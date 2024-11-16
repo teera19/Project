@@ -1,5 +1,5 @@
 # Base image สำหรับ Maven build
-FROM maven:3.9.4-eclipse-temurin-17 AS build
+FROM maven:3.9.4-eclipse-temurin-23 AS build
 
 # ตั้ง Working Directory
 WORKDIR /app
@@ -20,7 +20,7 @@ COPY src ./src
 RUN ./mvnw package -DskipTests
 
 # Base image สำหรับรันแอปพลิเคชัน
-FROM openjdk:17-jdk-slim
+FROM openjdk:23-jdk-slim
 
 # ตั้ง Working Directory
 WORKDIR /app

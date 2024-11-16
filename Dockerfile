@@ -9,3 +9,5 @@ COPY target/server-management-0.0.1-SNAPSHOT.jar app.jar
 
 # ระบุคำสั่งสำหรับการรันแอป
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
+EXPOSE 8080

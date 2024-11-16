@@ -31,6 +31,7 @@ public class User {
     private String tel;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private MyShop myShop;
 
     public int getUserId() {
         return userId;
@@ -95,4 +96,13 @@ public class User {
     public void setTel(String tel) {
         this.tel = tel;
     }
+
+    public MyShop getMyShop() {
+        return myShop;
+    }
+
+    public void setMyShop(MyShop myShop) {
+        this.myShop = myShop;
+    }
 }
+

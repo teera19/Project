@@ -1,6 +1,7 @@
 package com.example.server_management.repository;
 
 import com.example.server_management.models.User;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface UserRepository extends CrudRepository<User, Integer> {
+    int countByUserName(String userName);
 
     @Transactional
     @Modifying
@@ -25,6 +27,7 @@ public interface UserRepository extends CrudRepository<User, Integer> {
                  @Param("tel") String tel);
 
 
+
     @Transactional
     @Modifying
     @Query("UPDATE User u SET u.Name = :name, u.lastName = :last_name, u.address = :address, u.tel = :tel WHERE u.userName = :user_name")
@@ -36,3 +39,4 @@ public interface UserRepository extends CrudRepository<User, Integer> {
     User findByUserName(String user_name);
 
 }
+

@@ -28,6 +28,10 @@ public class Register {
         if (user_name.isEmpty() || name.isEmpty() || last_name.isEmpty() || email.isEmpty() || password.isEmpty() || address.isEmpty() || tel.isEmpty()) {
             return new ResponseEntity<>("Please Complete all Fields", HttpStatus.BAD_REQUEST);
         }
+        if (userService.countByUserName(user_name) > 0) {
+            return new ResponseEntity<>("Username already exists", HttpStatus.BAD_REQUEST);
+        }
+
         int result = userService.registerServiceMethod(user_name, name, last_name, email, password, address, tel);
 
 

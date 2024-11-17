@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     @Autowired
-    private UserRepository userRepository; // ลบ static ออก
+    private UserRepository userRepository;
 
     public int registerServiceMethod(String user_name,
                                      String name,
@@ -20,6 +20,9 @@ public class UserService {
                                      String address,
                                      String tel) {
         return userRepository.register(user_name, name, last_name, email, password, address, tel);
+    }
+    public int countByUserName(String userName) {
+        return userRepository.countByUserName(userName);
     }
 
     public User loginUser(String user_name) {

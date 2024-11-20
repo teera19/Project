@@ -4,10 +4,7 @@ import com.example.server_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -52,4 +49,22 @@ public class Myshop {
             throw new RuntimeException(e);
         }
     }
+
+
+    @PatchMapping("/edit-product")
+    public ResponseEntity<String> editProduct(@RequestParam("product_id") Long productId,
+                                              @RequestParam(value = "name", required = false) String name,
+                                              @RequestParam(value = "description", required = false) String description,
+                                              @RequestParam(value = "price", required = false) Double price,
+                                              @RequestParam(value = "image", required = false) MultipartFile image) {
+        try {
+            userService.editProduct(productId, name, description, price, image);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return new ResponseEntity<>("Product updated successfully", HttpStatus.OK);
+    }
+
+
+
 }

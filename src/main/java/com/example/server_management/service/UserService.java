@@ -77,4 +77,29 @@ public class UserService {
         // บันทึก Product ลงฐานข้อมูล
         productRepository.save(product);
     }
+
+
+    @Transactional
+    public void editProduct(Long productId, String name, String description, Double price, MultipartFile image) throws IOException {
+        Product product = productRepository.findById(Math.toIntExact(productId)).orElseThrow(() ->
+                new IllegalArgumentException("Product not found with ID: " + productId));
+
+        // ตรวจสอบว่าแต่ละฟิลด์ไม่เป็น null และทำการอัปเดต
+        if (name != null) {
+            product.setName(name);
+        }
+        if (description != null) {
+            product.setDescription(description);
+        }
+        if (price != null) {
+            product.setPrice(price);
+        }
+        if (image != null) {
+            product.setImage(image.getBytes());
+        }
+
+        productRepository.save(product);
+    }
+
+
 }

@@ -29,6 +29,8 @@ public interface MyshopRepository extends JpaRepository<MyShop, Integer> {
                        @Param("user") User user);
 
     Optional<MyShop> findByUser(User user);
+    MyShop findByTitle(String title);
+
 
 
 }

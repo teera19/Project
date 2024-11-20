@@ -16,3 +16,12 @@ CREATE TABLE users(
     tel VARCHAR(50) NOT NULL,
     PRIMARY KEY(user_id)
 );
+CREATE TABLE product (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2),
+    image LONGBLOB,
+    shop_id INT,
+    FOREIGN KEY (shop_id) REFERENCES my_shop(myshop_id)
+);

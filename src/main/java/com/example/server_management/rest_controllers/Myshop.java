@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/")
@@ -31,5 +34,22 @@ public class Myshop {
         userService.createShopForUser(user_name, title, detail);  // เรียกผ่าน instance ของ UserService
 
         return new ResponseEntity<>("Shop Created Successfully", HttpStatus.OK);
+    }
+
+
+    @PostMapping("/add-product")
+    public ResponseEntity<String> addProduct(@RequestParam("shop_title") String shopTitle,
+                                             @RequestParam("name") String name,
+                                             @RequestParam("description") String description,
+                                             @RequestParam("price") double price,
+                                             @RequestParam("image") MultipartFile image) {
+        try {
+            userService.addProductToShop(shopTitle, name, description, price, image);
+            return new ResponseEntity<>("Product added successfully", HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -2,8 +2,9 @@ package com.example.server_management.service;
 
 import com.example.server_management.models.MyShop;
 import com.example.server_management.models.Product;
+import com.example.server_management.models.ProductResponse;
 import com.example.server_management.models.User;
-import com.example.server_management.repository.MyshopRepository;  // แก้ชื่อ repository
+import com.example.server_management.repository.MyshopRepository;
 import com.example.server_management.repository.ProductRepository;
 import com.example.server_management.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Base64;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -21,15 +25,10 @@ public class UserService {
     @Autowired
     private ProductRepository productRepository;
     @Autowired
-    private MyshopRepository myShopRepository;  // แก้ชื่อ repository
+    private MyshopRepository myShopRepository;
 
-    public int registerServiceMethod(String user_name,
-                                     String name,
-                                     String last_name,
-                                     String email,
-                                     String password,
-                                     String address,
-                                     String tel) {
+    public int registerServiceMethod(String user_name, String name, String last_name, String email,
+                                     String password, String address, String tel) {
         return userRepository.register(user_name, name, last_name, email, password, address, tel);
     }
 
@@ -41,9 +40,8 @@ public class UserService {
         return userRepository.findByUserName(user_name);
     }
 
-    public void createShopForUser(String userName, String title, String detail) { // ลบ static ออก
+    public void createShopForUser(String userName, String title, String detail) {
         User user = userRepository.findByUserName(userName);
-
         if (user != null) {
             MyShop myShop = new MyShop();
             myShop.setTitle(title);
@@ -57,34 +55,26 @@ public class UserService {
 
     @Transactional
     public void addProductToShop(String shopTitle, String name, String description, double price, MultipartFile image) throws IOException {
-        // หา shop ตาม shopTitle
-        MyShop shop = myShopRepository.findByTitle(shopTitle);  // แก้ชื่อ repository
+        MyShop shop = myShopRepository.findByTitle(shopTitle);
         if (shop == null) {
             throw new IllegalArgumentException("Shop not found with title: " + shopTitle);
         }
 
-        // แปลง MultipartFile เป็น byte[]
-        byte[] imageBytes = image.getBytes();
-
-        // สร้าง Product
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
         product.setPrice(price);
-        product.setImage(imageBytes); // บันทึกภาพเป็น byte[]
+        product.setImage(image.getBytes());
         product.setShop(shop);
 
-        // บันทึก Product ลงฐานข้อมูล
         productRepository.save(product);
     }
 
-
     @Transactional
-    public void editProduct(Long productId, String name, String description, Double price, MultipartFile image) throws IOException {
-        Product product = productRepository.findById(Math.toIntExact(productId)).orElseThrow(() ->
+    public void editProduct(Integer productId, String name, String description, Double price, MultipartFile image) throws IOException {
+        Product product = productRepository.findById(productId).orElseThrow(() ->
                 new IllegalArgumentException("Product not found with ID: " + productId));
 
-        // ตรวจสอบว่าแต่ละฟิลด์ไม่เป็น null และทำการอัปเดต
         if (name != null) {
             product.setName(name);
         }
@@ -101,5 +91,15 @@ public class UserService {
         productRepository.save(product);
     }
 
-
+    public List<ProductResponse> getAllProducts() {
+        List<Product> products = productRepository.findAll();
+        return products.stream()
+                .map(product -> new ProductResponse(
+                        product.getName(),
+                        product.getDescription(),
+                        product.getPrice(),
+                        product.getImage() != null ? Base64.getEncoder().encodeToString(product.getImage()) : null
+                ))
+                .collect(Collectors.toList());
+    }
 }

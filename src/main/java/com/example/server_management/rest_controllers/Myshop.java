@@ -38,14 +38,26 @@ public class Myshop {
                                              @RequestParam("price") double price,
                                              @RequestParam("image") MultipartFile image) {
         try {
-            userService.addProductToShop(shopTitle, name, description, price, image);
+            // ตรวจสอบว่าไฟล์มีขนาดไม่เกินที่กำหนด
+            if (image.isEmpty()) {
+                return new ResponseEntity<>("No image uploaded", HttpStatus.BAD_REQUEST);
+            }
+
+            // แปลงไฟล์ image เป็น byte[]
+            byte[] imageBytes = image.getBytes();
+
+            // เรียกใช้ userService เพื่อเพิ่มข้อมูลสินค้า พร้อมส่ง imageBytes
+            userService.addProductToShop(shopTitle, name, description, price, imageBytes);
+
             return new ResponseEntity<>("Product added successfully", HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            // การจัดการข้อผิดพลาดในกรณีที่เกิด IOException
+            return new ResponseEntity<>("Failed to process the image", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
+
 
     @PatchMapping("/edit-product")
     public ResponseEntity<String> editProduct(@RequestParam("product_id") Integer productId,

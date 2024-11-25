@@ -54,21 +54,30 @@ public class UserService {
     }
 
     @Transactional
-    public void addProductToShop(String shopTitle, String name, String description, double price, MultipartFile image) throws IOException {
+    public void addProductToShop(String shopTitle, String name, String description, double price, byte[] image) throws IOException {
+        // ตรวจสอบว่ามี shop ที่ตรงกับ shopTitle หรือไม่
         MyShop shop = myShopRepository.findByTitle(shopTitle);
         if (shop == null) {
             throw new IllegalArgumentException("Shop not found with title: " + shopTitle);
         }
 
+        // ตรวจสอบว่า image มีข้อมูลหรือไม่
+        if (image == null || image.length == 0) {
+            throw new IllegalArgumentException("Image file is empty");
+        }
+
+        // สร้าง Product และกำหนดค่าต่างๆ
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
         product.setPrice(price);
-        product.setImage(image.getBytes());
-        product.setShop(shop);
+        product.setImage(image);  // ใช้ image เป็น byte[] โดยตรง
+        product.setShop(shop);  // ตั้งค่าร้านค้า (shop)
 
+        // บันทึก Product ลงฐานข้อมูล
         productRepository.save(product);
     }
+
 
     @Transactional
     public void editProduct(Integer productId, String name, String description, Double price, MultipartFile image) throws IOException {

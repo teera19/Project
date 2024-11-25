@@ -66,4 +66,14 @@ public class Myshop {
         List<ProductResponse> response = userService.getAllProducts();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @GetMapping("/my-product")
+    public ResponseEntity<List<ProductResponse>> getMyProducts(@RequestParam("user_name") String userName) {
+        try {
+            List<ProductResponse> response = userService.getMyProducts(userName);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+    }
+
 }

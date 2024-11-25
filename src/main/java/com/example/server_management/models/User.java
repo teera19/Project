@@ -13,8 +13,10 @@ public class User {
 
     @Column(name = "user_name")
     private String userName;
+
     @Column(name = "name")
-    private String Name;
+    private String name;
+
     @Column(name = "last_name")
     private String lastName;
 
@@ -30,8 +32,10 @@ public class User {
     @Column(name = "tel")
     private String tel;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private MyShop myShop;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private MyShop myShop;  // ใช้ myShop ให้ตรงกับ MyShop class
+
+    // getter and setter
 
     public int getUserId() {
         return userId;
@@ -50,11 +54,11 @@ public class User {
     }
 
     public String getName() {
-        return Name;
+        return name;
     }
 
-    public void setName(String Name) {
-        this.Name = Name;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getLastName() {
@@ -98,11 +102,10 @@ public class User {
     }
 
     public MyShop getMyShop() {
-        return myShop;
+        return myShop;  // เปลี่ยนชื่อให้ตรงกับฟิลด์
     }
 
     public void setMyShop(MyShop myShop) {
-        this.myShop = myShop;
+        this.myShop = myShop;  // เปลี่ยนชื่อให้ตรงกับฟิลด์
     }
 }
-

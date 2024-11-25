@@ -102,4 +102,27 @@ public class UserService {
                 ))
                 .collect(Collectors.toList());
     }
+    @Transactional
+    public List<ProductResponse> getMyProducts(String userName) {
+        User user = userRepository.findByUserName(userName);
+        if (user == null) {
+            throw new IllegalArgumentException("User not found with username: " + userName);
+        }
+
+        MyShop shop = user.getMyShop();
+        if (shop == null) {
+            throw new IllegalArgumentException("No shop associated with this user.");
+        }
+
+        List<Product> products = productRepository.findByShop(shop);
+        return products.stream()
+                .map(product -> new ProductResponse(
+                        product.getName(),
+                        product.getDescription(),
+                        product.getPrice(),
+                        product.getImage() != null ? Base64.getEncoder().encodeToString(product.getImage()) : null
+                ))
+                .collect(Collectors.toList());
+    }
+
 }

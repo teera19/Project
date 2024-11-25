@@ -30,7 +30,7 @@ public interface UserRepository extends CrudRepository<User, Integer> {
 
     @Transactional
     @Modifying
-    @Query("UPDATE User u SET u.Name = :name, u.lastName = :last_name, u.address = :address, u.tel = :tel WHERE u.userName = :user_name")
+    @Query("UPDATE User u SET u.name = :name, u.lastName = :last_name, u.address = :address, u.tel = :tel WHERE u.userName = :user_name")
     int updateUserInfo(@Param("name") String name,
                        @Param("last_name") String last_name,
                        @Param("address") String address,

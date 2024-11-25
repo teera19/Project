@@ -17,12 +17,11 @@ public class MyShop {
     @Column(name = "detail")
     private String detail;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false, unique = true)  // ใช้ user_id เชื่อมกับ User
+    private User user;  // เพิ่มการเชื่อมโยงกับ User
 
-    public MyShop() {
-    }
+    // getter and setter
 
     public int getMyShopId() {
         return myShopId;

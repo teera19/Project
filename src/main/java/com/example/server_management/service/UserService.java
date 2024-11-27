@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,6 +53,29 @@ public class UserService {
             userRepository.save(user);
         }
     }
+
+    public String userHasShop(String userName) {
+        // ค้นหาผู้ใช้ในระบบ
+        User user = userRepository.findByUserName(userName);
+        if (user == null) {
+            return "User not found";
+        }
+
+        // ค้นหาร้านค้าของผู้ใช้
+        Optional<MyShop> shop = myShopRepository.findByUser(user);
+        System.out.println("Shop: " + shop); // Log เพื่อตรวจสอบ
+
+        // ตรวจสอบว่าผู้ใช้มีร้านค้าหรือไม่
+        if (shop.isPresent()) {
+            return "User has a shop";
+        } else {
+            return "User does not have a shop";
+        }
+    }
+
+
+
+
 
     @Transactional
     public void addProductToShop(String shopTitle, String name, String description, double price, byte[] image) throws IOException {

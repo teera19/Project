@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/")
@@ -30,6 +31,20 @@ public class Myshop {
         userService.createShopForUser(user_name, title, detail);
         return new ResponseEntity<>("Shop Created Successfully", HttpStatus.OK);
     }
+
+    @GetMapping("/checkshop")
+    public ResponseEntity<Map<String, Object>> checkShop(@RequestParam("user_name") String userName) {
+        String message = userService.userHasShop(userName);
+
+        // เช็คข้อความที่ได้จาก Service เพื่อกำหนด HTTP Status
+        HttpStatus status = message.equals("User not found") ? HttpStatus.NOT_FOUND : HttpStatus.OK;
+
+        return new ResponseEntity<>(Map.of(
+                "message", message
+        ), status);
+    }
+
+
 
     @PostMapping("/add-product")
     public ResponseEntity<String> addProduct(@RequestParam("shop_title") String shopTitle,

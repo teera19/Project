@@ -41,7 +41,7 @@ public class UserService {
         return userRepository.findByUserName(user_name);
     }
 
-    public void createShopForUser(String userName, String title, String detail) {
+    public MyShop createShopForUser(String userName, String title, String detail) {
         User user = userRepository.findByUserName(userName);
         if (user != null) {
             MyShop myShop = new MyShop();
@@ -49,10 +49,15 @@ public class UserService {
             myShop.setDetail(detail);
             myShop.setUser(user);
 
+            // บันทึก MyShop ผ่าน User และเชื่อมโยงกัน
             user.setMyShop(myShop);
             userRepository.save(user);
+
+            return myShop; // คืนค่า MyShop ที่สร้างใหม่
         }
+        return null; // หาก User ไม่พบ
     }
+
 
     public String userHasShop(String userName) {
         // ค้นหาผู้ใช้ในระบบ

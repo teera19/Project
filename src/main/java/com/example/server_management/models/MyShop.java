@@ -1,6 +1,8 @@
 package com.example.server_management.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+
 
 @Entity
 @Table(name = "my_shop")
@@ -18,8 +20,11 @@ public class MyShop {
     private String detail;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)  // ใช้ user_id เชื่อมกับ User
-    private User user;  // เพิ่มการเชื่อมโยงกับ User
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JsonBackReference
+    private User user;
+
+
 
     // getter and setter
 

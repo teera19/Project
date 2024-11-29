@@ -1,9 +1,14 @@
 package com.example.server_management.models;
 
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+
+
 
 @Entity
 @Table(name = "users")
+
 public class User {
 
     @Id
@@ -32,8 +37,10 @@ public class User {
     @Column(name = "tel")
     private String tel;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private MyShop myShop;  // ใช้ myShop ให้ตรงกับ MyShop class
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonManagedReference
+    private MyShop myShop;
+
 
     // getter and setter
 

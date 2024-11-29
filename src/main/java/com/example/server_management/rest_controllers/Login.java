@@ -15,14 +15,18 @@ public class Login {
     private UserRepository userRepository;
 
     @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@RequestBody User loginUser) {
+    public ResponseEntity<?> loginUser(@RequestBody User loginUser) {
 
         User existingUser = userRepository.findByUserName(loginUser.getUserName());
 
         if (existingUser != null && loginUser.getPassword().equals(existingUser.getPassword())) {
-            return new ResponseEntity<>("Login successful. Welcome " + existingUser.getUserName(), HttpStatus.OK);
+            existingUser.setPassword(null);
+
+
+            return new ResponseEntity<>(existingUser, HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Login failed. Invalid credentials.", HttpStatus.UNAUTHORIZED);
         }
     }
 }
+

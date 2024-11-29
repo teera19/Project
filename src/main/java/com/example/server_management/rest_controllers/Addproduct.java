@@ -1,5 +1,6 @@
 package com.example.server_management.rest_controllers;
 
+import com.example.server_management.models.Product;
 import com.example.server_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,14 +12,17 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Base64;
 
 @RestController
 @RequestMapping("/")
 public class Addproduct {
+
     @Autowired
     private UserService userService;
+
     @PostMapping("/add-product")
-    public ResponseEntity<String> addProduct(@RequestParam("shop_title") String shopTitle,
+    public ResponseEntity<Object> addProduct(@RequestParam("shop_title") String shopTitle,
                                              @RequestParam("name") String name,
                                              @RequestParam("description") String description,
                                              @RequestParam("price") double price,
@@ -32,13 +36,25 @@ public class Addproduct {
             // แปลงไฟล์ image เป็น byte[]
             byte[] imageBytes = image.getBytes();
 
-            // เรียกใช้ userService เพื่อเพิ่มข้อมูลสินค้า พร้อมส่ง imageBytes
-            userService.addProductToShop(shopTitle, name, description, price, imageBytes);
+            // เรียกใช้ userService เพื่อเพิ่มข้อมูลสินค้า
+            Product addedProduct = userService.addProductToShop(shopTitle, name, description, price, imageBytes);
 
-            return new ResponseEntity<>("Product added successfully", HttpStatus.OK);
+            // แปลง byte array ของ image เป็น Base64
+            String base64Encoded = addedProduct.getImageBase64();
+
+            if (base64Encoded != null) {
+                // ตัด Base64 ให้แสดงแค่ 500 ตัวแรก
+                String shortBase64 = base64Encoded.substring(0, Math.min(base64Encoded.length(), 100));
+                addedProduct.setImage(Base64.getDecoder().decode(shortBase64));
+                // ตั้งค่าภาพที่ตัดแล้วกลับไปใน Product
+            }
+
+            // ส่งข้อมูลสินค้าเป็น JSON
+            return new ResponseEntity<>(addedProduct, HttpStatus.CREATED);
         } catch (IOException e) {
             // การจัดการข้อผิดพลาดในกรณีที่เกิด IOException
             return new ResponseEntity<>("Failed to process the image", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 }

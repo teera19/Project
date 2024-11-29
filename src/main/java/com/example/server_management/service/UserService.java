@@ -83,7 +83,7 @@ public class UserService {
 
 
     @Transactional
-    public void addProductToShop(String shopTitle, String name, String description, double price, byte[] image) throws IOException {
+    public Product addProductToShop(String shopTitle, String name, String description, double price, byte[] image) throws IOException {
         // ตรวจสอบว่ามี shop ที่ตรงกับ shopTitle หรือไม่
         MyShop shop = myShopRepository.findByTitle(shopTitle);
         if (shop == null) {
@@ -104,7 +104,10 @@ public class UserService {
         product.setShop(shop);  // ตั้งค่าร้านค้า (shop)
 
         // บันทึก Product ลงฐานข้อมูล
-        productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+
+        // ส่งกลับ Product ที่บันทึกแล้ว
+        return savedProduct;
     }
 
 

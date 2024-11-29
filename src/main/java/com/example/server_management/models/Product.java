@@ -1,6 +1,9 @@
 package com.example.server_management.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
+import java.util.Base64;
 
 @Entity
 @Table(name = "product")
@@ -62,10 +65,17 @@ public class Product {
     public void setPrice(double price) {
         this.price = price;
     }
-
+    @JsonIgnore
+    public String getImageBase64() {
+        if (image != null) {
+            return Base64.getEncoder().encodeToString(image);
+        }
+        return null;
+    }
     public byte[] getImage() {
         return image;
     }
+
 
     public void setImage(byte[] image) {
         this.image = image;
@@ -78,6 +88,8 @@ public class Product {
     public void setShop(MyShop shop) {
         this.shop = shop;
     }
+
+
 }
 
 

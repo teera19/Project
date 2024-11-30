@@ -11,10 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 @Service
 public class UserService {
@@ -107,58 +106,55 @@ public class UserService {
 
 
     @Transactional
-    public void editProduct(Integer productId, String name, String description, Double price, MultipartFile image) throws IOException {
-        Product product = productRepository.findById(productId).orElseThrow(() ->
-                new IllegalArgumentException("Product not found with ID: " + productId));
+    public Product editProduct(int productId, String shopTitle, String name, String description, double price, byte[] imageBytes, int categoryId) {
+        // ค้นหาสินค้าจาก productId
+        Product existingProduct = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
-        if (name != null) {
-            product.setName(name);
-        }
-        if (description != null) {
-            product.setDescription(description);
-        }
-        if (price != null) {
-            product.setPrice(price);
-        }
-        if (image != null) {
-            product.setImage(image.getBytes());
+        // ตรวจสอบว่าผู้ใช้เป็นเจ้าของร้านค้าที่สินค้าถูกเพิ่มไว้หรือไม่
+        if (!existingProduct.getShop().getTitle().equals(shopTitle)) {
+            throw new IllegalArgumentException("You are not the owner of this product");
         }
 
-        productRepository.save(product);
+        // ค้นหาหมวดหมู่จาก categoryId
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+
+        // อัพเดตข้อมูลสินค้า
+        existingProduct.setName(name);
+        existingProduct.setDescription(description);
+        existingProduct.setPrice(price);
+        existingProduct.setImage(imageBytes);
+        existingProduct.setCategory(category);
+
+        // บันทึกการเปลี่ยนแปลง
+        return productRepository.save(existingProduct);
     }
 
-    public List<ProductResponse> getAllProducts() {
-        List<Product> products = productRepository.findAll();
-        return products.stream()
-                .map(product -> new ProductResponse(
-                        product.getName(),
-                        product.getDescription(),
-                        product.getPrice(),
-                        product.getImage() != null ? Base64.getEncoder().encodeToString(product.getImage()) : null
-                ))
-                .collect(Collectors.toList());
+
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
     }
+
+
     @Transactional
-    public List<ProductResponse> getMyProducts(String userName) {
+    public List<Product> getMyProducts(String userName) {
+        // ค้นหา User ตามชื่อ
         User user = userRepository.findByUserName(userName);
         if (user == null) {
             throw new IllegalArgumentException("User not found with username: " + userName);
         }
 
+        // ค้นหา MyShop ที่เชื่อมโยงกับ User
         MyShop shop = user.getMyShop();
         if (shop == null) {
             throw new IllegalArgumentException("No shop associated with this user.");
         }
 
+        // ค้นหา Products ที่เชื่อมโยงกับ MyShop
         List<Product> products = productRepository.findByShop(shop);
-        return products.stream()
-                .map(product -> new ProductResponse(
-                        product.getName(),
-                        product.getDescription(),
-                        product.getPrice(),
-                        product.getImage() != null ? Base64.getEncoder().encodeToString(product.getImage()) : null
-                ))
-                .collect(Collectors.toList());
+        return products;
     }
+
 
 }

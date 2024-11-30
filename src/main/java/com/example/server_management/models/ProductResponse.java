@@ -5,12 +5,15 @@ public class ProductResponse {
     private String description;
     private double price;
     private String imageBase64;
+    private String categoryName;  // เพิ่มตัวแปร categoryName
 
-    public ProductResponse(String name, String description, double price, String imageBase64) {
+    // ปรับ constructor ให้รับ categoryName ด้วย
+    public ProductResponse(String name, String description, double price, String imageBase64, String categoryName) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.imageBase64 = imageBase64;
+        this.categoryName = categoryName;  // กำหนดค่าให้ categoryName
     }
 
     // Getter และ Setter
@@ -44,5 +47,14 @@ public class ProductResponse {
 
     public void setImageBase64(String imageBase64) {
         this.imageBase64 = imageBase64;
+    }
+
+    // เพิ่ม Getter และ Setter สำหรับ categoryName
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 }

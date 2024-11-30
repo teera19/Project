@@ -1,9 +1,7 @@
 package com.example.server_management.service;
 
-import com.example.server_management.models.MyShop;
-import com.example.server_management.models.Product;
-import com.example.server_management.models.ProductResponse;
-import com.example.server_management.models.User;
+import com.example.server_management.models.*;
+import com.example.server_management.repository.CategoryRepository;
 import com.example.server_management.repository.MyshopRepository;
 import com.example.server_management.repository.ProductRepository;
 import com.example.server_management.repository.UserRepository;
@@ -25,6 +23,8 @@ public class UserService {
     private UserRepository userRepository;
     @Autowired
     private ProductRepository productRepository;
+    @Autowired
+    private CategoryRepository categoryRepository;
     @Autowired
     private MyshopRepository myShopRepository;
 
@@ -83,31 +83,26 @@ public class UserService {
 
 
     @Transactional
-    public Product addProductToShop(String shopTitle, String name, String description, double price, byte[] image) throws IOException {
-        // ตรวจสอบว่ามี shop ที่ตรงกับ shopTitle หรือไม่
+    public Product addProductToShop(String shopTitle, String name, String description, double price, byte[] imageBytes, int categoryId) {
+        // ค้นหาหมวดหมู่จาก categoryId
+        Category category = categoryRepository.findById(categoryId).orElseThrow(() -> new IllegalArgumentException("Category not found"));
+
+        // ค้นหาร้านค้า
         MyShop shop = myShopRepository.findByTitle(shopTitle);
-        if (shop == null) {
-            throw new IllegalArgumentException("Shop not found with title: " + shopTitle);
-        }
 
-        // ตรวจสอบว่า image มีข้อมูลหรือไม่
-        if (image == null || image.length == 0) {
-            throw new IllegalArgumentException("Image file is empty");
-        }
-
-        // สร้าง Product และกำหนดค่าต่างๆ
+        // สร้างสินค้าใหม่
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
         product.setPrice(price);
-        product.setImage(image);  // ใช้ image เป็น byte[] โดยตรง
-        product.setShop(shop);  // ตั้งค่าร้านค้า (shop)
+        product.setImage(imageBytes);
+        product.setShop(shop);
+        product.setCategory(category);  // ตั้งค่าหมวดหมู่ให้กับสินค้า
 
-        // บันทึก Product ลงฐานข้อมูล
-        Product savedProduct = productRepository.save(product);
-
-        // ส่งกลับ Product ที่บันทึกแล้ว
-        return savedProduct;
+        return productRepository.save(product);
+    }
+    public List<Category> getAllCategories() {
+        return categoryRepository.findAll();
     }
 
 

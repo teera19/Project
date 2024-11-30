@@ -1,12 +1,15 @@
 package com.example.server_management.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.persistence.*;
 
 import java.util.Base64;
 
 @Entity
 @Table(name = "product")
+@JsonPropertyOrder({"productId", "name", "description", "price", "image", "categoryName", "shop"})
 public class Product {
 
     @Id
@@ -27,6 +30,10 @@ public class Product {
     @Column(name = "image")
     private byte[] image;
 
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    @JsonBackReference
+    private Category category;
     @ManyToOne
     @JoinColumn(name = "myshop_id", nullable = false)
     private MyShop shop;
@@ -74,6 +81,17 @@ public class Product {
     }
     public byte[] getImage() {
         return image;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+    public String getCategoryName() {
+        return category != null ? category.getName() : null;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 
 

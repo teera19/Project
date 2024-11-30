@@ -1,5 +1,6 @@
 package com.example.server_management.repository;
 
+import com.example.server_management.models.Category;
 import com.example.server_management.models.MyShop;
 import com.example.server_management.models.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,5 +25,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
                       @Param("shopId") int shopId);
 
     List<Product> findByShop(MyShop shop);
+    List<Product> findByCategory(Category category);
 
 }

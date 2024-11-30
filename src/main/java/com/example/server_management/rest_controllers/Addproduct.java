@@ -26,8 +26,9 @@ public class Addproduct {
                                              @RequestParam("name") String name,
                                              @RequestParam("description") String description,
                                              @RequestParam("price") double price,
-                                             @RequestParam("image") MultipartFile image) {
-        try {
+                                             @RequestParam("image") MultipartFile image,
+                                             @RequestParam("category_id") int categoryId) throws IOException {
+
             // ตรวจสอบว่าไฟล์มีขนาดไม่เกินที่กำหนด
             if (image.isEmpty()) {
                 return new ResponseEntity<>("No image uploaded", HttpStatus.BAD_REQUEST);
@@ -37,24 +38,20 @@ public class Addproduct {
             byte[] imageBytes = image.getBytes();
 
             // เรียกใช้ userService เพื่อเพิ่มข้อมูลสินค้า
-            Product addedProduct = userService.addProductToShop(shopTitle, name, description, price, imageBytes);
+            Product addedProduct = userService.addProductToShop(shopTitle, name, description, price, imageBytes, categoryId);
 
             // แปลง byte array ของ image เป็น Base64
             String base64Encoded = addedProduct.getImageBase64();
 
             if (base64Encoded != null) {
-                // ตัด Base64 ให้แสดงแค่ 500 ตัวแรก
+                // ตัด Base64 ให้แสดงแค่ 100 ตัวแรก
                 String shortBase64 = base64Encoded.substring(0, Math.min(base64Encoded.length(), 100));
                 addedProduct.setImage(Base64.getDecoder().decode(shortBase64));
-                // ตั้งค่าภาพที่ตัดแล้วกลับไปใน Product
             }
 
             // ส่งข้อมูลสินค้าเป็น JSON
             return new ResponseEntity<>(addedProduct, HttpStatus.CREATED);
-        } catch (IOException e) {
-            // การจัดการข้อผิดพลาดในกรณีที่เกิด IOException
-            return new ResponseEntity<>("Failed to process the image", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+
     }
 
 }

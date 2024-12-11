@@ -97,6 +97,7 @@ public class UserService {
         product.setImage(imageBytes);
         product.setShop(shop);
         product.setCategory(category);  // ตั้งค่าหมวดหมู่ให้กับสินค้า
+        product.setCategoryName(category.getName());
 
         return productRepository.save(product);
     }

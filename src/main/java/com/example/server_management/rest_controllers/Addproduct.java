@@ -40,6 +40,8 @@ public class Addproduct {
             // เรียกใช้ userService เพื่อเพิ่มข้อมูลสินค้า
             Product addedProduct = userService.addProductToShop(shopTitle, name, description, price, imageBytes, categoryId);
 
+            String categoryName = addedProduct.getCategory().getName();
+            addedProduct.setCategoryName(categoryName);
             // แปลง byte array ของ image เป็น Base64
             String base64Encoded = addedProduct.getImageBase64();
 

@@ -1,15 +1,19 @@
 package com.example.server_management.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.util.Set;
 
 @Entity
 @Table(name = "category")
+@JsonIgnoreProperties({"products"})
 public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Column(name = "category_id")
     private int categoryId;
 
@@ -44,6 +48,8 @@ public class Category {
         this.name = name;
     }
 
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    @JsonIgnore
     public Set<Product> getProducts() {
         return products;
     }

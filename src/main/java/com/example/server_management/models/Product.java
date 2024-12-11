@@ -83,6 +83,12 @@ public class Product {
         return image;
     }
 
+    private String categoryName;
+
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
     public Category getCategory() {
         return category;
     }

@@ -29,6 +29,8 @@ public class Addproduct {
                                              @RequestParam("image") MultipartFile image,
                                              @RequestParam("category_id") int categoryId) throws IOException {
 
+        // ตรวจสอบว่าไฟล์มีขนาดไม่เกินที่กำหนด
+        try {
             // ตรวจสอบว่าไฟล์มีขนาดไม่เกินที่กำหนด
             if (image.isEmpty()) {
                 return new ResponseEntity<>("No image uploaded", HttpStatus.BAD_REQUEST);
@@ -40,8 +42,6 @@ public class Addproduct {
             // เรียกใช้ userService เพื่อเพิ่มข้อมูลสินค้า
             Product addedProduct = userService.addProductToShop(shopTitle, name, description, price, imageBytes, categoryId);
 
-            String categoryName = addedProduct.getCategory().getName();
-            addedProduct.setCategoryName(categoryName);
             // แปลง byte array ของ image เป็น Base64
             String base64Encoded = addedProduct.getImageBase64();
 
@@ -51,9 +51,12 @@ public class Addproduct {
                 addedProduct.setImage(Base64.getDecoder().decode(shortBase64));
             }
 
-            // ส่งข้อมูลสินค้าเป็น JSON
             return new ResponseEntity<>(addedProduct, HttpStatus.CREATED);
+        } catch (Exception e) {
+            // Log ข้อผิดพลาด
+            e.printStackTrace();
+            return new ResponseEntity<>("Internal Server Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
     }
-
 }

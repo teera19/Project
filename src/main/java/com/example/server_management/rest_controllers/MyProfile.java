@@ -1,6 +1,8 @@
 package com.example.server_management.rest_controllers;
 
+import com.example.server_management.dto.UserProfile;
 import com.example.server_management.models.User;
+import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,34 +22,28 @@ public class MyProfile {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping("/my-profile")
-    public ResponseEntity<Object> getMyProfile(HttpSession session) {
-        // ดึง userName จาก Session
+    public ResponseEntity<?> getUserProfile(HttpSession session) {
+        // ดึงข้อมูลจาก session เพื่อหาผู้ใช้ที่ล็อกอิน
         String userName = (String) session.getAttribute("user_name");
 
-        if (userName == null || userName.isEmpty()) {
-            return new ResponseEntity<>("User not logged in", HttpStatus.UNAUTHORIZED);
+        if (userName != null) {
+            // ค้นหาผู้ใช้ในฐานข้อมูล
+            User existingUser = userRepository.findByUserName(userName);
+
+            if (existingUser != null) {
+                // ส่งเฉพาะข้อมูล name และ lastname
+                UserProfile userProfile = new UserProfile(existingUser.getName(), existingUser.getLastName());
+                return new ResponseEntity<>(userProfile, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("User not found.", HttpStatus.NOT_FOUND);
+            }
+        } else {
+            return new ResponseEntity<>("User is not logged in.", HttpStatus.UNAUTHORIZED);
         }
-
-        // ค้นหาผู้ใช้ในฐานข้อมูล
-        User user = userService.getUserByUserName(userName);
-
-        if (user == null) {
-            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
-        }
-
-        // จัดเรียงลำดับฟิลด์ใน Map ตามต้องการ
-        Map<String, Object> response = Map.of(
-                "email", user.getEmail(),
-                "name", user.getName(),
-                "lastName", user.getLastName()
-
-
-
-        );
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 }

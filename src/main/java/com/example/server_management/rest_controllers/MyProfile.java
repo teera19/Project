@@ -36,7 +36,7 @@ public class MyProfile {
 
             if (existingUser != null) {
                 // ส่งเฉพาะข้อมูล name และ lastname
-                UserProfile userProfile = new UserProfile(existingUser.getName(), existingUser.getLastName());
+                UserProfile userProfile = new UserProfile(existingUser.getName(), existingUser.getLastName(),existingUser.getEmail());
                 return new ResponseEntity<>(userProfile, HttpStatus.OK);
             } else {
                 return new ResponseEntity<>("User not found.", HttpStatus.NOT_FOUND);

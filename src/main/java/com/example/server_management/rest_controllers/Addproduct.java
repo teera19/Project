@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Base64;
 
@@ -29,34 +34,52 @@ public class Addproduct {
                                              @RequestParam("image") MultipartFile image,
                                              @RequestParam("category_id") int categoryId) throws IOException {
 
-        // ตรวจสอบว่าไฟล์มีขนาดไม่เกินที่กำหนด
         try {
-            // ตรวจสอบว่าไฟล์มีขนาดไม่เกินที่กำหนด
             if (image.isEmpty()) {
                 return new ResponseEntity<>("No image uploaded", HttpStatus.BAD_REQUEST);
             }
 
             // แปลงไฟล์ image เป็น byte[]
-            byte[] imageBytes = image.getBytes();
+            byte[] originalImageBytes = image.getBytes();
+
+            // บีบอัดภาพ
+            byte[] compressedImageBytes = compressImage(originalImageBytes);
 
             // เรียกใช้ userService เพื่อเพิ่มข้อมูลสินค้า
-            Product addedProduct = userService.addProductToShop(shopTitle, name, description, price, imageBytes, categoryId);
-
-            // แปลง byte array ของ image เป็น Base64
-            String base64Encoded = addedProduct.getImageBase64();
-
-            if (base64Encoded != null) {
-                // ตัด Base64 ให้แสดงแค่ 100 ตัวแรก
-                String shortBase64 = base64Encoded.substring(0, Math.min(base64Encoded.length(), 100));
-                addedProduct.setImage(Base64.getDecoder().decode(shortBase64));
-            }
+            Product addedProduct = userService.addProductToShop(shopTitle, name, description, price, compressedImageBytes, categoryId);
 
             return new ResponseEntity<>(addedProduct, HttpStatus.CREATED);
         } catch (Exception e) {
-            // Log ข้อผิดพลาด
             e.printStackTrace();
             return new ResponseEntity<>("Internal Server Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
 
+    // ฟังก์ชันสำหรับบีบอัดภาพ
+    private byte[] compressImage(byte[] imageBytes) throws IOException {
+        BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
+
+        if (originalImage == null) {
+            throw new IOException("Cannot read the image from the provided byte array");
+        }
+
+        // กำหนดขนาดของภาพที่ต้องการ
+        int targetWidth = 100; // ความกว้างของภาพที่ลดขนาด
+        int targetHeight = (int) (originalImage.getHeight() * (100.0 / originalImage.getWidth()));
+
+        // ลดขนาดภาพ
+        Image scaledImage = originalImage.getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
+
+        BufferedImage bufferedScaledImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = bufferedScaledImage.createGraphics();
+        g2d.drawImage(scaledImage, 0, 0, null);
+        g2d.dispose();
+
+        // แปลงภาพเป็น byte array
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(bufferedScaledImage, "jpg", baos);
+        baos.flush();
+        return baos.toByteArray();
     }
 }
+

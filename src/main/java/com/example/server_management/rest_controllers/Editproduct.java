@@ -25,7 +25,7 @@ public class Editproduct {
                                               @RequestParam("name") String name,
                                               @RequestParam("description") String description,
                                               @RequestParam("price") double price,
-                                              @RequestParam("image") MultipartFile image,
+                                              @RequestParam(value = "image", required = false) MultipartFile image,
                                               @RequestParam("category_id") int categoryId,
                                               HttpSession session) throws IOException {
 
@@ -36,30 +36,25 @@ public class Editproduct {
             return new ResponseEntity<>("User not logged in", HttpStatus.FORBIDDEN);
         }
 
-        // ตรวจสอบว่าไฟล์มีขนาดไม่เกินที่กำหนด
-        if (image.isEmpty()) {
-            return new ResponseEntity<>("No image uploaded", HttpStatus.BAD_REQUEST);
+        byte[] imageBytes = null;
+        if (image != null && !image.isEmpty()) {
+            imageBytes = image.getBytes();
         }
-
-        // แปลงไฟล์ image เป็น byte[]
-        byte[] imageBytes = image.getBytes();
 
         try {
             // เรียกใช้ userService เพื่ออัพเดตข้อมูลสินค้า
             Product updatedProduct = userService.editProduct(productId, shopTitle, name, description, price, imageBytes, categoryId);
 
-            // แปลง byte array ของ image เป็น Base64
-            String base64Encoded = updatedProduct.getImageBase64();
+            // ตั้งค่า URL ของภาพแทนการตัด Base64
+            updatedProduct.setImageUrl("/images/" + updatedProduct.getProductId() + ".jpg");
 
-            if (base64Encoded != null) {
-                // ตัด Base64 ให้แสดงแค่ 100 ตัวแรก
-                String shortBase64 = base64Encoded.substring(0, Math.min(base64Encoded.length(), 100));
-                updatedProduct.setImage(Base64.getDecoder().decode(shortBase64));
-            }
+            // ลบข้อมูล byte[] เพื่อไม่ส่งข้อมูลภาพใหญ่ไปใน JSON Response
+            updatedProduct.setImage(null);
 
             return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>("Error updating product", HttpStatus.INTERNAL_SERVER_ERROR);
+            e.printStackTrace();
+            return new ResponseEntity<>("Error updating product: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

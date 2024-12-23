@@ -22,27 +22,24 @@ public class Allproduct {
     @GetMapping("/all-product")
     public ResponseEntity<List<Product>> getAllProducts() {
         try {
-            List<Product> products = userService.getAllProducts(); // เรียกใช้เมธอดจาก UserService
+            List<Product> products = userService.getAllProducts();
 
-            // ตรวจสอบว่า products ว่างหรือไม่
             if (products.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
 
-            // ตัด Base64 ของแต่ละสินค้าที่มีภาพใน Base64 ให้เหลือแค่ 100 ตัวแรก
             for (Product product : products) {
-                String base64Encoded = product.getImageBase64();
-                if (base64Encoded != null && !base64Encoded.isEmpty()) {
-                    // ตัด Base64 ให้เหลือแค่ 100 ตัวแรก
-                    String shortBase64 = base64Encoded.substring(0, Math.min(base64Encoded.length(), 100));
-                    product.setImage(Base64.getDecoder().decode(shortBase64)); // ใช้ข้อมูลที่ถูกตัดในส่วนนี้
-                }
+                String imageUrl = "/images/" + product.getProductId() + ".jpg";
+                product.setImageUrl(imageUrl);
+                product.setImage(null); // เคลียร์ byte[] ก่อนส่งไปยัง Frontend
             }
 
             return new ResponseEntity<>(products, HttpStatus.OK);
         } catch (Exception e) {
+            e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 }
 

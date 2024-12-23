@@ -10,6 +10,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -82,22 +87,54 @@ public class UserService {
     @Transactional
     public Product addProductToShop(String shopTitle, String name, String description, double price, byte[] imageBytes, int categoryId) {
         // ค้นหาหมวดหมู่จาก categoryId
-        Category category = categoryRepository.findById(categoryId).orElseThrow(() -> new IllegalArgumentException("Category not found"));
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found with ID: " + categoryId));
 
         // ค้นหาร้านค้า
         MyShop shop = myShopRepository.findByTitle(shopTitle);
+        if (shop == null) {
+            throw new IllegalArgumentException("Shop not found with title: " + shopTitle);
+        }
 
         // สร้างสินค้าใหม่
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
         product.setPrice(price);
-        product.setImage(imageBytes);
+        product.setImage(imageBytes); // เก็บ byte[] ของภาพในฐานข้อมูล
         product.setShop(shop);
-        product.setCategory(category);  // ตั้งค่าหมวดหมู่ให้กับสินค้า
-        product.setCategoryName(category.getName());
+        product.setCategory(category);
 
-        return productRepository.save(product);
+        // ตั้งค่าชื่อหมวดหมู่ หากมีการใช้งานฟิลด์ categoryName
+        if (category.getName() != null) {
+            product.setCategoryName(category.getName());
+        }
+
+        // บันทึกสินค้า
+        Product savedProduct = productRepository.save(product);
+
+        // บันทึกภาพลงในระบบไฟล์
+        saveImageToFile(imageBytes, savedProduct.getProductId());
+
+        return savedProduct;
+    }
+
+    // ฟังก์ชันสำหรับบันทึกภาพในระบบไฟล์
+    private void saveImageToFile(byte[] imageBytes, int productId) {
+        try {
+            // ตรวจสอบและสร้างโฟลเดอร์ images หากยังไม่มี
+            File imagesFolder = new File("images");
+            if (!imagesFolder.exists() && !imagesFolder.mkdirs()) {
+                throw new IOException("Failed to create images directory");
+            }
+
+            // บันทึกภาพ
+            File outputFile = new File(imagesFolder, productId + ".jpg");
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+            ImageIO.write(image, "jpg", outputFile);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save image for product ID: " + productId, e);
+        }
     }
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
@@ -107,27 +144,55 @@ public class UserService {
     @Transactional
     public Product editProduct(int productId, String shopTitle, String name, String description, double price, byte[] imageBytes, int categoryId) {
         // ค้นหาสินค้าจาก productId
-        Product existingProduct = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // ตรวจสอบว่าผู้ใช้เป็นเจ้าของร้านค้าที่สินค้าถูกเพิ่มไว้หรือไม่
-        if (!existingProduct.getShop().getTitle().equals(shopTitle)) {
-            throw new IllegalArgumentException("You are not the owner of this product");
+        // ค้นหา Shop
+        MyShop shop = myShopRepository.findByTitle(shopTitle);
+        if (shop == null) {
+            throw new RuntimeException("Shop not found");
         }
 
-        // ค้นหาหมวดหมู่จาก categoryId
+        // ค้นหา Category
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+                .orElseThrow(() -> new RuntimeException("Category not found"));
 
-        // อัพเดตข้อมูลสินค้า
-        existingProduct.setName(name);
-        existingProduct.setDescription(description);
-        existingProduct.setPrice(price);
-        existingProduct.setImage(imageBytes);
-        existingProduct.setCategory(category);
+        // อัปเดตข้อมูลสินค้า
+        product.setName(name);
+        product.setDescription(description);
+        product.setPrice(price);
+        product.setShop(shop);
+        product.setCategory(category);
 
-        // บันทึกการเปลี่ยนแปลง
-        return productRepository.save(existingProduct);
+        // บันทึกภาพหากมีการอัปเดต
+        if (imageBytes != null) {
+            // บีบอัดภาพหรือบันทึกลงไฟล์
+            saveCompressedImage(imageBytes, product.getProductId());
+        }
+
+        return productRepository.save(product);
+    }
+
+    // ฟังก์ชันสำหรับบีบอัดและบันทึกภาพ
+    private void saveCompressedImage(byte[] imageBytes, int productId) {
+        try {
+            BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
+
+            // บีบอัดภาพ
+            int targetWidth = 100;
+            int targetHeight = (int) (originalImage.getHeight() * (100.0 / originalImage.getWidth()));
+            BufferedImage scaledImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+
+            Graphics2D g2d = scaledImage.createGraphics();
+            g2d.drawImage(originalImage.getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH), 0, 0, null);
+            g2d.dispose();
+
+            // บันทึกภาพลงโฟลเดอร์
+            File outputFile = new File("images/" + productId + ".jpg");
+            ImageIO.write(scaledImage, "jpg", outputFile);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save image: " + e.getMessage());
+        }
     }
 
 

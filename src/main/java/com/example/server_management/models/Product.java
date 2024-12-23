@@ -9,7 +9,7 @@ import java.util.Base64;
 
 @Entity
 @Table(name = "product")
-@JsonPropertyOrder({"productId", "name", "description", "price", "image", "categoryName", "shop"})
+@JsonPropertyOrder({"productId", "name", "description", "price", "imageUrl", "categoryName", "shop"})
 public class Product {
 
     @Id
@@ -30,16 +30,20 @@ public class Product {
     @Column(name = "image")
     private byte[] image;
 
+    @Transient
+    private String imageUrl; // ใช้สำหรับส่ง URL ไปยัง Frontend
+
+    @Transient
+    private String categoryName; // ใช้สำหรับส่งชื่อหมวดหมู่สินค้า
+
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
     @JsonBackReference
     private Category category;
+
     @ManyToOne
     @JoinColumn(name = "myshop_id", nullable = false)
     private MyShop shop;
-
-    public Product() {
-    }
 
     public int getProductId() {
         return productId;
@@ -72,37 +76,38 @@ public class Product {
     public void setPrice(double price) {
         this.price = price;
     }
-    @JsonIgnore
-    public String getImageBase64() {
-        if (image != null) {
-            return Base64.getEncoder().encodeToString(image);
-        }
-        return null;
-    }
+
     public byte[] getImage() {
         return image;
     }
 
-    private String categoryName;
+    public void setImage(byte[] image) {
+        this.image = image;
+    }
 
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getCategoryName() {
+        // ดึงชื่อหมวดหมู่จาก category
+        return category != null ? category.getName() : null;
+    }
 
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
     }
+
     public Category getCategory() {
         return category;
-    }
-    public String getCategoryName() {
-        return category != null ? category.getName() : null;
     }
 
     public void setCategory(Category category) {
         this.category = category;
-    }
-
-
-    public void setImage(byte[] image) {
-        this.image = image;
     }
 
     public MyShop getShop() {
@@ -112,8 +117,7 @@ public class Product {
     public void setShop(MyShop shop) {
         this.shop = shop;
     }
-
-
 }
+
 
 

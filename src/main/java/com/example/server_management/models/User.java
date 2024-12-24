@@ -36,6 +36,8 @@ public class User {
 
     @Column(name = "tel")
     private String tel;
+    @Column(name = "profile_image")
+    private String profileImage;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
@@ -114,5 +116,12 @@ public class User {
 
     public void setMyShop(MyShop myShop) {
         this.myShop = myShop;  // เปลี่ยนชื่อให้ตรงกับฟิลด์
+    }
+    public String getProfileImage() { // Getter สำหรับ profileImage
+        return profileImage;
+    }
+
+    public void setProfileImage(String profileImage) { // Setter สำหรับ profileImage
+        this.profileImage = profileImage;
     }
 }

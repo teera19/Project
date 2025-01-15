@@ -16,6 +16,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
@@ -153,6 +156,7 @@ public class UserService {
             throw new RuntimeException("Shop not found");
         }
 
+
         // ค้นหา Category
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -172,9 +176,24 @@ public class UserService {
 
         return productRepository.save(product);
     }
+    public Product findProductById(int productId) {
+        return productRepository.findById(productId).orElse(null);
+    }
+
+    // ค้นหาหมวดหมู่โดยใช้ category_id
+    public Category findCategoryById(int categoryId) {
+        return categoryRepository.findById(categoryId).orElse(null);
+    }
+
+    // บันทึกสินค้า
+    public void saveProduct(Product product) {
+        productRepository.save(product);
+    }
+
+    // บันทึกไฟล์รูปภาพ
 
     // ฟังก์ชันสำหรับบีบอัดและบันทึกภาพ
-    private void saveCompressedImage(byte[] imageBytes, int productId) {
+    public void saveCompressedImage(byte[] imageBytes, int productId) {
         try {
             BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
 
@@ -194,6 +213,7 @@ public class UserService {
             throw new RuntimeException("Failed to save image: " + e.getMessage());
         }
     }
+
 
 
     public List<Product> getAllProducts() {
@@ -219,6 +239,7 @@ public class UserService {
         List<Product> products = productRepository.findByShop(shop);
         return products;
     }
+
 
 
 }

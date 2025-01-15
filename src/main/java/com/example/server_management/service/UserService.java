@@ -8,7 +8,7 @@ import com.example.server_management.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
+
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -16,11 +16,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -239,7 +237,15 @@ public class UserService {
         List<Product> products = productRepository.findByShop(shop);
         return products;
     }
-
-
+    public List<String> findProductNamesByQuery(String query) {
+        List<Product> products = productRepository.findByNameContainingIgnoreCase(query);
+        return products.stream()
+                .map(Product::getName) // ดึงเฉพาะชื่อสินค้า
+                .limit(10) // จำกัดผลลัพธ์ที่ 10 รายการ
+                .collect(Collectors.toList());
+    }
+    public List<Product> searchProductsByName(String query) {
+        return productRepository.findByNameContainingIgnoreCase(query);
+    }
 
 }

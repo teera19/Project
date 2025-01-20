@@ -247,5 +247,16 @@ public class UserService {
     public List<Product> searchProductsByName(String query) {
         return productRepository.findByNameContainingIgnoreCase(query);
     }
+    public MyShop findShopByProductId(int productId) {
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product != null && product.getShop() != null) {
+            return myShopRepository.findById(product.getShop().getMyShopId()).orElse(null);
+        }
+        return null;
+    }
+
+    public void deleteProductById(int productId) {
+        productRepository.deleteById(productId);
+    }
 
 }

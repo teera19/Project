@@ -3,6 +3,8 @@ package com.example.server_management.models;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
+import java.util.List;
+
 
 @Entity
 @Table(name = "my_shop")
@@ -13,7 +15,7 @@ public class MyShop {
     @Column(name = "myshop_id")
     private int myShopId;
 
-    @Column(name = "title")
+    @Column(name = "title", nullable = false)
     private String title;
 
     @Column(name = "detail")
@@ -24,9 +26,10 @@ public class MyShop {
     @JsonBackReference
     private User user;
 
+    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Product> products;
 
-
-    // getter and setter
+    // Getter and Setter
 
     public int getMyShopId() {
         return myShopId;
@@ -58,5 +61,13 @@ public class MyShop {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public void setProducts(List<Product> products) {
+        this.products = products;
     }
 }

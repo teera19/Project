@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer> {
@@ -27,6 +28,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     List<Product> findByShop(MyShop shop);
     List<Product> findByCategory(Category category);
     List<Product> findByNameContainingIgnoreCase(String name);
+    Optional<Product> findById(int productId);
 
 
 }

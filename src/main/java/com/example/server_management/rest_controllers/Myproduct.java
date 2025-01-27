@@ -10,14 +10,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Base64;
+
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/")
@@ -27,31 +22,42 @@ public class Myproduct {
     private UserService userService;
 
     @GetMapping("/my-product")
-    public ResponseEntity<List<Product>> getMyProducts(HttpSession session) {
+    public ResponseEntity<?> getMyProducts(HttpSession session) {
+        // ดึง user_name จาก session
         String userName = (String) session.getAttribute("user_name");
 
+        // ตรวจสอบว่า session มี user_name หรือไม่
         if (userName == null) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(Map.of(
+                    "message", "User not logged in. Please log in first."
+            ), HttpStatus.FORBIDDEN);
         }
 
         try {
+            // ดึงรายการสินค้า
             List<Product> products = userService.getMyProducts(userName);
 
             if (products.isEmpty()) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+                // กรณีไม่มีสินค้า
+                return new ResponseEntity<>(Map.of(
+                        "message", "Don't have product"
+                ), HttpStatus.OK); // สามารถเปลี่ยนเป็น HttpStatus.NO_CONTENT ได้หากเหมาะสม
             }
 
+            // แปลง URL ภาพสินค้า และลบข้อมูล byte[] ออกจาก Response
             for (Product product : products) {
-                // เพิ่ม URL ของภาพ
                 String imageUrl = "/images/" + product.getProductId() + ".jpg";
                 product.setImageUrl(imageUrl);
                 product.setImage(null); // ลบข้อมูล byte[] ออกจาก JSON Response
             }
 
+            // ส่งรายการสินค้า
             return new ResponseEntity<>(products, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(Map.of(
+                    "message", "Internal server error occurred."
+            ), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/")
 public class Login {
@@ -17,24 +19,43 @@ public class Login {
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody User loginUser, HttpSession session) {
-        // ค้นหาผู้ใช้ในฐานข้อมูล
-        User existingUser = userRepository.findByUserName(loginUser.getUserName());
+        try {
+            // ค้นหาผู้ใช้จากฐานข้อมูล
+            User existingUser = userRepository.findByUserName(loginUser.getUserName());
 
-        // ตรวจสอบความถูกต้องของรหัสผ่าน
-        if (existingUser != null && loginUser.getPassword().equals(existingUser.getPassword())) {
-            // ลบ password ออกก่อนที่จะส่งข้อมูลกลับไป
-            existingUser.setPassword(null);  // ไม่ให้ password ถูกส่งกลับไปใน JSON response
+            // ตรวจสอบว่าผู้ใช้มีอยู่
+            if (existingUser == null) {
+                return new ResponseEntity<>(Map.of(
+                        "message", "User not found."
+                ), HttpStatus.NOT_FOUND);
+            }
 
-            // เก็บ user_name ลงใน session
-            session.setAttribute("user_name", loginUser.getUserName());
+            // ตรวจสอบรหัสผ่าน
+            if (!existingUser.getPassword().equals(loginUser.getPassword())) {
+                return new ResponseEntity<>(Map.of(
+                        "message", "Invalid password."
+                ), HttpStatus.UNAUTHORIZED);
+            }
 
-            // ส่งข้อมูลผู้ใช้กลับไปในรูปแบบ JSON
+            // เก็บข้อมูลลงใน Session
+            session.setAttribute("user_name", existingUser.getUserName());
+
+            // ลบรหัสผ่านก่อนส่งกลับ (เพื่อความปลอดภัย)
+            existingUser.setPassword(null);
+
+            // ส่งข้อมูลผู้ใช้กลับไป
             return new ResponseEntity<>(existingUser, HttpStatus.OK);
-        } else {
-            // หากข้อมูลไม่ถูกต้อง ส่งข้อความผิดพลาด
-            return new ResponseEntity<>("Login failed. Invalid credentials.", HttpStatus.UNAUTHORIZED);
+
+        } catch (Exception e) {
+            // Log ข้อผิดพลาดเพื่อ Debug
+            e.printStackTrace();
+            return new ResponseEntity<>(Map.of(
+                    "message", "An error occurred while processing the request."
+            ), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
 }
+
+
 

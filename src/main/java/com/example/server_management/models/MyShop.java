@@ -1,6 +1,7 @@
 package com.example.server_management.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -15,22 +16,18 @@ public class MyShop {
     @Column(name = "myshop_id")
     private int myShopId;
 
-    @Column(name = "title", nullable = false)
+    @Column(name = "title")
     private String title;
 
     @Column(name = "detail")
     private String detail;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id")
     @JsonBackReference
     private User user;
 
-    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Product> products;
-
-    // Getter and Setter
-
+    // Getter และ Setter
     public int getMyShopId() {
         return myShopId;
     }
@@ -62,12 +59,5 @@ public class MyShop {
     public void setUser(User user) {
         this.user = user;
     }
-
-    public List<Product> getProducts() {
-        return products;
-    }
-
-    public void setProducts(List<Product> products) {
-        this.products = products;
-    }
 }
+

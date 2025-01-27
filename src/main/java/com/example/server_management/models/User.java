@@ -8,7 +8,6 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users")
-
 public class User {
 
     @Id
@@ -36,16 +35,15 @@ public class User {
 
     @Column(name = "tel")
     private String tel;
+
     @Column(name = "profile_image")
     private String profileImage;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToOne(mappedBy = "user", cascade = {CascadeType.MERGE, CascadeType.PERSIST}, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
     private MyShop myShop;
 
-
-    // getter and setter
-
+    // Getter และ Setter
     public int getUserId() {
         return userId;
     }
@@ -111,17 +109,18 @@ public class User {
     }
 
     public MyShop getMyShop() {
-        return myShop;  // เปลี่ยนชื่อให้ตรงกับฟิลด์
+        return myShop;
     }
 
     public void setMyShop(MyShop myShop) {
-        this.myShop = myShop;  // เปลี่ยนชื่อให้ตรงกับฟิลด์
+        this.myShop = myShop;
     }
-    public String getProfileImage() { // Getter สำหรับ profileImage
+
+    public String getProfileImage() {
         return profileImage;
     }
 
-    public void setProfileImage(String profileImage) { // Setter สำหรับ profileImage
+    public void setProfileImage(String profileImage) {
         this.profileImage = profileImage;
     }
 }

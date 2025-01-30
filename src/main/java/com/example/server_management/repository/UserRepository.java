@@ -39,5 +39,6 @@ public interface UserRepository extends CrudRepository<User, Integer> {
     User findByUserName(String user_name);
 
 
+    boolean existsByUserName(String userName);
 }
 

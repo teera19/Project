@@ -141,7 +141,9 @@ public class UserService {
         return categoryRepository.findAll();
     }
 
-
+    public Product getProductById(int productId) {
+        return productRepository.findById(productId).orElse(null);
+    }
     @Transactional
     public Product editProduct(int productId, String shopTitle, String name, String description, double price, byte[] imageBytes, int categoryId) {
         // ค้นหาสินค้าจาก productId

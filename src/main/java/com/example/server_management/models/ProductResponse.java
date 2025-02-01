@@ -1,22 +1,31 @@
 package com.example.server_management.models;
 
 public class ProductResponse {
+    private int productId; // เพิ่ม productId
     private String name;
     private String description;
     private double price;
-    private String imageBase64;
-    private String categoryName;  // เพิ่มตัวแปร categoryName
+    private String imageUrl;
+    private String categoryName;
 
-    // ปรับ constructor ให้รับ categoryName ด้วย
-    public ProductResponse(String name, String description, double price, String imageBase64, String categoryName) {
+    public ProductResponse(int productId, String name, String description, double price, String imageUrl, String categoryName) {
+        this.productId = productId;
         this.name = name;
         this.description = description;
         this.price = price;
-        this.imageBase64 = imageBase64;
-        this.categoryName = categoryName;  // กำหนดค่าให้ categoryName
+        this.imageUrl = imageUrl;
+        this.categoryName = categoryName;
     }
 
     // Getter และ Setter
+    public int getProductId() {
+        return productId;
+    }
+
+    public void setProductId(int productId) {
+        this.productId = productId;
+    }
+
     public String getName() {
         return name;
     }
@@ -41,15 +50,14 @@ public class ProductResponse {
         this.price = price;
     }
 
-    public String getImageBase64() {
-        return imageBase64;
+    public String getImageUrl() {
+        return imageUrl;
     }
 
-    public void setImageBase64(String imageBase64) {
-        this.imageBase64 = imageBase64;
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
-    // เพิ่ม Getter และ Setter สำหรับ categoryName
     public String getCategoryName() {
         return categoryName;
     }

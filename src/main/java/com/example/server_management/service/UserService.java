@@ -251,12 +251,46 @@ public class UserService {
     // ค้นหาหมวดหมู่โดยใช้ category_id
     public Category findCategoryById(int categoryId) {
         return categoryRepository.findById(categoryId).orElse(null);
+
     }
 
     // บันทึกสินค้า
     public void saveProduct(Product product) {
         productRepository.save(product);
     }
+    // ค้นหา ClothingDetails โดยใช้ productId
+    public ClothingDetails findClothingDetailsByProductId(int productId) {
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product == null) return null;
+        return clothingDetailsRepository.findByProduct(product).orElse(null);
+    }
+
+    public PhoneDetails findPhoneDetailsByProductId(int productId) {
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product == null) return null;
+        return phoneDetailsRepository.findByProduct(product).orElse(null);
+    }
+
+    public ShoesDetails findShoesDetailsByProductId(int productId) {
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product == null) return null;
+        return shoesDetailsRepository.findByProduct(product).orElse(null);
+    }
+
+
+
+    public void saveClothingDetails(ClothingDetails clothingDetails) {
+        clothingDetailsRepository.save(clothingDetails);
+    }
+
+    public void savePhoneDetails(PhoneDetails phoneDetails) {
+        phoneDetailsRepository.save(phoneDetails);
+    }
+
+    public void saveShoesDetails(ShoesDetails shoesDetails) {
+        shoesDetailsRepository.save(shoesDetails);
+    }
+
 
     // บันทึกไฟล์รูปภาพ
 

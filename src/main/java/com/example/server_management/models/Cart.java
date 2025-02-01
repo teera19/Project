@@ -1,5 +1,7 @@
 package com.example.server_management.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -17,9 +19,11 @@ public class Cart {
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // ฝั่งเจ้าของความสัมพันธ์ (Cart → CartItem)
     private List<CartItem> items = new ArrayList<>();
 
     // Getter และ Setter

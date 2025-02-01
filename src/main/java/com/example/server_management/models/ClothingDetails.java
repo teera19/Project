@@ -11,7 +11,7 @@ public class ClothingDetails {
     private int id;
 
     @Column(name = "has_stain")
-    private boolean hasStain;
+    private Boolean hasStain;
 
     @Column(name = "tear_location")
     private String tearLocation;

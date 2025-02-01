@@ -1,6 +1,7 @@
 package com.example.server_management.rest_controllers;
 
 import com.example.server_management.models.Product;
+import com.example.server_management.models.ProductResponse;
 import com.example.server_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/")
@@ -22,7 +24,7 @@ public class Allproduct {
 
     // API สำหรับดึงรายการสินค้าทั้งหมด
     @GetMapping("/all-product")
-    public ResponseEntity<List<Product>> getAllProducts() {
+    public ResponseEntity<List<ProductResponse>> getAllProducts() {
         try {
             List<Product> products = userService.getAllProducts();
 
@@ -30,13 +32,19 @@ public class Allproduct {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
 
-            for (Product product : products) {
-                String imageUrl = "/images/" + product.getProductId() + ".jpg";
-                product.setImageUrl(imageUrl);
-                product.setImage(null); // เคลียร์ byte[] ก่อนส่งไปยัง Frontend
-            }
+            // แปลง Product Entity เป็น ProductResponse
+            List<ProductResponse> productResponses = products.stream()
+                    .map(product -> new ProductResponse(
+                            product.getProductId(),
+                            product.getName(),
+                            product.getDescription(),
+                            product.getPrice(),
+                            "/images/" + product.getProductId() + ".jpg", // สร้าง URL ของรูป
+                            product.getCategoryName() // เพิ่ม categoryName
+                    ))
+                    .collect(Collectors.toList());
 
-            return new ResponseEntity<>(products, HttpStatus.OK);
+            return new ResponseEntity<>(productResponses, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -45,7 +53,7 @@ public class Allproduct {
 
     // API สำหรับดึงรายละเอียดสินค้า
     @GetMapping("/product/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable("id") int productId) {
+    public ResponseEntity<ProductResponse> getProductById(@PathVariable("id") int productId) {
         try {
             Product product = userService.getProductById(productId);
 
@@ -53,17 +61,24 @@ public class Allproduct {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
-            // เพิ่ม URL ของรูปภาพ และเคลียร์ข้อมูล byte[] ก่อนส่งไป Front-end
-            String imageUrl = "/images/" + product.getProductId() + ".jpg";
-            product.setImageUrl(imageUrl);
-            product.setImage(null); // เคลียร์ byte[] ก่อนส่งไปยัง Frontend
+            // แปลง Product Entity เป็น ProductResponse
+            ProductResponse productResponse = new ProductResponse(
+                    product.getProductId(),
+                    product.getName(),
+                    product.getDescription(),
+                    product.getPrice(),
+                    "/images/" + product.getProductId() + ".jpg", // สร้าง URL ของรูป
+                    product.getCategoryName() // เพิ่ม categoryName
+            );
 
-            return new ResponseEntity<>(product, HttpStatus.OK);
+            return new ResponseEntity<>(productResponse, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 }
+
 
 

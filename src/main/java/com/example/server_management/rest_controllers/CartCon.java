@@ -42,13 +42,20 @@ public class CartCon {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
-        List<CartItem> cartItems = cartService.viewCart(userName);
-        if (cartItems.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        try {
+            List<CartItem> cartItems = cartService.viewCart(userName);
+            if (cartItems.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            return new ResponseEntity<>(cartItems, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-
-        return new ResponseEntity<>(cartItems, HttpStatus.OK);
     }
+
+
+
+
 
     @DeleteMapping("/remove")
     public ResponseEntity<String> removeFromCart(@RequestParam("product_id") int productId, HttpSession session) {

@@ -1,6 +1,7 @@
 package com.example.server_management.rest_controllers;
 
 import com.example.server_management.models.Product;
+import com.example.server_management.models.ProductResponse;
 import com.example.server_management.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/")
@@ -23,10 +25,9 @@ public class Myproduct {
 
     @GetMapping("/my-product")
     public ResponseEntity<?> getMyProducts(HttpSession session) {
-        // ดึง user_name จาก session
         String userName = (String) session.getAttribute("user_name");
 
-        // ตรวจสอบว่า session มี user_name หรือไม่
+        // ตรวจสอบว่าผู้ใช้ล็อกอินหรือไม่
         if (userName == null) {
             return new ResponseEntity<>(Map.of(
                     "message", "User not logged in. Please log in first."
@@ -34,25 +35,30 @@ public class Myproduct {
         }
 
         try {
-            // ดึงรายการสินค้า
+            // ดึงรายการสินค้าของผู้ใช้
             List<Product> products = userService.getMyProducts(userName);
 
+            // ตรวจสอบว่ามีสินค้าในรายการหรือไม่
             if (products.isEmpty()) {
-                // กรณีไม่มีสินค้า
                 return new ResponseEntity<>(Map.of(
-                        "message", "Don't have product"
-                ), HttpStatus.OK); // สามารถเปลี่ยนเป็น HttpStatus.NO_CONTENT ได้หากเหมาะสม
+                        "message", "Don't have any products"
+                ), HttpStatus.OK);
             }
 
-            // แปลง URL ภาพสินค้า และลบข้อมูล byte[] ออกจาก Response
-            for (Product product : products) {
-                String imageUrl = "/images/" + product.getProductId() + ".jpg";
-                product.setImageUrl(imageUrl);
-                product.setImage(null); // ลบข้อมูล byte[] ออกจาก JSON Response
-            }
+            // แปลง Product Entity เป็น ProductResponse
+            List<ProductResponse> productResponses = products.stream()
+                    .map(product -> new ProductResponse(
+                            product.getProductId(),  // เพิ่ม productId
+                            product.getName(),
+                            product.getDescription(),
+                            product.getPrice(),
+                            "/images/" + product.getProductId() + ".jpg",  // URL ของรูป
+                            product.getCategoryName()  // กำหนด Category Name
+                    ))
+                    .collect(Collectors.toList());
 
-            // ส่งรายการสินค้า
-            return new ResponseEntity<>(products, HttpStatus.OK);
+            // ส่งกลับ Response ที่แปลงแล้ว
+            return new ResponseEntity<>(productResponses, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(Map.of(

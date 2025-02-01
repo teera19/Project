@@ -4,6 +4,7 @@ import com.example.server_management.models.Cart;
 import com.example.server_management.models.CartItem;
 import com.example.server_management.models.Product;
 import com.example.server_management.models.User;
+import com.example.server_management.repository.CartItemRepository;
 import com.example.server_management.repository.CartRepository;
 import com.example.server_management.repository.ProductRepository;
 import com.example.server_management.repository.UserRepository;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CartService {
@@ -24,6 +26,8 @@ public class CartService {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private CartItemRepository cartItemRepository;
 
     public Cart getCartByUser(String userName) {
         User user = userRepository.findByUserName(userName);
@@ -77,9 +81,15 @@ public class CartService {
 
 
     public List<CartItem> viewCart(String userName) {
-        Cart cart = getCartByUser(userName);
-        return cart.getItems();
+        User user = userRepository.findByUserName(userName);
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+        return cartItemRepository.findByCartUser(user);
     }
+
+
+
 
     public void removeFromCart(String userName, int productId) {
         Cart cart = getCartByUser(userName);

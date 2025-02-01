@@ -1,10 +1,8 @@
 package com.example.server_management.service;
 
+import com.example.server_management.dto.ResponseProduct;
 import com.example.server_management.models.*;
-import com.example.server_management.repository.CategoryRepository;
-import com.example.server_management.repository.MyshopRepository;
-import com.example.server_management.repository.ProductRepository;
-import com.example.server_management.repository.UserRepository;
+import com.example.server_management.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +15,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,6 +31,12 @@ public class UserService {
     private CategoryRepository categoryRepository;
     @Autowired
     private MyshopRepository myShopRepository;
+    @Autowired
+    private ClothingDetailsRepository  clothingDetailsRepository;
+    @Autowired
+    private PhoneDetailsRepository phoneDetailsRepository;
+    @Autowired
+    private ShoesDetailsRepository shoesDetailsRepository;
 
     public int registerServiceMethod(String user_name, String name, String last_name, String email,
                                      String password, String address, String tel) {
@@ -86,7 +91,7 @@ public class UserService {
 
 
     @Transactional
-    public Product addProductToShop(String shopTitle, String name, String description, double price, byte[] imageBytes, int categoryId) {
+    public ResponseProduct addProductToShop(String shopTitle, String name, String description, double price, byte[] imageBytes, int categoryId, Map<String, String> details) {
         // ค้นหาหมวดหมู่จาก categoryId
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found with ID: " + categoryId));
@@ -102,41 +107,104 @@ public class UserService {
         product.setName(name);
         product.setDescription(description);
         product.setPrice(price);
-        product.setImage(imageBytes); // เก็บ byte[] ของภาพในฐานข้อมูล
+        product.setImage(imageBytes);
         product.setShop(shop);
         product.setCategory(category);
-
-        // ตั้งค่าชื่อหมวดหมู่ หากมีการใช้งานฟิลด์ categoryName
-        if (category.getName() != null) {
-            product.setCategoryName(category.getName());
-        }
 
         // บันทึกสินค้า
         Product savedProduct = productRepository.save(product);
 
-        // บันทึกภาพลงในระบบไฟล์
+        Object detailObject = null;
+
+        // บันทึกข้อมูลเฉพาะหมวดหมู่
+        if (categoryId == 1) { // สำหรับเสื้อผ้า
+            ClothingDetails clothingDetails = new ClothingDetails();
+            clothingDetails.setProduct(savedProduct);
+
+            // ใช้พารามิเตอร์ที่ตรงกับที่ส่งจาก Postman
+            String tearLocation = details.getOrDefault("details[tear_location]", "Unknown");
+            boolean hasStain = Boolean.parseBoolean(details.getOrDefault("details[has_stain]", "false"));
+            int repairCount = Integer.parseInt(details.getOrDefault("details[repair_count]", "0"));
+
+            clothingDetails.setTearLocation(tearLocation);
+            clothingDetails.setHasStain(hasStain);
+            clothingDetails.setRepairCount(repairCount);
+
+            clothingDetailsRepository.save(clothingDetails);
+            detailObject = clothingDetails;
+
+
+    } else if (categoryId == 2) { // สำหรับโทรศัพท์
+            PhoneDetails phoneDetails = new PhoneDetails();
+            phoneDetails.setProduct(savedProduct);
+
+            // ใช้พารามิเตอร์ที่ตรงกับที่ส่งจาก Postman
+            boolean basicFunctionalityStatus = Boolean.parseBoolean(details.getOrDefault("details[basic_functionality_status]", "false"));
+            String nonFunctionalParts = details.getOrDefault("details[nonfunctional_parts]", "Unknown");
+            String batteryStatus = details.getOrDefault("details[battery_status]", "Unknown");
+            int scratchCount = Integer.parseInt(details.getOrDefault("details[scratch_count]", "0"));
+
+            phoneDetails.setBasicFunctionalityStatus(basicFunctionalityStatus);
+            phoneDetails.setNonFunctionalParts(nonFunctionalParts);
+            phoneDetails.setBatteryStatus(batteryStatus);
+            phoneDetails.setScratchCount(scratchCount);
+
+            phoneDetailsRepository.save(phoneDetails);
+            detailObject = phoneDetails;
+        } else if (categoryId == 3) { // สำหรับรองเท้า
+            ShoesDetails shoesDetails = new ShoesDetails();
+            shoesDetails.setProduct(savedProduct);
+
+            // ใช้พารามิเตอร์ที่ตรงกับที่ส่งจาก Postman
+            boolean hasBrandLogo = Boolean.parseBoolean(details.getOrDefault("details[hasbrand_logo]", "false"));
+            int repairCount = Integer.parseInt(details.getOrDefault("details[repair_count]", "0"));
+            String tearLocation = details.getOrDefault("details[tear_location]", "Unknown");
+
+            shoesDetails.setHasBrandLogo(hasBrandLogo);
+            shoesDetails.setRepairCount(repairCount);
+            shoesDetails.setTearLocation(tearLocation);
+
+            shoesDetailsRepository.save(shoesDetails);
+            detailObject = shoesDetails;
+        }
         saveImageToFile(imageBytes, savedProduct.getProductId());
 
-        return savedProduct;
+        // กรณีหมวดหมู่ "อื่นๆ" (categoryId == 4) ไม่มีรายละเอียดเพิ่มเติม
+        String imageUrl = "http://127.0.0.1:8085/images/" + savedProduct.getProductId() + ".jpg";
+
+// ส่ง ResponseProduct กลับ
+        return new ResponseProduct(
+                savedProduct.getProductId(),
+                savedProduct.getName(),
+                savedProduct.getDescription(),
+                savedProduct.getPrice(),
+                imageUrl, // ตั้งค่า URL รูปภาพ
+                detailObject // อ็อบเจ็กต์รายละเอียดเฉพาะ (อาจเป็น null สำหรับ categoryId == 4)
+        );
     }
+
+
 
     // ฟังก์ชันสำหรับบันทึกภาพในระบบไฟล์
     private void saveImageToFile(byte[] imageBytes, int productId) {
         try {
-            // ตรวจสอบและสร้างโฟลเดอร์ images หากยังไม่มี
             File imagesFolder = new File("images");
             if (!imagesFolder.exists() && !imagesFolder.mkdirs()) {
                 throw new IOException("Failed to create images directory");
             }
 
-            // บันทึกภาพ
             File outputFile = new File(imagesFolder, productId + ".jpg");
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
-            ImageIO.write(image, "jpg", outputFile);
+            if (image != null) {
+                ImageIO.write(image, "jpg", outputFile);
+            } else {
+                throw new IOException("Invalid image data");
+            }
         } catch (IOException e) {
             throw new RuntimeException("Failed to save image for product ID: " + productId, e);
         }
     }
+
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }

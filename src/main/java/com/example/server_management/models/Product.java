@@ -44,6 +44,17 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "myshop_id", nullable = false)
     private MyShop shop;
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private ClothingDetails clothingDetails;
+
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private ShoesDetails shoesDetails;
+
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private PhoneDetails phoneDetails;
+
 
     public int getProductId() {
         return productId;
@@ -117,6 +128,30 @@ public class Product {
     public void setShop(MyShop shop) {
         this.shop = shop;
     }
+    public ShoesDetails getShoesDetails() {
+        return shoesDetails;
+    }
+
+    public void setShoesDetails(ShoesDetails shoesDetails) {
+        this.shoesDetails = shoesDetails;
+    }
+
+    public PhoneDetails getPhoneDetails() {
+        return phoneDetails;
+    }
+
+    public void setPhoneDetails(PhoneDetails phoneDetails) {
+        this.phoneDetails = phoneDetails;
+    }
+
+    public ClothingDetails getClothingDetails() {
+        return clothingDetails;
+    }
+
+    public void setClothingDetails(ClothingDetails clothingDetails) {
+        this.clothingDetails = clothingDetails;
+    }
+
 }
 
 

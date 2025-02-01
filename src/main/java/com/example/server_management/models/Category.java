@@ -13,7 +13,6 @@ public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-
     @Column(name = "category_id")
     private int categoryId;
 
@@ -30,6 +29,8 @@ public class Category {
     public Category(String name) {
         this.name = name;
     }
+
+
 
     // Getters and Setters
     public int getCategoryId() {

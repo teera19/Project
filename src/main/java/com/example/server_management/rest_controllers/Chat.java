@@ -1,6 +1,7 @@
 package com.example.server_management.rest_controllers;
 
 import com.example.server_management.dto.MessageRequest;
+import com.example.server_management.dto.MessageRespons;
 import com.example.server_management.models.Message;
 import com.example.server_management.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/chat")
@@ -23,36 +25,49 @@ public class Chat {
     @Autowired
     private MessageService messageService;
 
-    @PostMapping("/send")
-    public ResponseEntity<?> sendMessage(@RequestBody MessageRequest request) {
+    @PostMapping("/send/{productId}")
+    public ResponseEntity<?> sendMessage(
+            @PathVariable int productId,  // รับ productId จาก URL
+            @RequestBody MessageRequest request) {
         try {
-            // ส่งข้อความผ่าน MessageService
             Message message = messageService.sendMessage(
-                    request.getSender(), request.getReceiver(), request.getContent());
+                    request.getSender(),
+                    request.getReceiver(),
+                    request.getContent(),
+                    productId // ใช้ productId จาก Path
+            );
             return new ResponseEntity<>(message, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
-            // กรณีข้อมูลผู้ส่งหรือผู้รับไม่ถูกต้อง
             return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            // กรณีเกิดข้อผิดพลาดอื่น ๆ
+            return new ResponseEntity<>(Map.of("error", "Internal Server Error"), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @GetMapping("/conversation/{user1}/{user2}")
+    public ResponseEntity<?> getConversation(
+            @PathVariable("user1") String user1,
+            @PathVariable("user2") String user2) {
+        try {
+            List<Message> messages = messageService.getConversation(user1, user2);
+
+            if (messages == null || messages.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            List<MessageRespons> response = messages.stream()
+                    .map(MessageRespons::new)
+                    .collect(Collectors.toList());
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();  // ดู log เพิ่มเติม
             return new ResponseEntity<>(Map.of("error", "Internal Server Error"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @GetMapping("/conversation/{user1}/{user2}")
-    public ResponseEntity<List<Message>> getConversation(
-            @PathVariable("user1") String user1,
-            @PathVariable("user2") String user2) {
-
-        List<Message> messages = messageService.getConversation(user1, user2);
-
-        if (messages.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-
-        return new ResponseEntity<>(messages, HttpStatus.OK);
-    }
 }
+
+
 
 
 

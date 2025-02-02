@@ -21,18 +21,16 @@ public class Allproduct {
     @Autowired
     private UserService userService;
 
-    // API สำหรับดึงรายการสินค้าทั้งหมด
     @GetMapping("/all-product")
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
         try {
-            List<Product> products = userService.getAllProducts();
-
+            List<Product> products = userService.getAllProducts();  // ✅ ดึงรายการสินค้า
             if (products.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
 
             List<ProductResponse> productResponses = products.stream()
-                    .map(ProductResponse::new)
+                    .map(ProductResponse::new)  // ✅ แปลง Product เป็น ProductResponse
                     .collect(Collectors.toList());
 
             return new ResponseEntity<>(productResponses, HttpStatus.OK);

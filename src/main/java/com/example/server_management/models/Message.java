@@ -8,7 +8,6 @@ import java.util.Date;
 @Entity
 @Table(name = "messages")
 public class Message {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,6 +23,9 @@ public class Message {
     @Column(name = "content", nullable = false)
     private String content;
 
+    @Column(name = "product_id") // ✅ เพิ่มรหัสสินค้า
+    private int productId;
+
     @Column(name = "timestamp", nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date timestamp;
@@ -32,25 +34,61 @@ public class Message {
         this.timestamp = new Date();
     }
 
-    public Message(User sender, User receiver, String content) {
+    public Message(User sender, User receiver, String content, int productId) {
         this.sender = sender;
         this.receiver = receiver;
         this.content = content;
+        this.productId = productId; // ✅ บันทึกสินค้าที่เกี่ยวข้อง
         this.timestamp = new Date();
     }
 
-    // Getter & Setter
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // Getters และ Setters
+    public Long getId() {
+        return id;
+    }
 
-    public User getSender() { return sender; }
-    public void setSender(User sender) { this.sender = sender; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public User getReceiver() { return receiver; }
-    public void setReceiver(User receiver) { this.receiver = receiver; }
+    public User getSender() {
+        return sender;
+    }
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
+    public void setSender(User sender) {
+        this.sender = sender;
+    }
 
-    public Date getTimestamp() { return timestamp; }
+    public User getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(User receiver) {
+        this.receiver = receiver;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public int getProductId() {
+        return productId;
+    }
+
+    public void setProductId(int productId) {
+        this.productId = productId;
+    }
+
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
+    }
 }
+

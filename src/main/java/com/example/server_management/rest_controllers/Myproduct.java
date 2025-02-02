@@ -27,7 +27,6 @@ public class Myproduct {
     public ResponseEntity<?> getMyProducts(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
 
-        // ตรวจสอบว่าผู้ใช้ล็อกอินหรือไม่
         if (userName == null) {
             return new ResponseEntity<>(Map.of(
                     "message", "User not logged in. Please log in first."
@@ -35,19 +34,15 @@ public class Myproduct {
         }
 
         try {
-            // ดึงรายการสินค้าของผู้ใช้
             List<Product> products = userService.getMyProducts(userName);
-
-            // ตรวจสอบว่ามีสินค้าในรายการหรือไม่
             if (products.isEmpty()) {
                 return new ResponseEntity<>(Map.of(
                         "message", "Don't have any products"
                 ), HttpStatus.OK);
             }
 
-            //ไม่ส่งข้อมูลร้านค้า
             List<ProductResponse> productResponses = products.stream()
-                    .map(product -> new ProductResponse(product, false)) // ไม่แสดง shopTitle, shopDetail
+                    .map(ProductResponse::new)  // ✅ แปลง Product เป็น ProductResponse
                     .collect(Collectors.toList());
 
             return new ResponseEntity<>(productResponses, HttpStatus.OK);

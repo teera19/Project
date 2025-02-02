@@ -45,19 +45,11 @@ public class Myproduct {
                 ), HttpStatus.OK);
             }
 
-            // แปลง Product Entity เป็น ProductResponse
+            //ไม่ส่งข้อมูลร้านค้า
             List<ProductResponse> productResponses = products.stream()
-                    .map(product -> new ProductResponse(
-                            product.getProductId(),  // เพิ่ม productId
-                            product.getName(),
-                            product.getDescription(),
-                            product.getPrice(),
-                            "/images/" + product.getProductId() + ".jpg",  // URL ของรูป
-                            product.getCategoryName()  // กำหนด Category Name
-                    ))
+                    .map(product -> new ProductResponse(product, false)) // ไม่แสดง shopTitle, shopDetail
                     .collect(Collectors.toList());
 
-            // ส่งกลับ Response ที่แปลงแล้ว
             return new ResponseEntity<>(productResponses, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
@@ -67,3 +59,4 @@ public class Myproduct {
         }
     }
 }
+

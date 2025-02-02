@@ -1,68 +1,83 @@
 package com.example.server_management.models;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProductResponse {
-    private int productId; // เพิ่ม productId
+    private int id;
     private String name;
     private String description;
     private double price;
     private String imageUrl;
     private String categoryName;
+    private String shopTitle;
+    private String shopDetail;
 
-    public ProductResponse(int productId, String name, String description, double price, String imageUrl, String categoryName) {
-        this.productId = productId;
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.imageUrl = imageUrl;
-        this.categoryName = categoryName;
+    public ProductResponse(Product product) {
+        this.id = product.getProductId();
+        this.name = product.getName();
+        this.description = product.getDescription();
+        this.price = product.getPrice();
+        this.imageUrl = "/images/" + product.getProductId() + ".jpg"; // URL รูปภาพ
+        this.categoryName = product.getCategoryName();
+
+        // ดึงข้อมูลจาก MyShop
+        if (product.getShop() != null) {
+            this.shopTitle = product.getShop().getTitle();
+            this.shopDetail = product.getShop().getDetail();
+        } else {
+            this.shopTitle = "Unknown Shop";
+            this.shopDetail = "No details available";
+        }
+    }
+    public ProductResponse(Product product, boolean includeShop) {
+        this.id = product.getProductId();
+        this.name = product.getName();
+        this.description = product.getDescription();
+        this.price = product.getPrice();
+        this.imageUrl = "/images/" + product.getProductId() + ".jpg"; // URL รูปภาพ
+        this.categoryName = product.getCategoryName();
+
+
+        if (includeShop && product.getShop() != null) {
+            this.shopTitle = product.getShop().getTitle();
+            this.shopDetail = product.getShop().getDetail();
+        } else {
+            this.shopTitle = null;
+            this.shopDetail = null;
+        }
     }
 
-    // Getter และ Setter
-    public int getProductId() {
-        return productId;
-    }
-
-    public void setProductId(int productId) {
-        this.productId = productId;
+    // Getters และ Setters
+    public int getId() {
+        return id;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public double getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
     public String getImageUrl() {
         return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
     }
 
     public String getCategoryName() {
         return categoryName;
     }
 
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
+    public String getShopTitle() {
+        return shopTitle;
+    }
+
+    public String getShopDetail() {
+        return shopDetail;
     }
 }

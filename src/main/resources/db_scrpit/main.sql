@@ -72,4 +72,21 @@ CREATE TABLE shoes_details (
     product_id INT NOT NULL,
     FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE
 );
+CREATE TABLE chat_rooms (
+    chat_id INT AUTO_INCREMENT PRIMARY KEY,
+    user1 VARCHAR(50) NOT NULL,  -- คนที่ 1 (ผู้ซื้อ)
+    user2 VARCHAR(50) NOT NULL,  -- คนที่ 2 (เจ้าของร้าน)
+    product_id INT NOT NULL,     -- 🛒 สินค้าที่กำลังคุยกันอยู่
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE messages (
+    message_id INT AUTO_INCREMENT PRIMARY KEY,
+    chat_id INT NOT NULL,  -- เชื่อมกับห้องแชท
+    sender VARCHAR(50) NOT NULL,  -- ใครส่งข้อความ
+    message TEXT NOT NULL,  -- เนื้อหาข้อความ
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (chat_id) REFERENCES chat_rooms(chat_id) ON DELETE CASCADE
+);
+
 

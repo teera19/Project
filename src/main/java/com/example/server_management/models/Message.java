@@ -1,94 +1,65 @@
 package com.example.server_management.models;
 
 import jakarta.persistence.*;
-
-import java.time.LocalDateTime;
-import java.util.Date;
+import java.sql.Timestamp;
 
 @Entity
 @Table(name = "messages")
 public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int messageId;
 
     @ManyToOne
-    @JoinColumn(name = "sender_id", nullable = false)
-    private User sender;
+    @JoinColumn(name = "chat_id", nullable = false)
+    private ChatRoom chatRoom;
 
-    @ManyToOne
-    @JoinColumn(name = "receiver_id", nullable = false)
-    private User receiver;
+    @Column(name = "sender")
+    private String sender;
 
-    @Column(name = "content", nullable = false)
-    private String content;
+    @Column(name = "message")
+    private String message;
 
-    @Column(name = "product_id") // ✅ เพิ่มรหัสสินค้า
-    private int productId;
+    @Column(name = "created_at")
+    private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
 
-    @Column(name = "timestamp", nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date timestamp;
-
-    public Message() {
-        this.timestamp = new Date();
+    public int getMessageId() {
+        return messageId;
     }
 
-    public Message(User sender, User receiver, String content, int productId) {
-        this.sender = sender;
-        this.receiver = receiver;
-        this.content = content;
-        this.productId = productId; // ✅ บันทึกสินค้าที่เกี่ยวข้อง
-        this.timestamp = new Date();
+    public void setMessageId(int messageId) {
+        this.messageId = messageId;
     }
 
-    // Getters และ Setters
-    public Long getId() {
-        return id;
+    public ChatRoom getChatRoom() {
+        return chatRoom;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setChatRoom(ChatRoom chatRoom) {
+        this.chatRoom = chatRoom;
     }
 
-    public User getSender() {
+    public String getSender() {
         return sender;
     }
 
-    public void setSender(User sender) {
+    public void setSender(String sender) {
         this.sender = sender;
     }
 
-    public User getReceiver() {
-        return receiver;
+    public String getMessage() {
+        return message;
     }
 
-    public void setReceiver(User receiver) {
-        this.receiver = receiver;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
-    public String getContent() {
-        return content;
+    public Timestamp getCreatedAt() {
+        return createdAt;
     }
 
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public int getProductId() {
-        return productId;
-    }
-
-    public void setProductId(int productId) {
-        this.productId = productId;
-    }
-
-    public Date getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(Date timestamp) {
-        this.timestamp = timestamp;
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
     }
 }
-

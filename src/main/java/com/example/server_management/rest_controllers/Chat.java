@@ -6,6 +6,7 @@ import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
 import com.example.server_management.service.ChatService;
 import com.example.server_management.service.ProductService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,70 +24,87 @@ public class Chat {
     @Autowired
     private ProductService productService;
 
-    @PostMapping("/start") //ปุ่มเริ่มแชทในราลเอียดสินค้า
+    @PostMapping("/start")
     public ResponseEntity<Map<String, Object>> startChat(
-            @SessionAttribute("user_name") String user1,
-            @RequestBody ChatRequest chatRequest // ✅ ใช้ @RequestBody เพื่อรับ JSON Body
+            HttpSession session, // ใช้ HttpSession แทน
+            @RequestBody ChatRequest chatRequest
     ) {
-        int productId = chatRequest.getProductId();
+        String user1 = (String) session.getAttribute("user_name");
 
-        // ค้นหาเจ้าของสินค้า (user2) จากฐานข้อมูล
+        if (user1 == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "message", "User not logged in. Please log in first."
+            ));
+        }
+
+        int productId = chatRequest.getProductId();
         String user2 = productService.findSellerByProductId(productId);
+
         if (user2 == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
-        // เช็คว่ามีห้องแชทอยู่แล้วหรือไม่
         ChatRoom chatRoom = chatService.getOrCreateChatRoom(user1, user2, productId);
 
-        // ส่ง `chatId` กลับไปให้ Frontend
-        Map<String, Object> response = new HashMap<>();
-        response.put("chatId", chatRoom.getChatId());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of("chatId", chatRoom.getChatId()));
     }
 
 
-    @GetMapping("/{chatId}/history") //ประวัติแชท
+
+    @GetMapping("/{chatId}/history")
     public ResponseEntity<?> getChatHistory(
-            @SessionAttribute("user_name") String currentUser, // ✅ ดึง user จาก session
+            HttpSession session, // ใช้ HttpSession
             @PathVariable int chatId
     ) {
-        // ✅ ดึงห้องแชทจากฐานข้อมูล
+        String currentUser = (String) session.getAttribute("user_name");
+
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not logged in.");
+        }
+
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
 
-        // ✅ ตรวจสอบว่าผู้ใช้ที่ขอเป็น `user1` หรือ `user2` หรือไม่
         if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้ ❌");
         }
 
-        // ✅ ถ้าผ่านการตรวจสอบ ดึงประวัติแชท
         List<Message> messages = chatService.getChatHistory(chatId);
         return ResponseEntity.ok(messages);
     }
 
 
-    @PostMapping("/{chatId}/send") //ส่งข้อความ
+    @PostMapping("/{chatId}/send")
     public ResponseEntity<Message> sendMessage(
-            @SessionAttribute("user_name") String sender, // ✅ ดึง sender จาก Session
+            HttpSession session,
             @PathVariable int chatId,
-            @RequestBody MessageRequest request // ✅ รับเฉพาะ message จาก Body
+            @RequestBody MessageRequest request
     ) {
-        // ✅ ตรวจสอบว่า sender มีสิทธิ์ส่งข้อความในห้องแชทนี้หรือไม่
+        String sender = (String) session.getAttribute("user_name");
+
+        if (sender == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
+
         if (!chatRoom.getUser1().equals(sender) && !chatRoom.getUser2().equals(sender)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
-        // ✅ ส่งข้อความ
         Message message = chatService.sendMessage(chatId, sender, request.getMessage());
         return ResponseEntity.ok(message);
     }
-    @GetMapping("/my-chats") //ปุ่มไอค่อนรูปข้อความ
-    public ResponseEntity<List<ChatRoom>> getMyChats(@SessionAttribute("user_name") String currentUser) {
+
+    @GetMapping("/my-chats")
+    public ResponseEntity<List<ChatRoom>> getMyChats(HttpSession session) {
+        String currentUser = (String) session.getAttribute("user_name");
+
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+
         List<ChatRoom> chatRooms = chatService.getChatsByUser(currentUser);
         return ResponseEntity.ok(chatRooms);
     }
-
 }
 

@@ -3,6 +3,7 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
 import com.example.server_management.models.Auction;
+import com.example.server_management.models.AuctionStatus;
 import com.example.server_management.models.Bid;
 import com.example.server_management.models.User;
 import com.example.server_management.repository.UserRepository;
@@ -12,10 +13,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -24,7 +36,6 @@ public class AuctionController {
 
     @Autowired
     private AuctionService auctionService;
-
     @Autowired
     private UserRepository userRepository;
 
@@ -43,8 +54,19 @@ public class AuctionController {
         return new ResponseEntity<>(new AuctionResponse(auction), HttpStatus.OK);
     }
 
-    @PostMapping
-    public ResponseEntity<?> addAuction(@RequestBody Auction auction, HttpSession session) {
+
+
+    @PostMapping("/add-auction") //เพิ่มของประมูล
+    public ResponseEntity<?> addAuction(
+            @RequestParam("productName") String productName,
+            @RequestParam("description") String description,
+            @RequestParam("startingPrice") double startingPrice,
+            @RequestParam("maxBidPrice") double maxBidPrice,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam("startTime") String startTimeStr,
+            @RequestParam("endTime") String endTimeStr,
+            HttpSession session) {
+
         Integer userId = (Integer) session.getAttribute("user_id");
         if (userId == null) {
             return new ResponseEntity<>(Map.of(
@@ -52,26 +74,50 @@ public class AuctionController {
             ), HttpStatus.FORBIDDEN);
         }
 
-        if (auction.getStartTime() == null) {
-            auction.setStartTime(LocalDateTime.now());
-        }
-        if (auction.getEndTime() == null) {
-            auction.setEndTime(auction.getStartTime().plusHours(1));
-        }
-
-        if (auction.getEndTime().isBefore(auction.getStartTime())) {
-            return new ResponseEntity<>(Map.of(
-                    "message", "End time must be after start time."
-            ), HttpStatus.BAD_REQUEST);
-        }
-
         try {
-            // Debugging Logs
-            System.out.println("Auction start time: " + auction.getStartTime());
-            System.out.println("Auction end time: " + auction.getEndTime());
+            // ✅ ใช้ ZoneId.of("Asia/Bangkok") ตั้งแต่ตอนแปลงเวลา
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+            ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter)
+                    .atZone(ZoneId.of("Asia/Bangkok"));
+            ZonedDateTime endTime = LocalDateTime.parse(endTimeStr, formatter)
+                    .atZone(ZoneId.of("Asia/Bangkok"));
+
+            if (endTime.isBefore(startTime)) {
+                return new ResponseEntity<>(Map.of(
+                        "message", "End time must be after start time."
+                ), HttpStatus.BAD_REQUEST);
+            }
+
+            if (maxBidPrice <= startingPrice) {
+                return new ResponseEntity<>(Map.of(
+                        "message", "Max bid price must be greater than starting price."
+                ), HttpStatus.BAD_REQUEST);
+            }
+
+            // ✅ บันทึกค่าของ `startTime` และ `endTime` เป็น LocalDateTime (เวลาไทย)
+            LocalDateTime startTimeLocal = startTime.toLocalDateTime();
+            LocalDateTime endTimeLocal = endTime.toLocalDateTime();
+
+            // ✅ แปลงรูปภาพเป็น URL หรือบันทึกเป็น byte[]
+            String imageUrl = null;
+            if (image != null && !image.isEmpty()) {
+                byte[] compressedImage = compressImage(image.getBytes());
+                imageUrl = saveImageToStorage(compressedImage, image.getOriginalFilename());
+            }
+
+            // ✅ สร้าง Auction ใหม่
+            Auction auction = new Auction();
+            auction.setProductName(productName);
+            auction.setDescription(description);
+            auction.setStartingPrice(startingPrice);
+            auction.setStartTime(startTimeLocal);
+            auction.setEndTime(endTimeLocal);
+            auction.setImageUrl(imageUrl);
+            auction.setStatus(AuctionStatus.ONGOING);
 
             Auction savedAuction = auctionService.addAuction(auction);
             return new ResponseEntity<>(savedAuction, HttpStatus.CREATED);
+
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(Map.of(
@@ -80,7 +126,42 @@ public class AuctionController {
         }
     }
 
+    // 📌 ฟังก์ชันบีบอัดรูปภาพ
+    private byte[] compressImage(byte[] imageBytes) throws IOException {
+        BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
 
+        if (originalImage == null) {
+            throw new IOException("Cannot read the image from the provided byte array");
+        }
+
+        int targetWidth = 300;
+        int targetHeight = (int) (originalImage.getHeight() * (300.0 / originalImage.getWidth()));
+
+        Image scaledImage = originalImage.getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
+        BufferedImage bufferedScaledImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = bufferedScaledImage.createGraphics();
+        g2d.drawImage(scaledImage, 0, 0, null);
+        g2d.dispose();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(bufferedScaledImage, "jpg", baos);
+        return baos.toByteArray();
+    }
+
+    // 📌 ฟังก์ชันบันทึกรูปภาพ
+    private String saveImageToStorage(byte[] imageBytes, String originalFilename) throws IOException {
+        String uploadDir = "uploads/";
+        Files.createDirectories(Paths.get(uploadDir)); // สร้างโฟลเดอร์ถ้ายังไม่มี
+
+        String filePath = uploadDir + UUID.randomUUID() + "_" + originalFilename;
+        File file = new File(filePath);
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(imageBytes);
+        }
+
+        return filePath;
+    }
     @PostMapping("/{auctionId}/bids") //ประมูล
     public ResponseEntity<?> addBid(@PathVariable int auctionId,
                                     @RequestBody Map<String, Object> bidRequest,
@@ -164,4 +245,3 @@ public class AuctionController {
         }
     }
 }
-

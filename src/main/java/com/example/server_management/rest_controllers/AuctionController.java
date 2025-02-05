@@ -56,7 +56,7 @@ public class AuctionController {
 
 
 
-    @PostMapping("/add-auction") //เพิ่มของประมูล
+    @PostMapping("/add-auction")
     public ResponseEntity<?> addAuction(
             @RequestParam("productName") String productName,
             @RequestParam("description") String description,
@@ -75,7 +75,6 @@ public class AuctionController {
         }
 
         try {
-            // ✅ ใช้ ZoneId.of("Asia/Bangkok") ตั้งแต่ตอนแปลงเวลา
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
             ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter)
                     .atZone(ZoneId.of("Asia/Bangkok"));
@@ -94,15 +93,13 @@ public class AuctionController {
                 ), HttpStatus.BAD_REQUEST);
             }
 
-            // ✅ บันทึกค่าของ `startTime` และ `endTime` เป็น LocalDateTime (เวลาไทย)
             LocalDateTime startTimeLocal = startTime.toLocalDateTime();
             LocalDateTime endTimeLocal = endTime.toLocalDateTime();
 
-            // ✅ แปลงรูปภาพเป็น URL หรือบันทึกเป็น byte[]
-            String imageUrl = null;
+            // ✅ แปลงและบีบอัดรูปภาพ
+            byte[] compressedImageBytes = null;
             if (image != null && !image.isEmpty()) {
-                byte[] compressedImage = compressImage(image.getBytes());
-                imageUrl = saveImageToStorage(compressedImage, image.getOriginalFilename());
+                compressedImageBytes = compressImage(image.getBytes());
             }
 
             // ✅ สร้าง Auction ใหม่
@@ -112,7 +109,7 @@ public class AuctionController {
             auction.setStartingPrice(startingPrice);
             auction.setStartTime(startTimeLocal);
             auction.setEndTime(endTimeLocal);
-            auction.setImageUrl(imageUrl);
+            auction.setImage(compressedImageBytes); // บันทึกเป็น byte[] แทน URL
             auction.setStatus(AuctionStatus.ONGOING);
 
             Auction savedAuction = auctionService.addAuction(auction);
@@ -134,8 +131,8 @@ public class AuctionController {
             throw new IOException("Cannot read the image from the provided byte array");
         }
 
-        int targetWidth = 300;
-        int targetHeight = (int) (originalImage.getHeight() * (300.0 / originalImage.getWidth()));
+        int targetWidth = 100;
+        int targetHeight = (int) (originalImage.getHeight() * (100.0 / originalImage.getWidth()));
 
         Image scaledImage = originalImage.getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
         BufferedImage bufferedScaledImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
@@ -148,20 +145,6 @@ public class AuctionController {
         return baos.toByteArray();
     }
 
-    // 📌 ฟังก์ชันบันทึกรูปภาพ
-    private String saveImageToStorage(byte[] imageBytes, String originalFilename) throws IOException {
-        String uploadDir = "uploads/";
-        Files.createDirectories(Paths.get(uploadDir)); // สร้างโฟลเดอร์ถ้ายังไม่มี
-
-        String filePath = uploadDir + UUID.randomUUID() + "_" + originalFilename;
-        File file = new File(filePath);
-
-        try (FileOutputStream fos = new FileOutputStream(file)) {
-            fos.write(imageBytes);
-        }
-
-        return filePath;
-    }
     @PostMapping("/{auctionId}/bids") //ประมูล
     public ResponseEntity<?> addBid(@PathVariable int auctionId,
                                     @RequestBody Map<String, Object> bidRequest,

@@ -89,4 +89,9 @@ CREATE TABLE messages (
     FOREIGN KEY (chat_id) REFERENCES chat_rooms(chat_id) ON DELETE CASCADE
 );
 
+ALTER TABLE auction DROP COLUMN image_url;
+ALTER TABLE auction ADD COLUMN image LONGBLOB;
+ALTER TABLE auction MODIFY COLUMN image LONGBLOB;
+
+
 

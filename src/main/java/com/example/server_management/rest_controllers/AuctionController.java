@@ -67,12 +67,11 @@ public class AuctionController {
             @RequestParam("endTime") String endTimeStr,
             HttpSession session) {
 
-        Integer userId = (Integer) session.getAttribute("user_id");
-        if (userId == null) {
-            return new ResponseEntity<>(Map.of(
-                    "message", "Please log in to add an auction."
-            ), HttpStatus.FORBIDDEN);
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return new ResponseEntity<>("User not logged in", HttpStatus.FORBIDDEN);
         }
+
 
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");

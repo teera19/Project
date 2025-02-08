@@ -82,7 +82,7 @@
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
-			<scope>runtime</scope>
+			<version>8.0.33</version>  <!-- ตรวจสอบเวอร์ชันล่าสุดจาก MySQL -->
 		</dependency>
 
 	</dependencies>

@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . .
 
 # รัน Maven เพื่อ Build JAR (สร้างโฟลเดอร์ target/)
-RUN ./mvnw clean package -DskipTests
+RUN chmod +x mvnw && ./mvnw clean package -DskipTests
 
 # ใช้ JAR ที่ Build เสร็จแล้ว
 FROM openjdk:21-jdk-slim

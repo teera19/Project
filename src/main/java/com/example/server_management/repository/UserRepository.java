@@ -13,20 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
+
     int countByUserName(String userName);
 
-    @Transactional
-    @Modifying
-    @Query(value = "INSERT INTO USERS(user_name, name, last_name, email, password, address, tel) VALUES(:user_name, :name, :last_name, :email, :password, :address, :tel)", nativeQuery = true)
-    int register(@Param("user_name") String user_name,
-                 @Param("name") String name,
-                 @Param("last_name") String last_name,
-                 @Param("email") String email,
-                 @Param("password") String password,
-                 @Param("address") String address,
-                 @Param("tel") String tel);
-
-
+    // ใช้ save() แทนการใช้ Native Query
+    default User register(User user) {
+        return save(user);
+    }
 
     @Transactional
     @Modifying
@@ -36,9 +29,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
                        @Param("address") String address,
                        @Param("tel") String tel,
                        @Param("user_name") String user_name);
+
     User findByUserName(String user_name);
-
-
     boolean existsByUserName(String userName);
 }
+
 

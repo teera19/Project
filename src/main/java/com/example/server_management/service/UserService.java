@@ -40,8 +40,12 @@ public class UserService {
 
     public int registerServiceMethod(String user_name, String name, String last_name, String email,
                                      String password, String address, String tel) {
-        return userRepository.register(user_name, name, last_name, email, password, address, tel);
+        System.out.println("Registering user: " + user_name + ", Email: " + email);
+        int result = userRepository.register(user_name, name, last_name, email, password, address, tel);
+        System.out.println("Result: " + result);
+        return result;
     }
+
 
     public int countByUserName(String userName) {
         return userRepository.countByUserName(userName);

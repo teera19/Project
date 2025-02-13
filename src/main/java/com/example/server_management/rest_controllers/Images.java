@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 @RestController
 @RequestMapping("/images")
 public class Images {
-    private final String imagesDirectory = "images"; // ✅ โฟลเดอร์ที่เก็บรูป
+    private final String imagesDirectory = "/tmp/images"; // ✅ โฟลเดอร์ที่เก็บรูป
 
     @GetMapping("/{filename}")
     public ResponseEntity<Resource> getImage(@PathVariable String filename) {

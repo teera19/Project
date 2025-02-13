@@ -142,7 +142,7 @@ public class UserService {
         }
 
         // ✅ 1. ตรวจสอบว่าโฟลเดอร์ `images/` มีอยู่หรือไม่, ถ้าไม่มีให้สร้าง
-        File uploadDir = new File("images/");
+        File uploadDir = new File("/tmp/images/");
         if (!uploadDir.exists()) uploadDir.mkdirs();
 
         // ✅ 2. ตั้งชื่อไฟล์เป็น `{productId}.jpg`

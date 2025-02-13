@@ -15,29 +15,43 @@ public class Register {
     UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        System.out.println("Received Register Request: " + user.getUserName() + ", " + user.getName() + ", " + user.getLastName() + ", " + user.getEmail());
+    public ResponseEntity<?> register(
+            @RequestParam String userName,
+            @RequestParam String name,
+            @RequestParam String lastName,
+            @RequestParam String email,
+            @RequestParam String password,
+            @RequestParam String address,
+            @RequestParam String tel) {
 
-        if (user.getUserName().isEmpty() || user.getName().isEmpty() || user.getLastName().isEmpty() ||
-                user.getEmail().isEmpty() || user.getPassword().isEmpty() ||
-                user.getAddress().isEmpty() || user.getTel().isEmpty()) {
-            System.out.println("Validation Failed: Some fields are empty.");
+        System.out.println("Received Register Request: " + userName);
+
+        if (userName.isEmpty() || name.isEmpty() || lastName.isEmpty() || email.isEmpty() ||
+                password.isEmpty() || address.isEmpty() || tel.isEmpty()) {
             return ResponseEntity.badRequest().body("Please Complete all Fields");
         }
 
-        if (userService.countByUserName(user.getUserName()) > 0) {
-            System.out.println("Validation Failed: Username already exists.");
+        if (userService.countByUserName(userName) > 0) {
             return ResponseEntity.badRequest().body("Username already exists");
         }
 
-        User savedUser = userService.registerServiceMethod(user);
+        // ✅ ต้องสร้าง User object ก่อนบันทึก
+        User newUser = new User();
+        newUser.setUserName(userName);
+        newUser.setName(name);
+        newUser.setLastName(lastName);
+        newUser.setEmail(email);
+        newUser.setPassword(password);
+        newUser.setAddress(address);
+        newUser.setTel(tel);
+
+        // ✅ ใช้ `registerServiceMethod` ในการบันทึก
+        User savedUser = userService.registerServiceMethod(newUser);
 
         if (savedUser == null) {
-            System.out.println("Error: Failed to Register");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to Register");
         }
 
-        System.out.println("Register Successfully!");
         return ResponseEntity.ok("Register Successfully");
     }
 }

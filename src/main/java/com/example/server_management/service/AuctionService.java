@@ -51,8 +51,13 @@ public class AuctionService {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
 
+        // 🛠 Debugging: ตรวจสอบเวลา
         LocalDateTime now = LocalDateTime.now();
+        System.out.println("🕒 Server Time (LocalDateTime.now()): " + now);
+        System.out.println("🕒 Auction Start Time: " + auction.getStartTime());
+
         if (now.isBefore(auction.getStartTime())) {
+            System.out.println("🚨 Auction has not started yet! (Check timezone)");
             throw new IllegalArgumentException("Auction has not started yet.");
         }
         if (now.isAfter(auction.getEndTime())) {
@@ -81,6 +86,7 @@ public class AuctionService {
 
         return bid;
     }
+
 
     @Transactional
     public void determineAuctionWinner(Auction auction) {

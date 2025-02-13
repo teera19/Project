@@ -53,18 +53,26 @@ public class AuctionService {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
 
-        // ✅ Debugging: ตรวจสอบค่าเวลาที่อ่านจาก MySQL
-        System.out.println("📌 Auction StartTime from DB: " + auction.getStartTime());
-        System.out.println("📌 Auction EndTime from DB: " + auction.getEndTime());
+        // ✅ Debugging: ตรวจสอบค่าเวลาที่อ่านจาก MySQL (Raw Data)
+        System.out.println("📌 Raw Auction StartTime from DB: " + auction.getStartTime());
+        System.out.println("📌 Raw Auction EndTime from DB: " + auction.getEndTime());
 
-        // ✅ ตรวจสอบค่าเวลาปัจจุบันของเซิร์ฟเวอร์
+        // ✅ ตรวจสอบว่าค่า Hibernate อ่านออกมาเป็นโซนเวลาไหน
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
-        ZonedDateTime auctionStart = auction.getStartTime().atZone(ZoneId.of("Asia/Bangkok"));
-        ZonedDateTime auctionEnd = auction.getEndTime().atZone(ZoneId.of("Asia/Bangkok"));
+        LocalDateTime rawStart = auction.getStartTime();
+        LocalDateTime rawEnd = auction.getEndTime();
+
+        // 🔥 Debug: เช็กว่า Hibernate คืนค่ามาเป็นโซนอะไร
+        System.out.println("🔥 Hibernate Read StartTime: " + rawStart);
+        System.out.println("🔥 Hibernate Read EndTime: " + rawEnd);
+
+        // ✅ แปลงให้แน่ใจว่าค่าเป็น Asia/Bangkok
+        ZonedDateTime auctionStart = rawStart.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
+        ZonedDateTime auctionEnd = rawEnd.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
 
         System.out.println("⏰ Current Server Time: " + now);
-        System.out.println("🎯 Auction Start Time: " + auctionStart);
-        System.out.println("🏁 Auction End Time: " + auctionEnd);
+        System.out.println("🎯 Converted Auction Start Time: " + auctionStart);
+        System.out.println("🏁 Converted Auction End Time: " + auctionEnd);
 
         if (now.isBefore(auctionStart)) {
             System.out.println("🚨 Auction has not started yet! (Check timezone)");
@@ -98,6 +106,7 @@ public class AuctionService {
 
         return bid;
     }
+
 
 
     @Transactional

@@ -41,9 +41,15 @@ public class Addproduct {
                 return new ResponseEntity<>("No image uploaded", HttpStatus.BAD_REQUEST);
             }
 
-            // ✅ ส่ง `MultipartFile image` โดยตรง (ไม่ต้องแปลงเป็น `byte[]`)
+            // แปลงไฟล์ image เป็น byte[]
+            byte[] originalImageBytes = image.getBytes();
+
+            // บีบอัดภาพ
+            byte[] compressedImageBytes = compressImage(originalImageBytes);
+
+            // เรียกใช้ userService เพื่อเพิ่มข้อมูลสินค้า
             ResponseProduct responseProduct = userService.addProductToShop(
-                    shopTitle, name, description, price, image, categoryId, details);
+                    shopTitle, name, description, price, compressedImageBytes, categoryId, details);
 
             return new ResponseEntity<>(responseProduct, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -51,4 +57,32 @@ public class Addproduct {
             return new ResponseEntity<>("Internal Server Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    private byte[] compressImage(byte[] imageBytes) throws IOException {
+        BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
+
+        if (originalImage == null) {
+            throw new IOException("Cannot read the image from the provided byte array");
+        }
+
+        // กำหนดขนาดของภาพที่ลดขนาด
+        int targetWidth = 100; // กว้าง
+        int targetHeight = (int) (originalImage.getHeight() * (100.0 / originalImage.getWidth()));
+
+        // ลดขนาดภาพ
+        Image scaledImage = originalImage.getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
+
+        BufferedImage bufferedScaledImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = bufferedScaledImage.createGraphics();
+        g2d.drawImage(scaledImage, 0, 0, null);
+        g2d.dispose();
+
+        // แปลงเป็น byte[]
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(bufferedScaledImage, "jpg", baos);
+        baos.flush();
+        return baos.toByteArray();
+    }
+
 }
+

@@ -149,9 +149,13 @@ public class UserService {
             }
         }
 
-        String fileName = productId + ".jpg";
-        File savedFile = new File(uploadDir, fileName);
+        String originalFileName = image.getOriginalFilename();
+        String extension = (originalFileName != null && originalFileName.contains("."))
+                ? originalFileName.substring(originalFileName.lastIndexOf("."))
+                : ".jpg"; // ✅ Default เป็น `.jpg` ถ้าไม่เจอ
 
+        String fileName = productId + extension;
+        File savedFile = new File(uploadDir, fileName);
         // ✅ Debug Log: เช็คว่าไฟล์ถูกบันทึกที่ไหน
         System.out.println("📢 Saving image to: " + savedFile.getAbsolutePath());
 

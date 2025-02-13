@@ -18,6 +18,15 @@ public class Auction {
     private double maxBidPrice;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    @Column(name = "owneruser_name", nullable = false)
+    private String ownerUserName;
+    @ManyToOne
+    @JoinColumn(name = "winner_id", nullable = true) // ✅ winner สามารถเป็น null ได้
+    private User winner;
+    @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Bid> bids;
+
+
 
     @Lob // ใช้เพื่อเก็บข้อมูล binary ขนาดใหญ่ (BLOB)
     private byte[] image; // แทน imageUrl ด้วย imageData
@@ -25,8 +34,6 @@ public class Auction {
     @Enumerated(EnumType.STRING)
     private AuctionStatus status; // สถานะการประมูล
 
-    @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Bid> bids;
 
     // Getters และ Setters
     public int getAuctionId() {
@@ -107,5 +114,19 @@ public class Auction {
 
     public void setBids(List<Bid> bids) {
         this.bids = bids;
+    }
+    public String getOwnerUserName() {
+        return ownerUserName;
+    }
+    public void setOwnerUserName(String ownerUserName) {
+        this.ownerUserName = ownerUserName;
+
+    }
+    public User getWinner() {
+        return winner;
+    }
+
+    public void setWinner(User winner) {
+        this.winner = winner;
     }
 }

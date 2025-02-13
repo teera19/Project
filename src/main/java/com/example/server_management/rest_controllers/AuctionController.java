@@ -2,13 +2,13 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
-import com.example.server_management.models.Auction;
-import com.example.server_management.models.AuctionStatus;
-import com.example.server_management.models.Bid;
-import com.example.server_management.models.User;
+import com.example.server_management.models.*;
+import com.example.server_management.repository.BidHistoryRepository;
 import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.AuctionService;
 import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,10 +27,12 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
+
 @RequestMapping("/auctions")
 public class AuctionController {
 
@@ -38,6 +40,9 @@ public class AuctionController {
     private AuctionService auctionService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    BidHistoryRepository bidHistoryRepository;
+
 
     @GetMapping
     public ResponseEntity<List<AuctionResponse>> getAllAuctions() {
@@ -47,7 +52,6 @@ public class AuctionController {
                 .collect(Collectors.toList());
         return new ResponseEntity<>(responses, HttpStatus.OK);
     }
-
     @GetMapping("/{auctionId}") //ดูรายละเอียดสินค้า+สเตตัสว่าปิดรึยัง+เวลา
     public ResponseEntity<AuctionResponse> getAuctionById(@PathVariable int auctionId) {
         Auction auction = auctionService.getAuctionById(auctionId);
@@ -67,18 +71,18 @@ public class AuctionController {
             @RequestParam("endTime") String endTimeStr,
             HttpSession session) {
 
+        // ✅ ตรวจสอบว่าผู้ใช้ล็อกอินหรือไม่
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
-            return new ResponseEntity<>("User not logged in", HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(Map.of(
+                    "message", "User not logged in"
+            ), HttpStatus.FORBIDDEN);
         }
-
 
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-            ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter)
-                    .atZone(ZoneId.of("Asia/Bangkok"));
-            ZonedDateTime endTime = LocalDateTime.parse(endTimeStr, formatter)
-                    .atZone(ZoneId.of("Asia/Bangkok"));
+            ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter).atZone(ZoneId.of("Asia/Bangkok"));
+            ZonedDateTime endTime = LocalDateTime.parse(endTimeStr, formatter).atZone(ZoneId.of("Asia/Bangkok"));
 
             if (endTime.isBefore(startTime)) {
                 return new ResponseEntity<>(Map.of(
@@ -95,21 +99,22 @@ public class AuctionController {
             LocalDateTime startTimeLocal = startTime.toLocalDateTime();
             LocalDateTime endTimeLocal = endTime.toLocalDateTime();
 
-            // ✅ แปลงและบีบอัดรูปภาพ
             byte[] compressedImageBytes = null;
             if (image != null && !image.isEmpty()) {
                 compressedImageBytes = compressImage(image.getBytes());
             }
 
-            // ✅ สร้าง Auction ใหม่
+            // ✅ สร้าง Auction และกำหนด ownerUserName
             Auction auction = new Auction();
             auction.setProductName(productName);
             auction.setDescription(description);
             auction.setStartingPrice(startingPrice);
+            auction.setMaxBidPrice(maxBidPrice);
             auction.setStartTime(startTimeLocal);
             auction.setEndTime(endTimeLocal);
-            auction.setImage(compressedImageBytes); // บันทึกเป็น byte[] แทน URL
+            auction.setImage(compressedImageBytes);
             auction.setStatus(AuctionStatus.ONGOING);
+            auction.setOwnerUserName(userName); // ✅ กำหนด ownerUserName
 
             Auction savedAuction = auctionService.addAuction(auction);
             return new ResponseEntity<>(savedAuction, HttpStatus.CREATED);
@@ -117,10 +122,13 @@ public class AuctionController {
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(Map.of(
-                    "message", "An error occurred while adding the auction."
+                    "message", "An error occurred while adding the auction.",
+                    "error", e.getMessage()
             ), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    private static final Logger log = LoggerFactory.getLogger(AuctionController.class);
 
     // 📌 ฟังก์ชันบีบอัดรูปภาพ
     private byte[] compressImage(byte[] imageBytes) throws IOException {
@@ -144,20 +152,34 @@ public class AuctionController {
         return baos.toByteArray();
     }
 
-    @PostMapping("/{auctionId}/bids") //ประมูล
+    @PostMapping("/{auctionId}/bids")
     public ResponseEntity<?> addBid(@PathVariable int auctionId,
                                     @RequestBody Map<String, Object> bidRequest,
                                     HttpSession session) {
-        Integer userId = (Integer) session.getAttribute("user_id");
-        if (userId == null) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
             return new ResponseEntity<>(Map.of(
                     "message", "Please log in to participate in the auction."
             ), HttpStatus.FORBIDDEN);
         }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-        double bidAmount = Double.parseDouble(bidRequest.get("bidAmount").toString());
+        Optional<User> optionalUser = userRepository.findUserByUserName(userName);
+        if (!optionalUser.isPresent()) {
+            return new ResponseEntity<>(Map.of(
+                    "message", "User not found with username: " + userName
+            ), HttpStatus.NOT_FOUND);
+        }
+
+        User user = optionalUser.get();
+
+        double bidAmount;
+        try {
+            bidAmount = Double.parseDouble(bidRequest.get("bidAmount").toString());
+        } catch (Exception e) {
+            return new ResponseEntity<>(Map.of(
+                    "message", "Invalid bid amount."
+            ), HttpStatus.BAD_REQUEST);
+        }
 
         if (bidAmount <= 0) {
             return new ResponseEntity<>(Map.of(
@@ -169,29 +191,29 @@ public class AuctionController {
             Auction auction = auctionService.getAuctionById(auctionId);
             LocalDateTime now = LocalDateTime.now();
 
-            // Debugging Logs
-            System.out.println("Current server time: " + now);
-            System.out.println("Auction start time: " + auction.getStartTime());
-            System.out.println("Auction end time: " + auction.getEndTime());
-
-            // ตรวจสอบเวลา
             if (now.isBefore(auction.getStartTime())) {
                 return new ResponseEntity<>(Map.of(
                         "message", "Auction has not started yet."
                 ), HttpStatus.BAD_REQUEST);
             }
-            if (now.isAfter(auction.getEndTime())) {
+            if (now.isAfter(auction.getEndTime()) || auction.getStatus() != AuctionStatus.ONGOING) {
                 return new ResponseEntity<>(Map.of(
                         "message", "Auction has already ended."
                 ), HttpStatus.BAD_REQUEST);
             }
 
             Bid bid = auctionService.addBid(auctionId, user, bidAmount);
-            return new ResponseEntity<>(bid, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(Map.of(
-                    "message", e.getMessage()
-            ), HttpStatus.BAD_REQUEST);
+
+            // ✅ ตรวจสอบว่ามีการเสนอราคาสูงสุดแล้วหรือไม่
+            if (bidAmount >= auction.getMaxBidPrice()) {
+                auctionService.determineAuctionWinner(auction);
+                return new ResponseEntity<>(Map.of(
+                        "message", "Bid placed successfully! You have won the auction.",
+                        "winner", user.getUserName()
+                ), HttpStatus.OK);
+            }
+
+            return new ResponseEntity<>(Map.of("message", "Bid placed successfully!"), HttpStatus.CREATED);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(Map.of(
@@ -199,31 +221,44 @@ public class AuctionController {
             ), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    @GetMapping("/{auctionId}/bids") //ดูว่าใครประมูล บิดเท่าไหร่
-    public ResponseEntity<?> getBidsForAuction(@PathVariable int auctionId) {
-        try {
-            // ดึงข้อมูล Auction จาก ID
-            Auction auction = auctionService.getAuctionById(auctionId);
 
-            // ตรวจสอบว่ามีการประมูลอยู่หรือไม่
-            if (auction == null) {
-                return new ResponseEntity<>(Map.of(
-                        "message", "Auction not found."
-                ), HttpStatus.NOT_FOUND);
+    @GetMapping("/my-auction")
+    public ResponseEntity<?> getMyAuctions(HttpSession session) {
+        try {
+            String userName = (String) session.getAttribute("user_name");
+            System.out.println("🔍 Session User: " + userName); // ✅ ตรวจสอบว่า session user_name ได้ค่าถูกต้อง
+
+            if (userName == null) {
+                return new ResponseEntity<>(Map.of("message", "User not logged in"), HttpStatus.FORBIDDEN);
             }
 
-            // แปลงข้อมูล Bid เป็น Response DTO
-            List<BidResponse> bidResponses = auction.getBids().stream()
-                    .map(BidResponse::new)
+            Optional<User> optionalUser = userRepository.findUserByUserName(userName);
+            if (!optionalUser.isPresent()) {
+                System.out.println("❌ User not found in database for username: " + userName);
+                return new ResponseEntity<>(Map.of("message", "User not found with username: " + userName), HttpStatus.NOT_FOUND);
+            }
+
+            User user = optionalUser.get();
+            System.out.println("✅ Querying BidHistory for user: " + user.getUserName() );
+
+            // ✅ ดึงข้อมูล BidHistory ที่ user ชนะ
+            List<BidHistory> testBids = bidHistoryRepository.findByUserAndIsWinnerTrue(user);
+            System.out.println("🏆 Winning Bids Found for user: " + user.getUserName() + " -> " + testBids.size());
+
+            if (testBids.isEmpty()) {
+                return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
+            }
+
+            List<AuctionResponse> responses = testBids.stream()
+                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction()))
                     .collect(Collectors.toList());
 
-            // ส่งกลับรายการ Bid
-            return new ResponseEntity<>(bidResponses, HttpStatus.OK);
+            return new ResponseEntity<>(responses, HttpStatus.OK);
         } catch (Exception e) {
+            System.err.println("❌ Error in /my-auction: " + e.getMessage());
             e.printStackTrace();
-            return new ResponseEntity<>(Map.of(
-                    "message", "An error occurred while fetching bids."
-            ), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 }

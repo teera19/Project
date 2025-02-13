@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
+import java.util.List;
 
 
 @Entity
@@ -43,6 +44,7 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = {CascadeType.MERGE, CascadeType.PERSIST}, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
     private MyShop myShop;
+
 
     // Getter และ Setter
     public int getUserId() {

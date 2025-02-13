@@ -95,17 +95,17 @@ public class UserService {
     @Transactional
     public ResponseProduct addProductToShop(String shopTitle, String name, String description, double price,
                                             MultipartFile image, int categoryId, Map<String, String> details) throws IOException {
-        // ค้นหาหมวดหมู่จาก categoryId
+        // ✅ ค้นหาหมวดหมู่
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found with ID: " + categoryId));
 
-        // ค้นหาร้านค้า
+        // ✅ ค้นหาร้านค้า
         MyShop shop = myShopRepository.findByTitle(shopTitle);
         if (shop == null) {
             throw new IllegalArgumentException("Shop not found with title: " + shopTitle);
         }
 
-        // สร้างสินค้าใหม่
+        // ✅ สร้างสินค้าใหม่
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
@@ -113,44 +113,50 @@ public class UserService {
         product.setShop(shop);
         product.setCategory(category);
 
-        // ✅ 1. บันทึกไฟล์ภาพลง `images/`
-        String imageUrl = saveImageToFile(image, product.getProductId());
-
-        // ✅ 2. บันทึก URL ของรูปลงฐานข้อมูลแทน `byte[]`
-        product.setImageUrl(imageUrl);
-
-        // ✅ 3. บันทึกสินค้า
+        // ✅ บันทึกสินค้าในฐานข้อมูลก่อน เพื่อให้ได้ `productId`
         Product savedProduct = productRepository.save(product);
+        System.out.println("✅ Saved Product ID: " + savedProduct.getProductId());
 
-        // ✅ 4. คืนค่า ResponseProduct พร้อม URL ของรูป
+        // ✅ บันทึกภาพและอัปเดต `imageUrl`
+        String imageUrl = saveImageToFile(image, savedProduct.getProductId());
+        savedProduct.setImageUrl(imageUrl);
+
+        // ✅ บันทึกสินค้าอีกรอบ พร้อม `imageUrl`
+        productRepository.save(savedProduct);
+
         return new ResponseProduct(
                 savedProduct.getProductId(),
                 savedProduct.getName(),
                 savedProduct.getDescription(),
                 savedProduct.getPrice(),
-                imageUrl, // ✅ URL ของรูป
+                imageUrl, // ✅ URL รูปที่ถูกต้อง
                 null
         );
     }
 
 
-
     // ฟังก์ชันสำหรับบันทึกภาพในระบบไฟล์
     private String saveImageToFile(MultipartFile image, int productId) throws IOException {
         if (image.isEmpty()) {
-            throw new IOException("No image uploaded");
+            throw new IOException("❌ No image uploaded");
         }
 
-        // ✅ 1. ตรวจสอบว่าโฟลเดอร์ `images/` มีอยู่หรือไม่, ถ้าไม่มีให้สร้าง
+        // ✅ ใช้ `/tmp/images/`
         File uploadDir = new File("/tmp/images/");
-        if (!uploadDir.exists()) uploadDir.mkdirs();
+        if (!uploadDir.exists()) {
+            if (!uploadDir.mkdirs()) {
+                throw new IOException("❌ Failed to create directory: " + uploadDir.getAbsolutePath());
+            }
+        }
 
-        // ✅ 2. ตั้งชื่อไฟล์เป็น `{productId}.jpg`
         String fileName = productId + ".jpg";
         File savedFile = new File(uploadDir, fileName);
-        image.transferTo(savedFile); // ✅ บันทึกไฟล์ลง `images/`
 
-        // ✅ 3. คืน URL ของรูปภาพให้ Front-end ใช้
+        // ✅ Debug Log: เช็คว่าไฟล์ถูกบันทึกที่ไหน
+        System.out.println("📢 Saving image to: " + savedFile.getAbsolutePath());
+
+        image.transferTo(savedFile);
+
         return "https://project-production-f4db.up.railway.app/images/" + fileName;
     }
 

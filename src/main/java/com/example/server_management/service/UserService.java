@@ -149,16 +149,8 @@ public class UserService {
             }
         }
 
-        String originalFileName = image.getOriginalFilename();
-        String extension = (originalFileName != null && originalFileName.contains("."))
-                ? originalFileName.substring(originalFileName.lastIndexOf("."))
-                : ".jpg"; // ✅ Default เป็น `.jpg` ถ้าไม่เจอ
-
-        String fileName = productId + extension;
+        String fileName = productId + ".jpg";
         File savedFile = new File(uploadDir, fileName);
-        // ✅ Debug Log: เช็คว่าไฟล์ถูกบันทึกที่ไหน
-        System.out.println("📢 Saving image to: " + savedFile.getAbsolutePath());
-
         image.transferTo(savedFile);
 
         return "https://project-production-f4db.up.railway.app/images/" + fileName;

@@ -3,6 +3,8 @@ package com.example.server_management.models;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Entity
@@ -33,6 +35,17 @@ public class Auction {
 
     @Enumerated(EnumType.STRING)
     private AuctionStatus status; // สถานะการประมูล
+
+    @PrePersist
+    @PreUpdate
+    public void adjustTimezone() {
+        if (startTime != null) {
+            this.startTime = ZonedDateTime.of(startTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
+        }
+        if (endTime != null) {
+            this.endTime = ZonedDateTime.of(endTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
+        }
+    }
 
 
     // Getters และ Setters
@@ -81,7 +94,7 @@ public class Auction {
     }
 
     public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
+        this.startTime = ZonedDateTime.of(startTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
     }
 
     public LocalDateTime getEndTime() {
@@ -89,7 +102,7 @@ public class Auction {
     }
 
     public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
+        this.endTime = ZonedDateTime.of(endTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
     }
 
     public byte[] getImage() {
@@ -129,4 +142,5 @@ public class Auction {
     public void setWinner(User winner) {
         this.winner = winner;
     }
+
 }

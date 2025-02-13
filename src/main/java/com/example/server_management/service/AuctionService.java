@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.List;
 
@@ -51,16 +53,26 @@ public class AuctionService {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
 
-        // 🛠 Debugging: ตรวจสอบเวลา
-        LocalDateTime now = LocalDateTime.now();
-        System.out.println("🕒 Server Time (LocalDateTime.now()): " + now);
-        System.out.println("🕒 Auction Start Time: " + auction.getStartTime());
+        // ✅ Debugging: ตรวจสอบค่าเวลาที่อ่านจาก MySQL
+        System.out.println("📌 Auction StartTime from DB: " + auction.getStartTime());
+        System.out.println("📌 Auction EndTime from DB: " + auction.getEndTime());
 
-        if (now.isBefore(auction.getStartTime())) {
+        // ✅ ตรวจสอบค่าเวลาปัจจุบันของเซิร์ฟเวอร์
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
+        ZonedDateTime auctionStart = auction.getStartTime().atZone(ZoneId.of("Asia/Bangkok"));
+        ZonedDateTime auctionEnd = auction.getEndTime().atZone(ZoneId.of("Asia/Bangkok"));
+
+        System.out.println("⏰ Current Server Time: " + now);
+        System.out.println("🎯 Auction Start Time: " + auctionStart);
+        System.out.println("🏁 Auction End Time: " + auctionEnd);
+
+        if (now.isBefore(auctionStart)) {
             System.out.println("🚨 Auction has not started yet! (Check timezone)");
             throw new IllegalArgumentException("Auction has not started yet.");
         }
-        if (now.isAfter(auction.getEndTime())) {
+
+        if (now.isAfter(auctionEnd)) {
+            System.out.println("🚨 Auction has already ended!");
             throw new IllegalArgumentException("Auction has already ended.");
         }
 

@@ -221,6 +221,17 @@ public class AuctionController {
             ), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    @GetMapping("/{auctionId}/bids")
+    public ResponseEntity<List<BidResponse>> getBidsByAuctionId(@PathVariable int auctionId) {
+        List<BidHistory> bids = bidHistoryRepository.findByAuction_AuctionId(auctionId);
+
+        List<BidResponse> responses = bids.stream()
+                .map(BidResponse::new) // ✅ ใช้ constructor ที่รับ `BidHistory`
+                .collect(Collectors.toList());
+
+        return new ResponseEntity<>(responses, HttpStatus.OK);
+    }
+
 
     @GetMapping("/my-auction")
     public ResponseEntity<?> getMyAuctions(HttpSession session) {

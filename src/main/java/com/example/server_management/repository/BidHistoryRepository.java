@@ -12,5 +12,6 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
     // ✅ ดึงเฉพาะรายการที่ผู้ใช้ชนะ
 
     List<BidHistory> findByUserAndIsWinnerTrue(User user);
+    List<BidHistory> findByAuctionId(int auctionId);
 
 }

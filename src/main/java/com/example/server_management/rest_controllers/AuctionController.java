@@ -155,7 +155,7 @@ public class AuctionController {
         return baos.toByteArray();
     }
 
-    @PostMapping("/{auctionId}/bids")
+    @PostMapping("/{id}/bids")
     public ResponseEntity<?> addBid(@PathVariable int auctionId,
                                     @RequestBody Map<String, Object> bidRequest,
                                     HttpSession session) {

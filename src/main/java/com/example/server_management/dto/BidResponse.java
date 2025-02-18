@@ -1,5 +1,6 @@
 package com.example.server_management.dto;
 
+import com.example.server_management.models.Bid;
 import com.example.server_management.models.BidHistory;
 import java.time.LocalDateTime;
 
@@ -9,23 +10,20 @@ public class BidResponse {
     private String username;         // ชื่อผู้ใช้ของผู้ที่บิด
     private String fullName;         // ชื่อ-นามสกุลของผู้ที่บิด
     private LocalDateTime bidTime;   // เวลาที่บิด
-    private boolean isWinner;        // สถานะว่าชนะการประมูลหรือไม่
 
-    // ✅ Constructor รับ `BidHistory`
-    public BidResponse(BidHistory bidHistory) {
-        this.bidId = Math.toIntExact(bidHistory.getId()); // แปลง `Long` เป็น `int` อย่างปลอดภัย
-        this.bidAmount = bidHistory.getBidAmount();
-        this.username = bidHistory.getUser().getUserName();
-        this.fullName = bidHistory.getUser().getName() + " " + bidHistory.getUser().getLastName();
-        this.bidTime = bidHistory.getBidTime();
-        this.isWinner = bidHistory.isWinner();
+    // ✅ Constructor รับ `Bid`
+    public BidResponse(Bid bid) {
+        this.bidId = bid.getBidId(); // ✅ ใช้ `id` จาก `Bid`
+        this.bidAmount = bid.getBidAmount();
+        this.username = bid.getUser().getUserName();
+        this.fullName = bid.getUser().getName() + " " + bid.getUser().getLastName();
+        this.bidTime = bid.getBidTime();
     }
 
     // ✅ Getters
-    public int getBidId() { return bidId; }  // แก้ให้เป็น int
+    public int getBidId() { return bidId; }
     public double getBidAmount() { return bidAmount; }
     public String getUsername() { return username; }
     public String getFullName() { return fullName; }
     public LocalDateTime getBidTime() { return bidTime; }
-    public boolean isWinner() { return isWinner; }
 }

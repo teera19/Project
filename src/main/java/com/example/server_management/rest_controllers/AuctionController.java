@@ -4,6 +4,7 @@ import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
 import com.example.server_management.models.*;
 import com.example.server_management.repository.BidHistoryRepository;
+import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.AuctionService;
 import jakarta.servlet.http.HttpSession;
@@ -42,6 +43,8 @@ public class AuctionController {
     private UserRepository userRepository;
     @Autowired
     BidHistoryRepository bidHistoryRepository;
+    @Autowired
+    BidRepository bidRepository;
 
 
     @GetMapping
@@ -223,13 +226,17 @@ public class AuctionController {
     }
     @GetMapping("/{auctionId}/bids")
     public ResponseEntity<List<BidResponse>> getBidsByAuctionId(@PathVariable int auctionId) {
-        List<BidHistory> bids = bidHistoryRepository.findByAuction_AuctionId(auctionId);
+        List<Bid> bids = bidRepository.findByAuction_AuctionId(auctionId); // ✅ ใช้ BidRepository
+
+        if (bids.isEmpty()) {
+            return ResponseEntity.noContent().build(); // 🔥 ไม่มี bid ก็ไม่ต้องส่ง error
+        }
 
         List<BidResponse> responses = bids.stream()
-                .map(BidResponse::new) // ✅ ใช้ constructor ที่รับ `BidHistory`
+                .map(BidResponse::new) // ✅ ใช้ constructor ที่รับ `Bid`
                 .collect(Collectors.toList());
 
-        return new ResponseEntity<>(responses, HttpStatus.OK);
+        return ResponseEntity.ok(responses);
     }
 
 

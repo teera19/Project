@@ -78,8 +78,9 @@ import java.util.Map;
                 // หากมีการอัปโหลดภาพใหม่
                 if (imageBytes != null) {
                     userService.saveCompressedImage(imageBytes, product.getProductId());
-                    String imageUrl = "/images/" + product.getProductId() + ".jpg";
+                    String imageUrl = "https://project-production-f4db.up.railway.app/images/" + product.getProductId() + ".jpg";
                     product.setImageUrl(imageUrl);
+
                 }
 
                 // บันทึกสินค้า

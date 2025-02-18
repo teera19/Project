@@ -251,7 +251,15 @@ public class UserService {
         try {
             BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
 
-            // บีบอัดภาพ
+            // ✅ ตรวจสอบและสร้างโฟลเดอร์ `/tmp/images/`
+            File uploadDir = new File("/tmp/images/");
+            if (!uploadDir.exists()) {
+                if (!uploadDir.mkdirs()) {
+                    throw new IOException("❌ Failed to create directory: " + uploadDir.getAbsolutePath());
+                }
+            }
+
+            // ✅ บีบอัดภาพ
             int targetWidth = 100;
             int targetHeight = (int) (originalImage.getHeight() * (100.0 / originalImage.getWidth()));
             BufferedImage scaledImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
@@ -260,13 +268,17 @@ public class UserService {
             g2d.drawImage(originalImage.getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH), 0, 0, null);
             g2d.dispose();
 
-            // บันทึกภาพลงโฟลเดอร์
-            File outputFile = new File("images/" + productId + ".jpg");
+            // ✅ บันทึกภาพลง `/tmp/images/`
+            File outputFile = new File(uploadDir, productId + ".jpg");
             ImageIO.write(scaledImage, "jpg", outputFile);
+
+            System.out.println("✅ Image saved successfully: " + outputFile.getAbsolutePath());
+
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save image: " + e.getMessage());
+            throw new RuntimeException("❌ Failed to save image: " + e.getMessage());
         }
     }
+
 
 
 

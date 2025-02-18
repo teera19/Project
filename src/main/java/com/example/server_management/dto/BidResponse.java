@@ -1,31 +1,43 @@
 package com.example.server_management.dto;
 
-import com.example.server_management.models.BidHistory;
+import com.example.server_management.models.Bid;
+
 import java.time.LocalDateTime;
 
 public class BidResponse {
-    private Long bidId;               // ID ของการบิด
+    private int bidId;               // ID ของการบิด
     private double bidAmount;        // จำนวนเงินที่บิด
     private String username;         // ชื่อผู้ใช้ของผู้ที่บิด
     private String fullName;         // ชื่อ-นามสกุลของผู้ที่บิด
     private LocalDateTime bidTime;   // เวลาที่บิด
-    private boolean isWinner;        // สถานะว่าชนะการประมูลหรือไม่
 
-    // ✅ Constructor รับ `BidHistory`
-    public BidResponse(BidHistory bidHistory) {
-        this.bidId = bidHistory.getId(); // ใช้ `id` ของ `BidHistory`
-        this.bidAmount = bidHistory.getBidAmount();
-        this.username = bidHistory.getUser().getUserName();
-        this.fullName = bidHistory.getUser().getName() + " " + bidHistory.getUser().getLastName();
-        this.bidTime = bidHistory.getBidTime();
-        this.isWinner = bidHistory.isWinner();
+    // Constructor
+    public BidResponse(Bid bid) {
+        this.bidId = bid.getBidId();
+        this.bidAmount = bid.getBidAmount();
+        this.username = bid.getUser().getUserName();
+        this.fullName = bid.getUser().getName() + " " + bid.getUser().getLastName(); // รวมชื่อจริงและนามสกุล
+        this.bidTime = bid.getBidTime(); // ตั้งค่าเวลาที่บิด
     }
 
-    // ✅ Getters
-    public Long getBidId() { return bidId; }
-    public double getBidAmount() { return bidAmount; }
-    public String getUsername() { return username; }
-    public String getFullName() { return fullName; }
-    public LocalDateTime getBidTime() { return bidTime; }
-    public boolean isWinner() { return isWinner; }
+    // Getters
+    public int getBidId() {
+        return bidId;
+    }
+
+    public double getBidAmount() {
+        return bidAmount;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public LocalDateTime getBidTime() {
+        return bidTime;
+    }
 }

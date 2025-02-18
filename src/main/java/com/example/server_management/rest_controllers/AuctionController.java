@@ -260,22 +260,6 @@ public class AuctionController {
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    @GetMapping("/{auctionId}/bids")
-    public ResponseEntity<List<BidResponse>> getBidsByAuctionId(@PathVariable int auctionId) {
-        List<BidHistory> bids = bidHistoryRepository.findByAuctionId(auctionId);
-
-        if (bids.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // ✅ ถ้าไม่มีการ Bid ไม่ต้องแสดง error
-        }
-
-        // ✅ ใช้ Constructor ใหม่ของ `BidResponse`
-        List<BidResponse> responses = bids.stream()
-                .map(BidResponse::new) // ✅ ใช้ Constructor แบบใหม่
-                .collect(Collectors.toList());
-
-        return new ResponseEntity<>(responses, HttpStatus.OK);
-    }
-
 
 
 }

@@ -85,7 +85,8 @@ import java.util.Map;
                 // บันทึกสินค้า
                 userService.saveProduct(product);
 
-                String imageUrl = "http://127.0.0.1:8085/images/" + product.getProductId() + ".jpg";
+                String imageUrl = "https://project-production-f4db.up.railway.app/images/" + product.getProductId() + ".jpg";
+
 
                 // ส่ง ResponseProduct กลับ
                 return new ResponseEntity<>(new ResponseProduct(

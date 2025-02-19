@@ -216,14 +216,19 @@ public class UserService {
 
     private int parseIntOrDefault(String value, int defaultValue) {
         if (value == null || value.trim().isEmpty()) {
+            System.out.println("⚠️ category_id is NULL or EMPTY, using default: " + defaultValue);
             return defaultValue;
         }
         try {
-            return Integer.parseInt(value);
+            int result = Integer.parseInt(value);
+            System.out.println("✅ Parsed category_id: " + result);
+            return result;
         } catch (NumberFormatException e) {
+            System.out.println("❌ Invalid category_id: " + value + ", using default: " + defaultValue);
             return defaultValue;
         }
     }
+
 
     private boolean parseBooleanOrDefault(String value, boolean defaultValue) {
         if (value == null || value.trim().isEmpty()) {
@@ -236,9 +241,6 @@ public class UserService {
     }
 
 
-    /**
-     * ✅ ฟังก์ชันช่วยแยก `,` เป็น `List<String>`
-     */
     private List<String> parseListOrDefault(String value, String defaultValue) {
         if (value == null || value.trim().isEmpty()) {
             return List.of(defaultValue);

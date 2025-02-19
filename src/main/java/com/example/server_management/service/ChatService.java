@@ -42,6 +42,11 @@ public class ChatService {
     public List<ChatRoom> getChatsByUser(String userName) {
         return chatRoomRepository.findByUser1OrUser2(userName, userName);
     }
+    public Message getLatestMessage(int chatId) {
+        ChatRoom chatRoom = this.getChatRoomById(chatId);
+        return messageRepository.findTopByChatRoomOrderByTimestampDesc(chatRoom);
+    }
+
 
 
 }

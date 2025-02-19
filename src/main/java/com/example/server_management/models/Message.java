@@ -2,6 +2,7 @@ package com.example.server_management.models;
 
 import jakarta.persistence.*;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "messages")
@@ -22,6 +23,8 @@ public class Message {
 
     @Column(name = "created_at")
     private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime timestamp;
 
     public int getMessageId() {
         return messageId;
@@ -62,4 +65,6 @@ public class Message {
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
+    public LocalDateTime getTimestamp() { return timestamp; }
+    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 }

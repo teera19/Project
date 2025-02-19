@@ -1,6 +1,7 @@
 package com.example.server_management.rest_controllers;
 
 import com.example.server_management.dto.ChatRequest;
+import com.example.server_management.dto.ChatRoomDTO;
 import com.example.server_management.dto.MessageRequest;
 import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
@@ -96,7 +97,7 @@ public class Chat {
     }
 
     @GetMapping("/my-chats")
-    public ResponseEntity<List<ChatRoom>> getMyChats(HttpSession session) {
+    public ResponseEntity<List<ChatRoomDTO>> getMyChats(HttpSession session) {
         String currentUser = (String) session.getAttribute("user_name");
 
         if (currentUser == null) {
@@ -104,7 +105,18 @@ public class Chat {
         }
 
         List<ChatRoom> chatRooms = chatService.getChatsByUser(currentUser);
-        return ResponseEntity.ok(chatRooms);
+
+        List<ChatRoomDTO> chatRoomDTOs = chatRooms.stream().map(chatRoom -> {
+            Message latestMessage = chatService.getLatestMessage(chatRoom.getChatId());
+            return new ChatRoomDTO(
+                    chatRoom,
+                    latestMessage != null ? latestMessage.getMessage() : "ไม่มีข้อความ",
+                    latestMessage != null ? latestMessage.getTimestamp().toString() : ""
+            );
+        }).toList();
+
+        return ResponseEntity.ok(chatRoomDTOs);
     }
+
 }
 

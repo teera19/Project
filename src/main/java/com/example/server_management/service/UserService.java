@@ -214,13 +214,13 @@ public class UserService {
 
 
 
-    /**
-     * 📌 ฟังก์ชันช่วยสำหรับแปลง `String` เป็น `int`
-     */
     private int parseIntOrDefault(String value, int defaultValue) {
+        if (value == null || value.trim().isEmpty()) {
+            return defaultValue;
+        }
         try {
             return Integer.parseInt(value);
-        } catch (NumberFormatException | NullPointerException e) {
+        } catch (NumberFormatException e) {
             return defaultValue;
         }
     }

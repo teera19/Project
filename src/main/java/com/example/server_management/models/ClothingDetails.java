@@ -11,7 +11,7 @@ public class ClothingDetails {
     private int id;
 
     @Column(name = "has_stain")
-    private Boolean hasStain;
+    private String hasStain; // 🔄 เปลี่ยนจาก Boolean เป็น String
 
     @Column(name = "tear_location")
     private String tearLocation;
@@ -22,7 +22,6 @@ public class ClothingDetails {
     @OneToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
-
     // Getters and Setters
     public int getId() {
         return id;
@@ -32,11 +31,11 @@ public class ClothingDetails {
         this.id = id;
     }
 
-    public Boolean getHasStain() {
+    public String getHasStain() {
         return hasStain;
     }
 
-    public void setHasStain(Boolean hasStain) {
+    public void setHasStain(String hasStain) {
         this.hasStain = hasStain;
     }
 

@@ -113,16 +113,17 @@ import java.util.Map;
             }
 
             String tearLocation = details.getOrDefault("details[tear_location]", "Unknown");
-            boolean hasStain = parseBooleanOrDefault(details.get("details[has_stain]"), false);
+            String hasStain = details.getOrDefault("details[has_stain]", "ไม่มี"); // ✅ รับค่าเป็น String โดยตรง
             int repairCount = parseIntOrDefault(details.get("details[repair_count]"), 0);
 
             clothingDetails.setTearLocation(tearLocation);
-            clothingDetails.setHasStain(hasStain);
+            clothingDetails.setHasStain(hasStain); // ✅ ใช้ค่า String "มี" หรือ "ไม่มี"
             clothingDetails.setRepairCount(repairCount);
 
             userService.saveClothingDetails(clothingDetails);
             return clothingDetails;
         }
+
 
         private PhoneDetails updatePhoneDetails(Product product, Map<String, String> details) {
             PhoneDetails phoneDetails = userService.findPhoneDetailsByProductId(product.getProductId());

@@ -15,6 +15,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -156,7 +157,7 @@ public class UserService {
             case 1: // ✅ หมวดหมู่เสื้อผ้า
                 ClothingDetails clothingDetails = new ClothingDetails();
                 clothingDetails.setProduct(product);
-                clothingDetails.setHasStain(parseBooleanOrDefault(details.get("has_stain"), false));
+                clothingDetails.setHasStain(details.getOrDefault("has_stain", "ไม่มี")); // ✅ ใช้ String "มี"/"ไม่มี"
                 clothingDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
                 clothingDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
                 clothingDetailsRepository.save(clothingDetails);
@@ -184,7 +185,7 @@ public class UserService {
             case 4: // ✅ หมวดหมู่ `More`
                 More more = new More();
                 more.setProduct(product);
-                more.setFlawedPoint(details.getOrDefault("flawed_point", "Unknown")); // ใช้ค่า `flawed_point`
+                more.setFlawedPoint(details.getOrDefault("flawed_point", "Unknown"));
                 moreRepository.save(more);
                 break;
 
@@ -192,6 +193,7 @@ public class UserService {
                 System.out.println("⚠️ No additional details required for categoryId: " + categoryId);
         }
     }
+
 
     /**
      * 📌 ฟังก์ชันช่วยสำหรับแปลง `String` เป็น `int`
@@ -204,14 +206,28 @@ public class UserService {
         }
     }
 
-    /**
-     * 📌 ฟังก์ชันช่วยสำหรับแปลง `String` เป็น `boolean`
-     */
     private boolean parseBooleanOrDefault(String value, boolean defaultValue) {
         if (value == null || value.trim().isEmpty()) {
             return defaultValue;
         }
-        return Boolean.parseBoolean(value);
+
+        // แปลงค่าที่รับมาให้เป็น Boolean ตามรูปแบบต่างๆ
+        value = value.trim().toLowerCase(); // ปรับเป็นตัวเล็กทั้งหมด
+        return value.equals("1") || value.equals("true") || value.equals("มี")|| value.equals("have");
+    }
+
+
+    /**
+     * ✅ ฟังก์ชันช่วยแยก `,` เป็น `List<String>`
+     */
+    private List<String> parseListOrDefault(String value, String defaultValue) {
+        if (value == null || value.trim().isEmpty()) {
+            return List.of(defaultValue);
+        }
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
     }
 
 

@@ -32,10 +32,10 @@ public class Product {
     private byte[] image;
 
     @Transient
-    private String imageUrl; // ใช้สำหรับส่ง URL ไปยัง Frontend
+    private String imageUrl;
 
     @Transient
-    private String categoryName; // ใช้สำหรับส่งชื่อหมวดหมู่สินค้า
+    private String categoryName;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)

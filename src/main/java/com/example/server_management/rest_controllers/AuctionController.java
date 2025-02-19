@@ -244,7 +244,6 @@ public class AuctionController {
     public ResponseEntity<?> getMyAuctions(HttpSession session) {
         try {
             String userName = (String) session.getAttribute("user_name");
-            System.out.println("🔍 Session User: " + userName); // ✅ ตรวจสอบว่า session user_name ได้ค่าถูกต้อง
 
             if (userName == null) {
                 return new ResponseEntity<>(Map.of("message", "User not logged in"), HttpStatus.FORBIDDEN);
@@ -252,29 +251,31 @@ public class AuctionController {
 
             Optional<User> optionalUser = userRepository.findUserByUserName(userName);
             if (!optionalUser.isPresent()) {
-                System.out.println("❌ User not found in database for username: " + userName);
                 return new ResponseEntity<>(Map.of("message", "User not found with username: " + userName), HttpStatus.NOT_FOUND);
             }
 
             User user = optionalUser.get();
-            System.out.println("✅ Querying BidHistory for user: " + user.getUserName() );
-
-            // ✅ ดึงข้อมูล BidHistory ที่ user ชนะ
             List<BidHistory> testBids = bidHistoryRepository.findByUserAndIsWinnerTrue(user);
-            System.out.println("🏆 Winning Bids Found for user: " + user.getUserName() + " -> " + testBids.size());
 
             if (testBids.isEmpty()) {
                 return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
             }
 
+            // ✅ แก้ไขตรงนี้: เพิ่ม imageUrl ลงไปใน AuctionResponse
             List<AuctionResponse> responses = testBids.stream()
-                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction()))
+                    .map(bidHistory -> {
+                        Auction auction = bidHistory.getAuction();
+                        AuctionResponse response = new AuctionResponse(auction);
+
+                        // ✅ ตั้งค่า imageUrl
+                        response.setImageUrl("https://project-production-f4db.up.railway.app/images/" + auction.getAuctionId() + ".jpg");
+
+                        return response;
+                    })
                     .collect(Collectors.toList());
 
             return new ResponseEntity<>(responses, HttpStatus.OK);
         } catch (Exception e) {
-            System.err.println("❌ Error in /my-auction: " + e.getMessage());
-            e.printStackTrace();
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

@@ -98,18 +98,20 @@ public class UserService {
     @Transactional
     public ResponseProduct addProductToShop(String shopTitle, String name, String description, double price,
                                             MultipartFile image, int categoryId, Map<String, String> details) throws IOException {
-        System.out.println("📌 Checking categoryId: " + categoryId);
-        System.out.println("📌 Checking shopTitle: " + shopTitle);
-        System.out.println("📌 Checking details: " + details);
+        System.out.println("📌 Checking categoryId before fetch: " + categoryId);
 
-        // ✅ ตรวจสอบว่า categoryId ถูกต้อง
         if (categoryId <= 0) {
             throw new IllegalArgumentException("Invalid categoryId: " + categoryId);
         }
 
-        // ✅ ค้นหาหมวดหมู่
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found with ID: " + categoryId));
+        // ✅ Debug ก่อนดึงข้อมูลจาก DB
+        Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+        if (categoryOpt.isEmpty()) {
+            throw new IllegalArgumentException("Category not found with ID: " + categoryId);
+        }
+
+        Category category = categoryOpt.get();
+        System.out.println("✅ Fetched category from DB: " + category.getName());
 
         // ✅ ค้นหาร้านค้า
         MyShop shop = myShopRepository.findByTitle(shopTitle);
@@ -135,9 +137,6 @@ public class UserService {
 
         // ✅ บันทึกสินค้าอีกรอบ พร้อม `imageUrl`
         productRepository.save(savedProduct);
-
-        // ✅ เพิ่มรายละเอียดสินค้าแยกตามประเภทหมวดหมู่
-        addProductDetails(savedProduct, categoryId, details);
 
         return new ResponseProduct(
                 savedProduct.getProductId(),

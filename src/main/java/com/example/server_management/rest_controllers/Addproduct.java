@@ -41,9 +41,12 @@ public class Addproduct {
                 return new ResponseEntity<>("No image uploaded", HttpStatus.BAD_REQUEST);
             }
 
+            // ✅ Debug category_id
+            System.out.println("📌 Received category_id (raw): " + categoryIdStr);
+
             // ✅ แปลง category_id เป็น int
             int categoryId = parseIntOrDefault(categoryIdStr, 0);
-            System.out.println("📌 Received category_id: " + categoryId);
+            System.out.println("📌 Parsed category_id: " + categoryId);
 
             if (categoryId <= 0) {
                 return new ResponseEntity<>("Invalid category_id: " + categoryId, HttpStatus.BAD_REQUEST);
@@ -58,6 +61,7 @@ public class Addproduct {
             return new ResponseEntity<>("Internal Server Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     private int parseIntOrDefault(String value, int defaultValue) {
         if (value == null || value.trim().isEmpty()) {
             return defaultValue;

@@ -38,6 +38,8 @@ public class UserService {
     private PhoneDetailsRepository phoneDetailsRepository;
     @Autowired
     private ShoesDetailsRepository shoesDetailsRepository;
+    @Autowired
+    private MoreRepository moreRepository;
 
     public User registerServiceMethod(User user) {
         System.out.println("Registering user: " + user.getUserName() + ", Email: " + user.getEmail());
@@ -124,14 +126,71 @@ public class UserService {
         // ✅ บันทึกสินค้าอีกรอบ พร้อม `imageUrl`
         productRepository.save(savedProduct);
 
+        // ✅ เพิ่มรายละเอียดสินค้าแยกตามประเภทหมวดหมู่
+        switch (categoryId) {
+            case 1: // ✅ หมวดหมู่เสื้อผ้า
+                ClothingDetails clothingDetails = new ClothingDetails();
+                clothingDetails.setProduct(savedProduct);
+                clothingDetails.setHasStain(parseBooleanOrDefault(details.get("has_stain"), false));
+                clothingDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
+                clothingDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
+                clothingDetailsRepository.save(clothingDetails);
+                break;
+
+            case 2: // ✅ หมวดหมู่โทรศัพท์
+                PhoneDetails phoneDetails = new PhoneDetails();
+                phoneDetails.setProduct(savedProduct);
+                phoneDetails.setBasicFunctionalityStatus("yes".equalsIgnoreCase(details.get("basic_functionality_status")));
+                phoneDetails.setBatteryStatus(details.getOrDefault("battery_status", "Unknown"));
+                phoneDetails.setNonFunctionalParts(details.getOrDefault("nonfunctional_parts", "None"));
+                phoneDetails.setScratchCount(parseIntOrDefault(details.get("scratch_count"), 0));
+                phoneDetailsRepository.save(phoneDetails);
+                break;
+
+            case 3: // ✅ หมวดหมู่รองเท้า
+                ShoesDetails shoesDetails = new ShoesDetails();
+                shoesDetails.setProduct(savedProduct);
+                shoesDetails.setHasBrandLogo("yes".equalsIgnoreCase(details.get("hasbrand_logo")));
+                shoesDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
+                shoesDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
+                shoesDetailsRepository.save(shoesDetails);
+                break;
+
+            case 4: // ✅ หมวดหมู่ `More`
+                More more = new More();
+                more.setProduct(savedProduct);
+                more.setFlawedPoint(details.getOrDefault("flawed_point", "Unknown")); // ใช้ค่า `flawed_point`
+                moreRepository.save(more);
+                break;
+
+            default:
+                System.out.println("⚠️ No additional details required for categoryId: " + categoryId);
+        }
+
         return new ResponseProduct(
                 savedProduct.getProductId(),
                 savedProduct.getName(),
                 savedProduct.getDescription(),
                 savedProduct.getPrice(),
                 imageUrl, // ✅ URL รูปที่ถูกต้อง
-                null
+                details // ✅ รายละเอียดสินค้า
         );
+    }
+
+
+    private int parseIntOrDefault(String value, int defaultValue) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException | NullPointerException e) {
+            return defaultValue;
+        }
+    }
+
+    private boolean parseBooleanOrDefault(String value, boolean defaultValue) {
+        if (value == null || value.trim().isEmpty()) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(value);
     }
 
 

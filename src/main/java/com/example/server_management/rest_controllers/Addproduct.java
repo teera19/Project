@@ -1,6 +1,7 @@
 package com.example.server_management.rest_controllers;
 
 import com.example.server_management.dto.ResponseProduct;
+import com.example.server_management.models.Category;
 import com.example.server_management.models.Product;
 import com.example.server_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,24 +35,28 @@ public class Addproduct {
                                              @RequestParam("description") String description,
                                              @RequestParam("price") double price,
                                              @RequestParam("image") MultipartFile image,
-                                             @RequestParam("category_id") String categoryIdStr, // 🛠 รับค่าเป็น String
                                              @RequestParam Map<String, String> details) throws IOException {
         try {
             if (image.isEmpty()) {
                 return new ResponseEntity<>("No image uploaded", HttpStatus.BAD_REQUEST);
             }
 
-            // ✅ Debug category_id
-            System.out.println("📌 Received category_id (raw): " + categoryIdStr);
-
-            // ✅ แปลง category_id เป็น int
-            int categoryId = parseIntOrDefault(categoryIdStr, 0);
-            System.out.println("📌 Parsed category_id: " + categoryId);
-
-            if (categoryId <= 0) {
-                return new ResponseEntity<>("Invalid category_id: " + categoryId, HttpStatus.BAD_REQUEST);
+            // ✅ รับค่า `category_id` หรือ `category_name`
+            int categoryId = 0;
+            if (details.containsKey("category_id")) {
+                categoryId = parseIntOrDefault(details.get("category_id"), 0);
+            } else if (details.containsKey("category_name")) {
+                Category category = userService.findCategoryByName(details.get("category_name"));
+                if (category != null) {
+                    categoryId = category.getCategoryId();
+                }
             }
 
+            if (categoryId <= 0) {
+                return new ResponseEntity<>("Invalid category", HttpStatus.BAD_REQUEST);
+            }
+
+            // ✅ เพิ่มสินค้า
             ResponseProduct responseProduct = userService.addProductToShop(
                     shopTitle, name, description, price, image, categoryId, details);
 
@@ -61,6 +66,7 @@ public class Addproduct {
             return new ResponseEntity<>("Internal Server Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     private int parseIntOrDefault(String value, int defaultValue) {
         if (value == null || value.trim().isEmpty()) {

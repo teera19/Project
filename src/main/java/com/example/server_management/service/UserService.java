@@ -435,5 +435,9 @@ public class UserService {
     public void deleteProductById(int productId) {
         productRepository.deleteById(productId);
     }
+    public Category findCategoryByName(String categoryName) {
+        return categoryRepository.findByName(categoryName);
+    }
+
 
 }

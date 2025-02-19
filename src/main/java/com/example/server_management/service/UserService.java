@@ -244,6 +244,9 @@ public class UserService {
     }
 
 
+    // บันทึกไฟล์รูปภาพ
+
+    // ฟังก์ชันสำหรับบีบอัดและบันทึกภาพ
     public void saveCompressedImage(byte[] imageBytes, int productId) {
         try {
             BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
@@ -251,25 +254,15 @@ public class UserService {
                 throw new IOException("❌ Cannot read image data.");
             }
 
-            // ✅ ตรวจสอบขนาดภาพต้นฉบับ
-            int originalWidth = originalImage.getWidth();
-            int originalHeight = originalImage.getHeight();
-
-            // ✅ ไม่ลดขนาด แต่บันทึกใหม่เป็น PNG เพื่อรักษาคุณภาพ
-            BufferedImage outputImage = new BufferedImage(originalWidth, originalHeight, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = outputImage.createGraphics();
-            g2d.drawImage(originalImage, 0, 0, originalWidth, originalHeight, null);
-            g2d.dispose();
-
-            // ✅ สร้างโฟลเดอร์ `/tmp/images/` ถ้ายังไม่มี
+            // ✅ ตรวจสอบและสร้างโฟลเดอร์ `/tmp/images/`
             File uploadDir = new File("/tmp/images/");
             if (!uploadDir.exists() && !uploadDir.mkdirs()) {
                 throw new IOException("❌ Failed to create directory: " + uploadDir.getAbsolutePath());
             }
 
-            // ✅ บันทึกเป็น PNG เพื่อรักษาคุณภาพสูงสุด
+            // ✅ บันทึกเป็น PNG โดยไม่ลดขนาด
             File outputFile = new File(uploadDir, productId + ".png");
-            ImageIO.write(outputImage, "png", outputFile);
+            ImageIO.write(originalImage, "png", outputFile);
 
             System.out.println("✅ Image saved successfully: " + outputFile.getAbsolutePath());
 
@@ -277,6 +270,7 @@ public class UserService {
             throw new RuntimeException("❌ Failed to save image: " + e.getMessage());
         }
     }
+
 
 
 

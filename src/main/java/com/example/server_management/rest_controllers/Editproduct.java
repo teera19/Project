@@ -30,73 +30,76 @@ public class Editproduct {
             @RequestParam("description") String description,
             @RequestParam("price") double price,
             @RequestParam(value = "image", required = false) MultipartFile image,
-            @RequestParam("category_id") int categoryId,
-            @RequestParam Map<String, String> details, // รับข้อมูล details ของหมวดหมู่
+            @RequestParam("category_name") String categoryName,  // ✅ เปลี่ยนเป็น category_name
+            @RequestParam Map<String, String> details,
             HttpSession session) throws IOException {
 
-        // ตรวจสอบการล็อกอิน
+        // ✅ Log เพื่อตรวจสอบค่าที่รับเข้ามา
+        System.out.println("📌 productId: " + productId);
+        System.out.println("📌 category_name: " + categoryName);
+
+        // ✅ ตรวจสอบการล็อกอิน
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return new ResponseEntity<>("User not logged in", HttpStatus.FORBIDDEN);
         }
 
-        byte[] imageBytes = null;
-        if (image != null && !image.isEmpty()) {
-            imageBytes = image.getBytes();
-        }
-
         try {
-            // ค้นหาสินค้าจาก productId
+            // ✅ ค้นหาสินค้า
             Product product = userService.findProductById(productId);
             if (product == null) {
+                System.out.println("❌ Product not found: " + productId);
                 return new ResponseEntity<>("Product not found", HttpStatus.NOT_FOUND);
             }
 
-            // ตรวจสอบและอัปเดต Category
-            Category category = userService.findCategoryById(categoryId);
+            // ✅ หา Category จากชื่อ
+            Category category = userService.findCategoryByName(categoryName);
             if (category == null) {
-                return new ResponseEntity<>("Invalid category_id: " + categoryId, HttpStatus.BAD_REQUEST);
+                System.out.println("❌ Category not found: " + categoryName);
+                return new ResponseEntity<>("Invalid category: " + categoryName, HttpStatus.BAD_REQUEST);
             }
-            product.setCategory(category); // อัปเดตหมวดหมู่ใหม่ใน Product
 
-            // อัปเดตข้อมูลทั่วไปของสินค้า
+            // ✅ อัปเดตข้อมูลสินค้า
+            product.setCategory(category);
             product.setName(name);
             product.setDescription(description);
             product.setPrice(price);
 
             Object detailObject = null;
 
-            // จัดการรายละเอียดตามหมวดหมู่
-            if (categoryId == 1) { // สำหรับเสื้อผ้า
-                detailObject = updateClothingDetails(product, details);
-            } else if (categoryId == 2) { // สำหรับโทรศัพท์
-                detailObject = updatePhoneDetails(product, details);
-            } else if (categoryId == 3) { // สำหรับรองเท้า
-                detailObject = updateShoesDetails(product, details);
+            // ✅ อัปเดตรายละเอียดสินค้าแยกตามหมวดหมู่
+            switch (category.getCategoryId()) {
+                case 1:
+                    detailObject = updateClothingDetails(product, details);
+                    break;
+                case 2:
+                    detailObject = updatePhoneDetails(product, details);
+                    break;
+                case 3:
+                    detailObject = updateShoesDetails(product, details);
+                    break;
+                default:
+                    System.out.println("⚠️ No additional details required for category: " + categoryName);
             }
 
-            // หากมีการอัปโหลดภาพใหม่
-            if (imageBytes != null) {
+            // ✅ อัปเดตรูปภาพสินค้า
+            if (image != null && !image.isEmpty()) {
+                byte[] imageBytes = image.getBytes();
                 userService.saveCompressedImage(imageBytes, product.getProductId());
                 String imageUrl = "https://project-production-f4db.up.railway.app/images/" + product.getProductId() + ".jpg";
                 product.setImageUrl(imageUrl);
-
             }
 
-            // บันทึกสินค้า
+            // ✅ บันทึกสินค้า
             userService.saveProduct(product);
 
-            String imageUrl = "https://project-production-f4db.up.railway.app/images/" + product.getProductId() + ".jpg";
-
-
-            // ส่ง ResponseProduct กลับ
             return new ResponseEntity<>(new ResponseProduct(
                     product.getProductId(),
                     product.getName(),
                     product.getDescription(),
                     product.getPrice(),
-                    imageUrl,
-                    detailObject // รายละเอียดเฉพาะหมวดหมู่
+                    product.getImageUrl(),
+                    detailObject
             ), HttpStatus.OK);
 
         } catch (Exception e) {
@@ -105,6 +108,7 @@ public class Editproduct {
         }
     }
 
+    // ✅ ฟังก์ชันอัปเดตรายละเอียดของเสื้อผ้า
     private ClothingDetails updateClothingDetails(Product product, Map<String, String> details) {
         ClothingDetails clothingDetails = userService.findClothingDetailsByProductId(product.getProductId());
         if (clothingDetails == null) {
@@ -112,18 +116,15 @@ public class Editproduct {
             clothingDetails.setProduct(product);
         }
 
-        String tearLocation = details.getOrDefault("details[tear_location]", "Unknown");
-        String hasStain = details.getOrDefault("details[has_stain]", "ไม่มี"); // ✅ ใช้ String ตรงๆ
-        int repairCount = parseIntOrDefault(details.get("details[repair_count]"), 0);
-
-        clothingDetails.setTearLocation(tearLocation);
-        clothingDetails.setHasStain(hasStain); // ✅ ใช้ String แทน boolean
-        clothingDetails.setRepairCount(repairCount);
+        clothingDetails.setTearLocation(details.getOrDefault("details[tear_location]", "Unknown"));
+        clothingDetails.setHasStain(details.getOrDefault("details[has_stain]", "ไม่มี"));
+        clothingDetails.setRepairCount(parseIntOrDefault(details.get("details[repair_count]"), 0));
 
         userService.saveClothingDetails(clothingDetails);
         return clothingDetails;
     }
 
+    // ✅ ฟังก์ชันอัปเดตรายละเอียดของโทรศัพท์
     private PhoneDetails updatePhoneDetails(Product product, Map<String, String> details) {
         PhoneDetails phoneDetails = userService.findPhoneDetailsByProductId(product.getProductId());
         if (phoneDetails == null) {
@@ -131,20 +132,16 @@ public class Editproduct {
             phoneDetails.setProduct(product);
         }
 
-        String basicFunctionalityStatus = details.getOrDefault("details[basic_functionality_status]", "ไม่ระบุ"); // ✅ ใช้ String แทน boolean
-        String nonFunctionalParts = details.getOrDefault("details[nonfunctional_parts]", "Unknown");
-        String batteryStatus = details.getOrDefault("details[battery_status]", "Unknown");
-        int scratchCount = parseIntOrDefault(details.get("details[scratch_count]"), 0);
-
-        phoneDetails.setBasicFunctionalityStatus(basicFunctionalityStatus); // ✅ เปลี่ยนจาก boolean เป็น String
-        phoneDetails.setNonFunctionalParts(nonFunctionalParts);
-        phoneDetails.setBatteryStatus(batteryStatus);
-        phoneDetails.setScratchCount(scratchCount);
+        phoneDetails.setBasicFunctionalityStatus(details.getOrDefault("details[basic_functionality_status]", "ไม่ระบุ"));
+        phoneDetails.setNonFunctionalParts(details.getOrDefault("details[nonfunctional_parts]", "Unknown"));
+        phoneDetails.setBatteryStatus(details.getOrDefault("details[battery_status]", "Unknown"));
+        phoneDetails.setScratchCount(parseIntOrDefault(details.get("details[scratch_count]"), 0));
 
         userService.savePhoneDetails(phoneDetails);
         return phoneDetails;
     }
 
+    // ✅ ฟังก์ชันอัปเดตรายละเอียดของรองเท้า
     private ShoesDetails updateShoesDetails(Product product, Map<String, String> details) {
         ShoesDetails shoesDetails = userService.findShoesDetailsByProductId(product.getProductId());
         if (shoesDetails == null) {
@@ -152,26 +149,15 @@ public class Editproduct {
             shoesDetails.setProduct(product);
         }
 
-        String hasBrandLogo = details.getOrDefault("details[hasbrand_logo]", "ไม่มี"); // ✅ ใช้ String แทน boolean
-        int repairCount = parseIntOrDefault(details.get("details[repair_count]"), 0);
-        String tearLocation = details.getOrDefault("details[tear_location]", "Unknown");
-
-        shoesDetails.setHasBrandLogo(hasBrandLogo); // ✅ เปลี่ยนจาก boolean เป็น String
-        shoesDetails.setRepairCount(repairCount);
-        shoesDetails.setTearLocation(tearLocation);
+        shoesDetails.setHasBrandLogo(details.getOrDefault("details[hasbrand_logo]", "ไม่มี"));
+        shoesDetails.setRepairCount(parseIntOrDefault(details.get("details[repair_count]"), 0));
+        shoesDetails.setTearLocation(details.getOrDefault("details[tear_location]", "Unknown"));
 
         userService.saveShoesDetails(shoesDetails);
         return shoesDetails;
     }
 
-
-    private boolean parseBooleanOrDefault(String value, boolean defaultValue) {
-        if (value == null || value.trim().isEmpty()) {
-            return defaultValue;
-        }
-        return Boolean.parseBoolean(value);
-    }
-
+    // ✅ ฟังก์ชันช่วยแปลง String เป็น int
     private int parseIntOrDefault(String value, int defaultValue) {
         try {
             return Integer.parseInt(value);
@@ -180,4 +166,5 @@ public class Editproduct {
         }
     }
 }
+
 

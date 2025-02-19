@@ -11,7 +11,7 @@ public class PhoneDetails {
     private int id;
 
     @Column(name = "basic_functionality_status")
-    private boolean basicFunctionalityStatus; // การทำงานพื้นฐานทำงานได้ไหม
+    private String basicFunctionalityStatus; // ✅ เปลี่ยนจาก `boolean` เป็น `String`
 
     @Column(name = "nonfunctional_parts")
     private String nonFunctionalParts; // อะไรที่ใช้ไม่ได้
@@ -26,7 +26,7 @@ public class PhoneDetails {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    // Getters and Setters
+    // ✅ Getters & Setters
     public int getId() {
         return id;
     }
@@ -35,11 +35,11 @@ public class PhoneDetails {
         this.id = id;
     }
 
-    public boolean isBasicFunctionalityStatus() {
+    public String getBasicFunctionalityStatus() {
         return basicFunctionalityStatus;
     }
 
-    public void setBasicFunctionalityStatus(boolean basicFunctionalityStatus) {
+    public void setBasicFunctionalityStatus(String basicFunctionalityStatus) {
         this.basicFunctionalityStatus = basicFunctionalityStatus;
     }
 
@@ -75,4 +75,3 @@ public class PhoneDetails {
         this.product = product;
     }
 }
-

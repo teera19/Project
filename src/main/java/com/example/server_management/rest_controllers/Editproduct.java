@@ -113,17 +113,16 @@ import java.util.Map;
             }
 
             String tearLocation = details.getOrDefault("details[tear_location]", "Unknown");
-            String hasStain = details.getOrDefault("details[has_stain]", "ไม่มี"); // ✅ รับค่าเป็น String โดยตรง
+            String hasStain = details.getOrDefault("details[has_stain]", "ไม่มี"); // ✅ ใช้ String ตรงๆ
             int repairCount = parseIntOrDefault(details.get("details[repair_count]"), 0);
 
             clothingDetails.setTearLocation(tearLocation);
-            clothingDetails.setHasStain(hasStain); // ✅ ใช้ค่า String "มี" หรือ "ไม่มี"
+            clothingDetails.setHasStain(hasStain); // ✅ ใช้ String แทน boolean
             clothingDetails.setRepairCount(repairCount);
 
             userService.saveClothingDetails(clothingDetails);
             return clothingDetails;
         }
-
 
         private PhoneDetails updatePhoneDetails(Product product, Map<String, String> details) {
             PhoneDetails phoneDetails = userService.findPhoneDetailsByProductId(product.getProductId());
@@ -132,12 +131,12 @@ import java.util.Map;
                 phoneDetails.setProduct(product);
             }
 
-            boolean basicFunctionalityStatus = parseBooleanOrDefault(details.get("details[basic_functionality_status]"), false);
+            String basicFunctionalityStatus = details.getOrDefault("details[basic_functionality_status]", "ไม่ระบุ"); // ✅ ใช้ String แทน boolean
             String nonFunctionalParts = details.getOrDefault("details[nonfunctional_parts]", "Unknown");
             String batteryStatus = details.getOrDefault("details[battery_status]", "Unknown");
             int scratchCount = parseIntOrDefault(details.get("details[scratch_count]"), 0);
 
-            phoneDetails.setBasicFunctionalityStatus(basicFunctionalityStatus);
+            phoneDetails.setBasicFunctionalityStatus(basicFunctionalityStatus); // ✅ เปลี่ยนจาก boolean เป็น String
             phoneDetails.setNonFunctionalParts(nonFunctionalParts);
             phoneDetails.setBatteryStatus(batteryStatus);
             phoneDetails.setScratchCount(scratchCount);
@@ -153,17 +152,18 @@ import java.util.Map;
                 shoesDetails.setProduct(product);
             }
 
-            boolean hasBrandLogo = parseBooleanOrDefault(details.get("details[hasbrand_logo]"), false);
+            String hasBrandLogo = details.getOrDefault("details[hasbrand_logo]", "ไม่มี"); // ✅ ใช้ String แทน boolean
             int repairCount = parseIntOrDefault(details.get("details[repair_count]"), 0);
             String tearLocation = details.getOrDefault("details[tear_location]", "Unknown");
 
-            shoesDetails.setHasBrandLogo(hasBrandLogo);
+            shoesDetails.setHasBrandLogo(hasBrandLogo); // ✅ เปลี่ยนจาก boolean เป็น String
             shoesDetails.setRepairCount(repairCount);
             shoesDetails.setTearLocation(tearLocation);
 
             userService.saveShoesDetails(shoesDetails);
             return shoesDetails;
         }
+
 
         private boolean parseBooleanOrDefault(String value, boolean defaultValue) {
             if (value == null || value.trim().isEmpty()) {

@@ -11,19 +11,19 @@ public class ShoesDetails {
     private int id;
 
     @Column(name = "hasbrand_logo")
-    private boolean hasBrandLogo;
-
-    @Column(name = "repair_count")
-    private int repairCount;
+    private String hasBrandLogo; // ✅ เปลี่ยนจาก `boolean` เป็น `String`
 
     @Column(name = "tear_location")
     private String tearLocation;
+
+    @Column(name = "repair_count")
+    private int repairCount;
 
     @OneToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    // Getters and Setters
+    // ✅ Getters & Setters
     public int getId() {
         return id;
     }
@@ -32,20 +32,12 @@ public class ShoesDetails {
         this.id = id;
     }
 
-    public boolean isHasBrandLogo() {
+    public String getHasBrandLogo() {
         return hasBrandLogo;
     }
 
-    public void setHasBrandLogo(boolean hasBrandLogo) {
+    public void setHasBrandLogo(String hasBrandLogo) {
         this.hasBrandLogo = hasBrandLogo;
-    }
-
-    public int getRepairCount() {
-        return repairCount;
-    }
-
-    public void setRepairCount(int repairCount) {
-        this.repairCount = repairCount;
     }
 
     public String getTearLocation() {
@@ -56,6 +48,14 @@ public class ShoesDetails {
         this.tearLocation = tearLocation;
     }
 
+    public int getRepairCount() {
+        return repairCount;
+    }
+
+    public void setRepairCount(int repairCount) {
+        this.repairCount = repairCount;
+    }
+
     public Product getProduct() {
         return product;
     }
@@ -64,4 +64,3 @@ public class ShoesDetails {
         this.product = product;
     }
 }
-

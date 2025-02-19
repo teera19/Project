@@ -157,7 +157,7 @@ public class UserService {
             case 1: // ✅ หมวดหมู่เสื้อผ้า
                 ClothingDetails clothingDetails = new ClothingDetails();
                 clothingDetails.setProduct(product);
-                clothingDetails.setHasStain(details.getOrDefault("has_stain", "ไม่มี")); // ✅ ใช้ String "มี"/"ไม่มี"
+                clothingDetails.setHasStain(parseStringOrDefault(details.get("has_stain"), "ไม่มี")); // ✅ ใช้ String "มี"/"ไม่มี"
                 clothingDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
                 clothingDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
                 clothingDetailsRepository.save(clothingDetails);
@@ -166,7 +166,7 @@ public class UserService {
             case 2: // ✅ หมวดหมู่โทรศัพท์
                 PhoneDetails phoneDetails = new PhoneDetails();
                 phoneDetails.setProduct(product);
-                phoneDetails.setBasicFunctionalityStatus("yes".equalsIgnoreCase(details.get("basic_functionality_status")));
+                phoneDetails.setBasicFunctionalityStatus(parseStringOrDefault(details.get("basic_functionality_status"), "ไม่มี")); // ✅ ใช้ String
                 phoneDetails.setBatteryStatus(details.getOrDefault("battery_status", "Unknown"));
                 phoneDetails.setNonFunctionalParts(details.getOrDefault("nonfunctional_parts", "None"));
                 phoneDetails.setScratchCount(parseIntOrDefault(details.get("scratch_count"), 0));
@@ -176,7 +176,7 @@ public class UserService {
             case 3: // ✅ หมวดหมู่รองเท้า
                 ShoesDetails shoesDetails = new ShoesDetails();
                 shoesDetails.setProduct(product);
-                shoesDetails.setHasBrandLogo("yes".equalsIgnoreCase(details.get("hasbrand_logo")));
+                shoesDetails.setHasBrandLogo(parseStringOrDefault(details.get("hasbrand_logo"), "ไม่มี")); // ✅ ใช้ String
                 shoesDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
                 shoesDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
                 shoesDetailsRepository.save(shoesDetails);
@@ -193,6 +193,25 @@ public class UserService {
                 System.out.println("⚠️ No additional details required for categoryId: " + categoryId);
         }
     }
+
+    private String parseStringOrDefault(String value, String defaultValue) {
+        if (value == null || value.trim().isEmpty()) {
+            return defaultValue;
+        }
+
+        // ✅ ปรับให้เป็นตัวพิมพ์เล็กทั้งหมด
+        value = value.trim().toLowerCase();
+
+        // ✅ รองรับค่าหลายรูปแบบ
+        if (value.equals("1") || value.equals("true") || value.equals("yes") || value.equals("have") || value.equals("มี")) {
+            return "มี";
+        } else if (value.equals("0") || value.equals("false") || value.equals("no") || value.equals("none") || value.equals("ไม่มี")) {
+            return "ไม่มี";
+        }
+
+        return defaultValue;
+    }
+
 
 
     /**

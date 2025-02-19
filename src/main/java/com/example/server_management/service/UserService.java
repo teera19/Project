@@ -97,6 +97,15 @@ public class UserService {
     @Transactional
     public ResponseProduct addProductToShop(String shopTitle, String name, String description, double price,
                                             MultipartFile image, int categoryId, Map<String, String> details) throws IOException {
+        System.out.println("📌 Checking categoryId: " + categoryId);
+        System.out.println("📌 Checking shopTitle: " + shopTitle);
+        System.out.println("📌 Checking details: " + details);
+
+        // ✅ ตรวจสอบว่า categoryId ถูกต้อง
+        if (categoryId <= 0) {
+            throw new IllegalArgumentException("Invalid categoryId: " + categoryId);
+        }
+
         // ✅ ค้นหาหมวดหมู่
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found with ID: " + categoryId));
@@ -127,45 +136,7 @@ public class UserService {
         productRepository.save(savedProduct);
 
         // ✅ เพิ่มรายละเอียดสินค้าแยกตามประเภทหมวดหมู่
-        switch (categoryId) {
-            case 1: // ✅ หมวดหมู่เสื้อผ้า
-                ClothingDetails clothingDetails = new ClothingDetails();
-                clothingDetails.setProduct(savedProduct);
-                clothingDetails.setHasStain(parseBooleanOrDefault(details.get("has_stain"), false));
-                clothingDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
-                clothingDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
-                clothingDetailsRepository.save(clothingDetails);
-                break;
-
-            case 2: // ✅ หมวดหมู่โทรศัพท์
-                PhoneDetails phoneDetails = new PhoneDetails();
-                phoneDetails.setProduct(savedProduct);
-                phoneDetails.setBasicFunctionalityStatus("yes".equalsIgnoreCase(details.get("basic_functionality_status")));
-                phoneDetails.setBatteryStatus(details.getOrDefault("battery_status", "Unknown"));
-                phoneDetails.setNonFunctionalParts(details.getOrDefault("nonfunctional_parts", "None"));
-                phoneDetails.setScratchCount(parseIntOrDefault(details.get("scratch_count"), 0));
-                phoneDetailsRepository.save(phoneDetails);
-                break;
-
-            case 3: // ✅ หมวดหมู่รองเท้า
-                ShoesDetails shoesDetails = new ShoesDetails();
-                shoesDetails.setProduct(savedProduct);
-                shoesDetails.setHasBrandLogo("yes".equalsIgnoreCase(details.get("hasbrand_logo")));
-                shoesDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
-                shoesDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
-                shoesDetailsRepository.save(shoesDetails);
-                break;
-
-            case 4: // ✅ หมวดหมู่ `More`
-                More more = new More();
-                more.setProduct(savedProduct);
-                more.setFlawedPoint(details.getOrDefault("flawed_point", "Unknown")); // ใช้ค่า `flawed_point`
-                moreRepository.save(more);
-                break;
-
-            default:
-                System.out.println("⚠️ No additional details required for categoryId: " + categoryId);
-        }
+        addProductDetails(savedProduct, categoryId, details);
 
         return new ResponseProduct(
                 savedProduct.getProductId(),
@@ -177,7 +148,54 @@ public class UserService {
         );
     }
 
+    /**
+     * 📌 เพิ่มรายละเอียดสินค้าแยกตามหมวดหมู่
+     */
+    private void addProductDetails(Product product, int categoryId, Map<String, String> details) {
+        switch (categoryId) {
+            case 1: // ✅ หมวดหมู่เสื้อผ้า
+                ClothingDetails clothingDetails = new ClothingDetails();
+                clothingDetails.setProduct(product);
+                clothingDetails.setHasStain(parseBooleanOrDefault(details.get("has_stain"), false));
+                clothingDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
+                clothingDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
+                clothingDetailsRepository.save(clothingDetails);
+                break;
 
+            case 2: // ✅ หมวดหมู่โทรศัพท์
+                PhoneDetails phoneDetails = new PhoneDetails();
+                phoneDetails.setProduct(product);
+                phoneDetails.setBasicFunctionalityStatus("yes".equalsIgnoreCase(details.get("basic_functionality_status")));
+                phoneDetails.setBatteryStatus(details.getOrDefault("battery_status", "Unknown"));
+                phoneDetails.setNonFunctionalParts(details.getOrDefault("nonfunctional_parts", "None"));
+                phoneDetails.setScratchCount(parseIntOrDefault(details.get("scratch_count"), 0));
+                phoneDetailsRepository.save(phoneDetails);
+                break;
+
+            case 3: // ✅ หมวดหมู่รองเท้า
+                ShoesDetails shoesDetails = new ShoesDetails();
+                shoesDetails.setProduct(product);
+                shoesDetails.setHasBrandLogo("yes".equalsIgnoreCase(details.get("hasbrand_logo")));
+                shoesDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
+                shoesDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
+                shoesDetailsRepository.save(shoesDetails);
+                break;
+
+            case 4: // ✅ หมวดหมู่ `More`
+                More more = new More();
+                more.setProduct(product);
+                more.setFlawedPoint(details.getOrDefault("flawed_point", "Unknown")); // ใช้ค่า `flawed_point`
+                moreRepository.save(more);
+                break;
+
+            default:
+                System.out.println("⚠️ No additional details required for categoryId: " + categoryId);
+        }
+    }
+
+    /**
+     * 📌 ฟังก์ชันช่วยสำหรับแปลง `String` เป็น `int`
+     */
     private int parseIntOrDefault(String value, int defaultValue) {
         try {
             return Integer.parseInt(value);
@@ -186,12 +204,16 @@ public class UserService {
         }
     }
 
+    /**
+     * 📌 ฟังก์ชันช่วยสำหรับแปลง `String` เป็น `boolean`
+     */
     private boolean parseBooleanOrDefault(String value, boolean defaultValue) {
         if (value == null || value.trim().isEmpty()) {
             return defaultValue;
         }
         return Boolean.parseBoolean(value);
     }
+
 
 
     // ฟังก์ชันสำหรับบันทึกภาพในระบบไฟล์

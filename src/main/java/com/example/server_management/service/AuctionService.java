@@ -118,12 +118,21 @@ public class AuctionService {
             return;
         }
 
-        Bid highestBid = bids.stream().max(Comparator.comparingDouble(Bid::getBidAmount)).orElse(null);
+        // ✅ หาผู้ชนะที่เสนอราคาสูงสุด
+        Bid highestBid = bids.stream()
+                .max(Comparator.comparingDouble(Bid::getBidAmount))
+                .orElse(null);
+
         if (highestBid != null) {
+            // ✅ ลบข้อมูลผู้ชนะเก่าก่อนบันทึกใหม่
+            bidHistoryRepository.deleteByAuction(auction);
+
+            // ✅ เพิ่มผู้ชนะใหม่
             closeAuctionWithWinner(auction, highestBid);
-            auctionRepository.flush();  // ✅ บังคับให้บันทึก
+            auctionRepository.flush();
         }
     }
+
 
 
 

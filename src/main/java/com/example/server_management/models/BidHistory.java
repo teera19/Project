@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"auction_id", "isWinner"}))
 public class BidHistory {
 
     @Id

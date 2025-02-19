@@ -35,28 +35,19 @@ public class Addproduct {
                                              @RequestParam("description") String description,
                                              @RequestParam("price") double price,
                                              @RequestParam("image") MultipartFile image,
+                                             @RequestParam("category_name") String categoryName, // 🛠 รับเป็นชื่อแทน
                                              @RequestParam Map<String, String> details) throws IOException {
         try {
-            if (image.isEmpty()) {
-                return new ResponseEntity<>("No image uploaded", HttpStatus.BAD_REQUEST);
-            }
+            System.out.println("📌 category_name = " + categoryName);
 
-            // ✅ รับค่า `category_id` หรือ `category_name`
-            int categoryId = 0;
-            if (details.containsKey("category_id")) {
-                categoryId = parseIntOrDefault(details.get("category_id"), 0);
-            } else if (details.containsKey("category_name")) {
-                Category category = userService.findCategoryByName(details.get("category_name"));
-                if (category != null) {
-                    categoryId = category.getCategoryId();
-                }
+            // ✅ หา category_id ตามชื่อ
+            Category category = userService.findCategoryByName(categoryName);
+            if (category == null) {
+                return new ResponseEntity<>("Invalid category name: " + categoryName, HttpStatus.BAD_REQUEST);
             }
+            int categoryId = category.getCategoryId();
+            System.out.println("✅ Found category_id: " + categoryId);
 
-            if (categoryId <= 0) {
-                return new ResponseEntity<>("Invalid category", HttpStatus.BAD_REQUEST);
-            }
-
-            // ✅ เพิ่มสินค้า
             ResponseProduct responseProduct = userService.addProductToShop(
                     shopTitle, name, description, price, image, categoryId, details);
 
@@ -67,17 +58,6 @@ public class Addproduct {
         }
     }
 
-
-    private int parseIntOrDefault(String value, int defaultValue) {
-        if (value == null || value.trim().isEmpty()) {
-            return defaultValue;
-        }
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
-    }
 
 
 }

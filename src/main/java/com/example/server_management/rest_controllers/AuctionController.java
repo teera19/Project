@@ -3,6 +3,7 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
 import com.example.server_management.models.*;
+import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidHistoryRepository;
 import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
@@ -47,6 +48,8 @@ public class AuctionController {
     BidHistoryRepository bidHistoryRepository;
     @Autowired
     BidRepository bidRepository;
+    @Autowired
+    private AuctionRepository auctionRepository;
 
 
     @GetMapping
@@ -246,11 +249,7 @@ public class AuctionController {
 
 
     @GetMapping("/my-auction")
-    public ResponseEntity<?> getMyAuctions(
-            HttpSession session,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+    public ResponseEntity<?> getMyAuctions(HttpSession session) {
         try {
             String userName = (String) session.getAttribute("user_name");
             if (userName == null) {
@@ -259,49 +258,29 @@ public class AuctionController {
 
             Optional<User> optionalUser = userRepository.findUserByUserName(userName);
             if (!optionalUser.isPresent()) {
-                return new ResponseEntity<>(Map.of("message", "User not found with username: " + userName), HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(Map.of("message", "User not found"), HttpStatus.NOT_FOUND);
             }
 
             User user = optionalUser.get();
-            Pageable pageable = PageRequest.of(page, size, Sort.by("bidTime").descending());
 
-            Page<BidHistory> testBids = bidHistoryRepository.findByUserAndIsWinnerTrue(user, pageable);
+            // ✅ ดึงข้อมูลจาก `AuctionRepository` โดยตรง
+            List<Auction> auctions = auctionRepository.findByWinner(user);
 
-            if (testBids.isEmpty()) {
+            if (auctions.isEmpty()) {
                 return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
             }
 
-            List<AuctionResponse> responses = testBids.getContent().stream()
-                    .map(bidHistory -> {
-                        Auction auction = bidHistory.getAuction();
-                        if (auction == null) {
-                            return new AuctionResponse(0, "Unknown", "", 0, 0, null, null, "", "Unknown");
-                        }
-                        return new AuctionResponse(
-                                auction.getAuctionId(),
-                                auction.getProductName(),
-                                auction.getDescription(),
-                                auction.getStartingPrice(),
-                                auction.getMaxBidPrice(),
-                                auction.getStartTime(),
-                                auction.getEndTime(),
-                                auction.getImageUrl(),
-                                auction.getStatus().name()
-                        );
-                    })
+            // ✅ แปลง `Auction` เป็น `AuctionResponse`
+            List<AuctionResponse> responses = auctions.stream()
+                    .map(AuctionResponse::new)
                     .collect(Collectors.toList());
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("auctions", responses);
-            response.put("currentPage", testBids.getNumber());
-            response.put("totalPages", testBids.getTotalPages());
-            response.put("totalItems", testBids.getTotalElements());
-
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            return new ResponseEntity<>(Map.of("auctions", responses), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     private String saveImageToFile(MultipartFile image, int auctionId) throws IOException {
         File uploadDir = new File("/tmp/images/");
         if (!uploadDir.exists()) {

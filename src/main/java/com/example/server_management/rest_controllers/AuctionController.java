@@ -271,10 +271,28 @@ public class AuctionController {
                 return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
             }
 
+            List<AuctionResponse> responses = testBids.getContent().stream()
+                    .map(bidHistory -> {
+                        Auction auction = bidHistory.getAuction();
+                        if (auction == null) {
+                            return new AuctionResponse(0, "Unknown", "", 0, 0, null, null, "", "Unknown");
+                        }
+                        return new AuctionResponse(
+                                auction.getAuctionId(),
+                                auction.getProductName(),
+                                auction.getDescription(),
+                                auction.getStartingPrice(),
+                                auction.getMaxBidPrice(),
+                                auction.getStartTime(),
+                                auction.getEndTime(),
+                                auction.getImageUrl(),
+                                auction.getStatus().name()
+                        );
+                    })
+                    .collect(Collectors.toList());
+
             Map<String, Object> response = new HashMap<>();
-            response.put("auctions", testBids.stream()
-                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction()))
-                    .collect(Collectors.toList()));
+            response.put("auctions", responses);
             response.put("currentPage", testBids.getNumber());
             response.put("totalPages", testBids.getTotalPages());
             response.put("totalItems", testBids.getTotalElements());

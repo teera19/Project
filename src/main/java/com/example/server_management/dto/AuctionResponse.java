@@ -16,6 +16,7 @@ public class AuctionResponse {
     private String status;
     private long minutesRemaining;
 
+    // ✅ Constructor รับ Object Auction โดยตรง
     public AuctionResponse(Auction auction) {
         this.auctionId = auction.getAuctionId();
         this.productName = auction.getProductName();
@@ -24,25 +25,46 @@ public class AuctionResponse {
         this.maxBidPrice = auction.getMaxBidPrice();
         this.startTime = auction.getStartTime();
         this.endTime = auction.getEndTime();
+        this.imageUrl = (auction.getImageUrl() != null && !auction.getImageUrl().isEmpty())
+                ? auction.getImageUrl()
+                : "https://project-production-f4db.up.railway.app/images/default.jpg";
+        this.status = auction.getStatus().name(); // ✅ Enum -> String
 
-        //  ใช้ URL รูปแบบเดียวกับ ProductResponse
-        if (auction.getImageUrl() != null && !auction.getImageUrl().isEmpty()) {
-            this.imageUrl = auction.getImageUrl(); // ใช้ URL ที่มีอยู่จริง
-        } else {
-            this.imageUrl = "https://project-production-f4db.up.railway.app/images/default.jpg"; // รูปเริ่มต้น
-        }
-
-
-        //  คำนวณสถานะและเวลาที่เหลือ
+        // ✅ คำนวณเวลาที่เหลือ
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(startTime)) {
-            this.status = "Not Started";
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, startTime);
         } else if (now.isAfter(endTime)) {
-            this.status = "Ended";
             this.minutesRemaining = 0;
         } else {
-            this.status = "Active";
+            this.minutesRemaining = ChronoUnit.MINUTES.between(now, endTime);
+        }
+    }
+
+    // ✅ Constructor รองรับค่าทีละตัว
+    public AuctionResponse(int auctionId, String productName, String description,
+                           double startingPrice, double maxBidPrice,
+                           LocalDateTime startTime, LocalDateTime endTime,
+                           String imageUrl, String status) {
+        this.auctionId = auctionId;
+        this.productName = productName;
+        this.description = description;
+        this.startingPrice = startingPrice;
+        this.maxBidPrice = maxBidPrice;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.imageUrl = (imageUrl != null && !imageUrl.isEmpty())
+                ? imageUrl
+                : "https://project-production-f4db.up.railway.app/images/default.jpg";
+        this.status = status;
+
+        // ✅ คำนวณเวลาที่เหลือ
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(startTime)) {
+            this.minutesRemaining = ChronoUnit.MINUTES.between(now, startTime);
+        } else if (now.isAfter(endTime)) {
+            this.minutesRemaining = 0;
+        } else {
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, endTime);
         }
     }
@@ -59,4 +81,3 @@ public class AuctionResponse {
     public String getStatus() { return status; }
     public long getMinutesRemaining() { return minutesRemaining; }
 }
-

@@ -15,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
 
-    Page<BidHistory> findByUserAndIsWinnerTrue(User user, Pageable pageable);
+    @Query("SELECT b FROM BidHistory b JOIN FETCH b.auction WHERE b.user = :user AND b.isWinner = true")
+    Page<BidHistory> findByUserAndIsWinnerTrue(@Param("user") User user, Pageable pageable);
+
 
     @Modifying
     @Transactional

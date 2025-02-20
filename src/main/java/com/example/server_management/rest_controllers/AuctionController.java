@@ -12,6 +12,10 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -241,40 +246,41 @@ public class AuctionController {
 
 
     @GetMapping("/my-auction")
-    public ResponseEntity<?> getMyAuctions(HttpSession session) {
+    public ResponseEntity<?> getMyAuctions(
+            HttpSession session,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
         try {
             String userName = (String) session.getAttribute("user_name");
-            System.out.println(" Session User: " + userName);
-
             if (userName == null) {
                 return new ResponseEntity<>(Map.of("message", "User not logged in"), HttpStatus.FORBIDDEN);
             }
 
             Optional<User> optionalUser = userRepository.findUserByUserName(userName);
             if (!optionalUser.isPresent()) {
-                System.out.println(" User not found: " + userName);
                 return new ResponseEntity<>(Map.of("message", "User not found with username: " + userName), HttpStatus.NOT_FOUND);
             }
 
             User user = optionalUser.get();
-            System.out.println(" Querying BidHistory for user: " + user.getUserName());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("endTime").descending());
 
-            //  ดึงรายการประมูลที่ user เป็นผู้ชนะ
-            List<BidHistory> testBids = bidHistoryRepository.findByUserAndIsWinnerTrue(user);
-            System.out.println(" Winning Bids Found: " + testBids.size());
+            Page<BidHistory> testBids = bidHistoryRepository.findByUserAndIsWinnerTrue(user, pageable);
 
             if (testBids.isEmpty()) {
                 return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
             }
 
-            List<AuctionResponse> responses = testBids.stream()
-                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction())) // ✅ ใช้ AuctionResponse ที่มี imageUrl
-                    .collect(Collectors.toList());
+            Map<String, Object> response = new HashMap<>();
+            response.put("auctions", testBids.stream()
+                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction()))
+                    .collect(Collectors.toList()));
+            response.put("currentPage", testBids.getNumber());
+            response.put("totalPages", testBids.getTotalPages());
+            response.put("totalItems", testBids.getTotalElements());
 
-            return new ResponseEntity<>(responses, HttpStatus.OK);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            System.err.println(" Error in /my-auction: " + e.getMessage());
-            e.printStackTrace();
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

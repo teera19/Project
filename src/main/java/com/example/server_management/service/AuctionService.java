@@ -5,9 +5,7 @@ import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -20,6 +18,11 @@ public class AuctionService {
 
     @Autowired
     private BidRepository bidRepository;
+    @Autowired
+
+    public List<Auction> getWonAuctions(User user) {
+        return auctionRepository.findByWinner(user);
+    }
 
     public List<Auction> getAllAuctions() {
         return auctionRepository.findByOrderByAuctionIdDesc();

@@ -140,4 +140,28 @@ public class AuctionController {
                     .body(Map.of("message", "An error occurred while processing the bid."));
         }
     }
+    @GetMapping("/my-auctions/won")
+    public ResponseEntity<?> getMyWonAuctions(HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Please log in to view your won auctions."));
+        }
+
+        Optional<User> optionalUser = userRepository.findUserByUserName(userName);
+        if (!optionalUser.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found with username: " + userName));
+        }
+
+        User user = optionalUser.get();
+        List<Auction> wonAuctions = auctionService.getWonAuctions(user);
+
+        List<AuctionResponse> responses = wonAuctions.stream()
+                .map(AuctionResponse::new)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responses);
+    }
+
 }

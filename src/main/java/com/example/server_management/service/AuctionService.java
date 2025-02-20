@@ -3,6 +3,7 @@ package com.example.server_management.service;
 import com.example.server_management.models.*;
 import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidRepository;
+import com.example.server_management.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ public class AuctionService {
     @Autowired
     private BidRepository bidRepository;
     @Autowired
+    private UserRepository userRepository;
 
     public List<Auction> getWonAuctions(User user) {
         return auctionRepository.findByWinner(user);

@@ -3,6 +3,8 @@ package com.example.server_management.models;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Entity
@@ -16,22 +18,34 @@ public class Auction {
     private String description;
     private double startingPrice;
     private double maxBidPrice;
-    private LocalDateTime startTime;  // ✅ ใช้ LocalDateTime ตรงๆ
-    private LocalDateTime endTime;    // ✅ ใช้ LocalDateTime ตรงๆ
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
     @Column(name = "owneruser_name", nullable = false)
     private String ownerUserName;
-
     @ManyToOne
     @JoinColumn(name = "winner_id", nullable = true) // ✅ winner สามารถเป็น null ได้
     private User winner;
-
     @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Bid> bids;
 
-    private String imageUrl;
+
+
+    @Lob // ใช้เพื่อเก็บข้อมูล binary ขนาดใหญ่ (BLOB)
+    private byte[] image; // แทน imageUrl ด้วย imageData
 
     @Enumerated(EnumType.STRING)
     private AuctionStatus status; // สถานะการประมูล
+
+    @PrePersist
+    @PreUpdate
+    public void adjustTimezone() {
+        if (startTime != null) {
+            this.startTime = ZonedDateTime.of(startTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
+        }
+        if (endTime != null) {
+            this.endTime = ZonedDateTime.of(endTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
+        }
+    }
 
 
     // Getters และ Setters
@@ -80,7 +94,7 @@ public class Auction {
     }
 
     public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
+        this.startTime = ZonedDateTime.of(startTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
     }
 
     public LocalDateTime getEndTime() {
@@ -88,7 +102,15 @@ public class Auction {
     }
 
     public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
+        this.endTime = ZonedDateTime.of(endTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
     }
 
     public AuctionStatus getStatus() {
@@ -106,15 +128,13 @@ public class Auction {
     public void setBids(List<Bid> bids) {
         this.bids = bids;
     }
-
     public String getOwnerUserName() {
         return ownerUserName;
     }
-
     public void setOwnerUserName(String ownerUserName) {
         this.ownerUserName = ownerUserName;
-    }
 
+    }
     public User getWinner() {
         return winner;
     }
@@ -123,11 +143,4 @@ public class Auction {
         this.winner = winner;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
 }

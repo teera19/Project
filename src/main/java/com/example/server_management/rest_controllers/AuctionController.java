@@ -3,11 +3,9 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.AuctionSummaryResponse;
 import com.example.server_management.dto.BidResponse;
+import com.example.server_management.dto.MyAuctionResponse;
 import com.example.server_management.models.*;
-import com.example.server_management.repository.AuctionRepository;
-import com.example.server_management.repository.BidHistoryRepository;
-import com.example.server_management.repository.BidRepository;
-import com.example.server_management.repository.UserRepository;
+import com.example.server_management.repository.*;
 import com.example.server_management.service.AuctionService;
 import jakarta.servlet.http.HttpSession;
 import net.coobird.thumbnailator.Thumbnails;
@@ -51,6 +49,8 @@ public class AuctionController {
     BidRepository bidRepository;
     @Autowired
     private AuctionRepository auctionRepository;
+    @Autowired
+    private MyAuctionRepository myAuctionRepository;
 
 
     @GetMapping
@@ -249,37 +249,35 @@ public class AuctionController {
     }
 
 
-//    @GetMapping("/my-auction")
-//    public ResponseEntity<?> getMyAuctions(HttpSession session) {
-//        try {
-//            String userName = (String) session.getAttribute("user_name");
-//            if (userName == null) {
-//                return new ResponseEntity<>(Map.of("message", "User not logged in"), HttpStatus.FORBIDDEN);
-//            }
-//
-//            Optional<User> optionalUser = userRepository.findUserByUserName(userName);
-//            if (!optionalUser.isPresent()) {
-//                return new ResponseEntity<>(Map.of("message", "User not found"), HttpStatus.NOT_FOUND);
-//            }
-//
-//            User user = optionalUser.get();
-//            List<Auction> auctions = auctionRepository.findByWinner(user);
-//
-//            if (auctions.isEmpty()) {
-//                return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
-//            }
-//
-//            // ✅ แปลง `Auction` เป็น `AuctionSummaryResponse`
-//            List<AuctionSummaryResponse> responses = auctions.stream()
-//                    .map(AuctionSummaryResponse::new)
-//                    .collect(Collectors.toList());
-//
-//            return new ResponseEntity<>(Map.of("auctions", responses), HttpStatus.OK);
-//        } catch (Exception e) {
-//            return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
-//        }
-//    }
-//
+    @GetMapping("/my-auction")
+    public ResponseEntity<?> getMyAuctions(HttpSession session) {
+        try {
+            String userName = (String) session.getAttribute("user_name");
+            if (userName == null) {
+                return new ResponseEntity<>(Map.of("message", "User not logged in"), HttpStatus.FORBIDDEN);
+            }
+
+            Optional<User> optionalUser = userRepository.findUserByUserName(userName);
+            if (!optionalUser.isPresent()) {
+                return new ResponseEntity<>(Map.of("message", "User not found"), HttpStatus.NOT_FOUND);
+            }
+
+            User user = optionalUser.get();
+            List<MyAuction> myAuctions = myAuctionRepository.findByWinner(user);
+
+            if (myAuctions.isEmpty()) {
+                return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
+            }
+
+            List<MyAuctionResponse> responses = myAuctions.stream()
+                    .map(MyAuctionResponse::new)
+                    .collect(Collectors.toList());
+
+            return new ResponseEntity<>(Map.of("auctions", responses), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     private String saveImageToFile(MultipartFile image, int auctionId) throws IOException {
         File uploadDir = new File("/tmp/images/");

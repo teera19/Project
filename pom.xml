@@ -78,6 +78,12 @@
 			<version>1.18.30</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>net.coobird</groupId>
+			<artifactId>thumbnailator</artifactId>
+			<version>0.4.8</version>
+		</dependency>
+
 
 
 	</dependencies>

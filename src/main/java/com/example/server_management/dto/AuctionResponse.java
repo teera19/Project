@@ -25,10 +25,15 @@ public class AuctionResponse {
         this.startTime = auction.getStartTime();
         this.endTime = auction.getEndTime();
 
-        // ✅ ใช้ URL รูปแบบเดียวกับ ProductResponse
-        this.imageUrl = "/images/" + auction.getAuctionId() + ".jpg";
+        //  ใช้ URL รูปแบบเดียวกับ ProductResponse
+        if (auction.getImageUrl() != null && !auction.getImageUrl().isEmpty()) {
+            this.imageUrl = auction.getImageUrl(); // ใช้ URL ที่มีอยู่จริง
+        } else {
+            this.imageUrl = "https://project-production-f4db.up.railway.app/images/default.jpg"; // รูปเริ่มต้น
+        }
 
-        // ✅ คำนวณสถานะและเวลาที่เหลือ
+
+        //  คำนวณสถานะและเวลาที่เหลือ
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(startTime)) {
             this.status = "Not Started";

@@ -8,6 +8,7 @@ import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.AuctionService;
 import jakarta.servlet.http.HttpSession;
+import net.coobird.thumbnailator.Thumbnails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -286,10 +287,14 @@ public class AuctionController {
         String fileName = auctionId + ".jpg";
         File savedFile = new File(uploadDir, fileName);
 
-        image.transferTo(savedFile);
-        System.out.println("✅ Image saved successfully: " + savedFile.getAbsolutePath());
+        // ✅ บีบอัดรูปก่อนบันทึก
+        Thumbnails.of(image.getInputStream())
+                .size(500, 500) // ลดขนาดรูปเป็น 500x500
+                .outputQuality(0.7) // ลดคุณภาพรูปให้ขนาดไฟล์เล็กลง
+                .toFile(savedFile);
 
-        return "https://project-production-f4db.up.railway.app/images/" + fileName; // ✅ คืนค่า URL ของไฟล์
+        System.out.println("✅ Compressed Image saved successfully: " + savedFile.getAbsolutePath());
+
+        return "https://project-production-f4db.up.railway.app/images/" + fileName; // ✅ ส่ง URL ของรูปที่ Railway ให้บริการ
     }
-
 }

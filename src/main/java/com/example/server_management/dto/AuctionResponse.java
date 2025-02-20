@@ -1,10 +1,8 @@
 package com.example.server_management.dto;
 
 import com.example.server_management.models.Auction;
-
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-
 
 public class AuctionResponse {
     private int auctionId;
@@ -14,7 +12,7 @@ public class AuctionResponse {
     private double maxBidPrice;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private String imageUrl; // ✅ ใช้ imageUrl จากฐานข้อมูล ถ้ามี
+    private String imageUrl;
     private String status;
     private long minutesRemaining;
 
@@ -27,12 +25,8 @@ public class AuctionResponse {
         this.startTime = auction.getStartTime();
         this.endTime = auction.getEndTime();
 
-        // ✅ ใช้ imageUrl จากฐานข้อมูล ถ้ามี, ถ้าไม่มีให้สร้าง URL
-        if (auction.getImageUrl() != null && !auction.getImageUrl().isEmpty()) {
-            this.imageUrl = auction.getImageUrl();
-        } else {
-            this.imageUrl = "https://project-production-f4db.up.railway.app/images/" + auction.getAuctionId() + ".jpg";
-        }
+        // ✅ ใช้ URL รูปแบบเดียวกับ ProductResponse
+        this.imageUrl = "/images/" + auction.getAuctionId() + ".jpg";
 
         // ✅ คำนวณสถานะและเวลาที่เหลือ
         LocalDateTime now = LocalDateTime.now();
@@ -60,3 +54,4 @@ public class AuctionResponse {
     public String getStatus() { return status; }
     public long getMinutesRemaining() { return minutesRemaining; }
 }
+

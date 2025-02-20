@@ -3,7 +3,6 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
 import com.example.server_management.models.*;
-import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidHistoryRepository;
 import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
@@ -40,8 +39,6 @@ public class AuctionController {
 
     @Autowired
     private AuctionService auctionService;
-    @Autowired
-    private AuctionRepository auctionRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -227,7 +224,6 @@ public class AuctionController {
             ), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
     @GetMapping("/{auctionId}/bids")
     public ResponseEntity<List<BidResponse>> getBidsByAuctionId(@PathVariable int auctionId) {
         List<Bid> bids = bidRepository.findByAuction_AuctionId(auctionId); // ✅ ใช้ BidRepository

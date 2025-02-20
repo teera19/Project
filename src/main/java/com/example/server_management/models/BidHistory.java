@@ -15,7 +15,7 @@ public class BidHistory {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "auction_id", nullable = false)
     private Auction auction;
 
@@ -25,8 +25,13 @@ public class BidHistory {
     @Column(nullable = false)
     private boolean isWinner;
 
-    public BidHistory() {}
 
+
+    // ✅ ต้องมี default constructor
+    public BidHistory() {
+    }
+
+    // ✅ Constructor ที่ใช้
     public BidHistory(User user, Auction auction, double bidAmount, LocalDateTime bidTime, boolean isWinner) {
         this.user = user;
         this.auction = auction;
@@ -34,7 +39,6 @@ public class BidHistory {
         this.bidTime = bidTime;
         this.isWinner = isWinner;
     }
-
 
     // ✅ Getters & Setters
     public int getId() { return id; }

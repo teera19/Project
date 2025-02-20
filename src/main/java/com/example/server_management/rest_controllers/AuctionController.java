@@ -1,6 +1,7 @@
 package com.example.server_management.rest_controllers;
 
 import com.example.server_management.dto.AuctionResponse;
+import com.example.server_management.dto.AuctionSummaryResponse;
 import com.example.server_management.dto.BidResponse;
 import com.example.server_management.models.*;
 import com.example.server_management.repository.AuctionRepository;
@@ -262,17 +263,15 @@ public class AuctionController {
             }
 
             User user = optionalUser.get();
-
-            // ✅ ดึงข้อมูลจาก `AuctionRepository` โดยตรง
             List<Auction> auctions = auctionRepository.findByWinner(user);
 
             if (auctions.isEmpty()) {
                 return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
             }
 
-            // ✅ แปลง `Auction` เป็น `AuctionResponse`
-            List<AuctionResponse> responses = auctions.stream()
-                    .map(AuctionResponse::new)
+            // ✅ แปลง `Auction` เป็น `AuctionSummaryResponse`
+            List<AuctionSummaryResponse> responses = auctions.stream()
+                    .map(AuctionSummaryResponse::new)
                     .collect(Collectors.toList());
 
             return new ResponseEntity<>(Map.of("auctions", responses), HttpStatus.OK);
@@ -280,6 +279,7 @@ public class AuctionController {
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     private String saveImageToFile(MultipartFile image, int auctionId) throws IOException {
         File uploadDir = new File("/tmp/images/");

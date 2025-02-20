@@ -49,63 +49,36 @@ public class AuctionService {
     }
 
     public Bid addBid(int auctionId, User user, double bidAmount) {
-        // ดึงข้อมูลการประมูล
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
 
-        // ✅ Debugging: ตรวจสอบค่าเวลาที่อ่านจาก MySQL (Raw Data)
-        System.out.println("📌 Raw Auction StartTime from DB: " + auction.getStartTime());
-        System.out.println("📌 Raw Auction EndTime from DB: " + auction.getEndTime());
-
-        // ✅ ตรวจสอบว่าค่า Hibernate อ่านออกมาเป็นโซนเวลาไหน
+        // ✅ อ่านค่าเวลาให้เป็น `Asia/Bangkok` เสมอ
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
-        LocalDateTime rawStart = auction.getStartTime();
-        LocalDateTime rawEnd = auction.getEndTime();
-
-        // 🔥 Debug: เช็กว่า Hibernate คืนค่ามาเป็นโซนอะไร
-        System.out.println("🔥 Hibernate Read StartTime: " + rawStart);
-        System.out.println("🔥 Hibernate Read EndTime: " + rawEnd);
-
-        // ✅ แปลงให้แน่ใจว่าค่าเป็น Asia/Bangkok
-        ZonedDateTime auctionStart = rawStart.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
-        ZonedDateTime auctionEnd = rawEnd.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
+        ZonedDateTime auctionStart = auction.getStartTime().atZone(ZoneId.of("Asia/Bangkok"));
+        ZonedDateTime auctionEnd = auction.getEndTime().atZone(ZoneId.of("Asia/Bangkok"));
 
         System.out.println("⏰ Current Server Time: " + now);
-        System.out.println("🎯 Converted Auction Start Time: " + auctionStart);
-        System.out.println("🏁 Converted Auction End Time: " + auctionEnd);
+        System.out.println("🎯 Auction Start Time (Converted): " + auctionStart);
+        System.out.println("🏁 Auction End Time (Converted): " + auctionEnd);
 
         if (now.isBefore(auctionStart)) {
-            System.out.println("🚨 Auction has not started yet! (Check timezone)");
             throw new IllegalArgumentException("Auction has not started yet.");
         }
 
         if (now.isAfter(auctionEnd)) {
-            System.out.println("🚨 Auction has already ended!");
             throw new IllegalArgumentException("Auction has already ended.");
         }
 
-        // ตรวจสอบราคาบิด
-        if (bidAmount < auction.getStartingPrice()) {
-            throw new IllegalArgumentException("Bid amount must be at least the starting price.");
-        }
-
-        // สร้างรายการบิดใหม่
+        // ✅ บันทึก Bid
         Bid bid = new Bid();
         bid.setAuction(auction);
         bid.setUser(user);
         bid.setBidAmount(bidAmount);
         bidRepository.save(bid);
 
-        // ตรวจสอบราคาสูงสุด (maxBidPrice)
-        if (bidAmount >= auction.getMaxBidPrice()) {
-            // ปิดการประมูล
-            auction.setStatus(AuctionStatus.COMPLETED);
-            auction.setEndTime(LocalDateTime.now());
-            auctionRepository.save(auction);
-        }
-
         return bid;
     }
+
 
 
 

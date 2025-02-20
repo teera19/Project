@@ -289,7 +289,7 @@ public class AuctionController {
 
         // ✅ บีบอัดรูปก่อนบันทึก
         Thumbnails.of(image.getInputStream())
-                .size(500, 500) // ลดขนาดรูปเป็น 500x500
+                .size(100, 100) // ลดขนาดรูปเป็น 500x500
                 .outputQuality(0.7) // ลดคุณภาพรูปให้ขนาดไฟล์เล็กลง
                 .toFile(savedFile);
 

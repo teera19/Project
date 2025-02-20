@@ -148,9 +148,6 @@ public class UserService {
         );
     }
 
-    /**
-     * 📌 เพิ่มรายละเอียดสินค้าแยกตามหมวดหมู่
-     */
     private void addProductDetails(Product product, int categoryId, Map<String, String> details) {
         switch (categoryId) {
             case 1: // ✅ หมวดหมู่เสื้อผ้า
@@ -377,16 +374,22 @@ public class UserService {
                 throw new IOException("❌ Failed to create directory: " + uploadDir.getAbsolutePath());
             }
 
-            // ✅ บันทึกเป็น PNG โดยไม่ลดขนาด
+            // ✅ ลบไฟล์เก่าก่อนบันทึกใหม่
             File outputFile = new File(uploadDir, productId + ".png");
-            ImageIO.write(originalImage, "png", outputFile);
+            if (outputFile.exists()) {
+                boolean deleted = outputFile.delete();
+                System.out.println("🗑 Deleted old image: " + deleted);
+            }
 
+            // ✅ บันทึกไฟล์ใหม่
+            ImageIO.write(originalImage, "png", outputFile);
             System.out.println("✅ Image saved successfully: " + outputFile.getAbsolutePath());
 
         } catch (IOException e) {
             throw new RuntimeException("❌ Failed to save image: " + e.getMessage());
         }
     }
+
 
 
 

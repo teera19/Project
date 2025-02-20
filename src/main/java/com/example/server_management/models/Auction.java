@@ -27,6 +27,7 @@ public class Auction {
     private User winner;
     @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Bid> bids;
+    private String imageUrl;
 
 
 
@@ -142,5 +143,7 @@ public class Auction {
     public void setWinner(User winner) {
         this.winner = winner;
     }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
 }

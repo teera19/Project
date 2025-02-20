@@ -38,4 +38,24 @@ public class Images {
             return ResponseEntity.internalServerError().build();
         }
     }
+    private static final String IMAGE_DIRECTORY = "/tmp/images/";
+    @GetMapping("/{auctionId}.jpg")
+    public ResponseEntity<Resource> getImage(@PathVariable int auctionId) {
+        try {
+            Path filePath = Paths.get(IMAGE_DIRECTORY).resolve(auctionId + ".jpg").normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (!resource.exists() || !resource.isReadable()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + auctionId + ".jpg\"")
+                    .body(resource);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

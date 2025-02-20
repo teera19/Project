@@ -70,58 +70,34 @@ public class AuctionController {
             @RequestParam("endTime") String endTimeStr,
             HttpSession session) {
 
-        //  ตรวจสอบว่าผู้ใช้ล็อกอินหรือไม่
+        // ✅ ตรวจสอบว่าผู้ใช้ล็อกอินหรือไม่
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
-            return new ResponseEntity<>(Map.of(
-                    "message", "User not logged in"
-            ), HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(Map.of("message", "User not logged in"), HttpStatus.FORBIDDEN);
         }
 
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-            ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter).atZone(ZoneId.of("Asia/Bangkok"));
-            ZonedDateTime endTime = LocalDateTime.parse(endTimeStr, formatter).atZone(ZoneId.of("Asia/Bangkok"));
+            // ✅ บันทึกข้อมูลการประมูล
+            Auction savedAuction = auctionService.addAuction(new Auction());
 
-            if (endTime.isBefore(startTime)) {
-                return new ResponseEntity<>(Map.of(
-                        "message", "End time must be after start time."
-                ), HttpStatus.BAD_REQUEST);
-            }
-
-            if (maxBidPrice <= startingPrice) {
-                return new ResponseEntity<>(Map.of(
-                        "message", "Max bid price must be greater than starting price."
-                ), HttpStatus.BAD_REQUEST);
-            }
-
-            LocalDateTime startTimeLocal = startTime.toLocalDateTime();
-            LocalDateTime endTimeLocal = endTime.toLocalDateTime();
-
-            byte[] compressedImageBytes = null;
+            // ✅ ตรวจสอบว่ามีรูปหรือไม่ และบันทึก URL แทน
             if (image != null && !image.isEmpty()) {
-                compressedImageBytes = compressImage(image.getBytes());
+                try {
+                    String imageUrl = saveImageToFile(image, savedAuction.getAuctionId());
+                    savedAuction.setImageUrl(imageUrl);
+                    auctionService.updateAuctionStatus(savedAuction);
+                } catch (IOException e) {
+                    return new ResponseEntity<>(Map.of(
+                            "message", "Failed to save image",
+                            "error", e.getMessage()
+                    ), HttpStatus.INTERNAL_SERVER_ERROR);
+                }
             }
 
-            //  สร้าง Auction และกำหนด ownerUserName
-            Auction auction = new Auction();
-            auction.setProductName(productName);
-            auction.setDescription(description);
-            auction.setStartingPrice(startingPrice);
-            auction.setMaxBidPrice(maxBidPrice);
-            auction.setStartTime(startTimeLocal);
-            auction.setEndTime(endTimeLocal);
-            auction.setImage(compressedImageBytes);
-            auction.setStatus(AuctionStatus.ONGOING);
-            auction.setOwnerUserName(userName); //  กำหนด ownerUserName
-
-            Auction savedAuction = auctionService.addAuction(auction);
             return new ResponseEntity<>(savedAuction, HttpStatus.CREATED);
-
         } catch (Exception e) {
-            e.printStackTrace();
             return new ResponseEntity<>(Map.of(
-                    "message", "An error occurred while adding the auction.",
+                    "message", "An error occurred",
                     "error", e.getMessage()
             ), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -150,6 +126,7 @@ public class AuctionController {
         ImageIO.write(bufferedScaledImage, "jpg", baos);
         return baos.toByteArray();
     }
+
 
     @PostMapping("/{auctionId}/bids")
     public ResponseEntity<?> addBid(@PathVariable int auctionId,
@@ -240,7 +217,7 @@ public class AuctionController {
     public ResponseEntity<?> getMyAuctions(HttpSession session) {
         try {
             String userName = (String) session.getAttribute("user_name");
-            System.out.println("🔍 Session User: " + userName); //  ตรวจสอบว่า session user_name ได้ค่าถูกต้อง
+            System.out.println(" Session User: " + userName);
 
             if (userName == null) {
                 return new ResponseEntity<>(Map.of("message", "User not logged in"), HttpStatus.FORBIDDEN);
@@ -248,23 +225,23 @@ public class AuctionController {
 
             Optional<User> optionalUser = userRepository.findUserByUserName(userName);
             if (!optionalUser.isPresent()) {
-                System.out.println(" User not found in database for username: " + userName);
+                System.out.println(" User not found: " + userName);
                 return new ResponseEntity<>(Map.of("message", "User not found with username: " + userName), HttpStatus.NOT_FOUND);
             }
 
             User user = optionalUser.get();
-            System.out.println(" Querying BidHistory for user: " + user.getUserName() );
+            System.out.println(" Querying BidHistory for user: " + user.getUserName());
 
-            //  ดึงข้อมูล BidHistory ที่ user ชนะ
+            //  ดึงรายการประมูลที่ user เป็นผู้ชนะ
             List<BidHistory> testBids = bidHistoryRepository.findByUserAndIsWinnerTrue(user);
-            System.out.println(" Winning Bids Found for user: " + user.getUserName() + " -> " + testBids.size());
+            System.out.println(" Winning Bids Found: " + testBids.size());
 
             if (testBids.isEmpty()) {
                 return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
             }
 
             List<AuctionResponse> responses = testBids.stream()
-                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction()))
+                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction())) // ✅ ใช้ AuctionResponse ที่มี imageUrl
                     .collect(Collectors.toList());
 
             return new ResponseEntity<>(responses, HttpStatus.OK);
@@ -274,4 +251,18 @@ public class AuctionController {
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    private String saveImageToFile(MultipartFile image, int auctionId) throws IOException {
+        File uploadDir = new File("/tmp/images/");
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+
+        String fileName = auctionId + ".jpg";
+        File savedFile = new File(uploadDir, fileName);
+        image.transferTo(savedFile);
+
+        return "https://project-production-f4db.up.railway.app/images/" + fileName; // ✅ คืนค่า URL ที่จะใช้
+    }
+
+
 }

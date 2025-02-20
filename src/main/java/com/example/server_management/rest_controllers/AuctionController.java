@@ -140,6 +140,29 @@ public class AuctionController {
                     .body(Map.of("message", "An error occurred while processing the bid."));
         }
     }
+    @GetMapping("/{auctionId}/bids")
+    public ResponseEntity<?> getBidsForAuction(@PathVariable int auctionId) {
+        // ตรวจสอบว่าสินค้าประมูลมีอยู่หรือไม่
+        Auction auction = auctionService.getAuctionById(auctionId);
+        if (auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Auction not found with ID: " + auctionId));
+        }
+
+        // ดึงรายการประมูลทั้งหมดของสินค้านี้
+        List<Bid> bids = bidRepository.findByAuction(auction);
+        if (bids.isEmpty()) {
+            return ResponseEntity.ok(Map.of("message", "No bids found for this auction."));
+        }
+
+        // แปลงข้อมูล `Bid` เป็น `BidResponse` เพื่อส่งกลับ
+        List<BidResponse> bidResponses = bids.stream()
+                .map(BidResponse::new)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(bidResponses);
+    }
+
     @GetMapping("/my-auctions/won")
     public ResponseEntity<?> getMyWonAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");

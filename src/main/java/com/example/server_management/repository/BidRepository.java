@@ -12,5 +12,5 @@ import java.util.List;
 public interface BidRepository extends JpaRepository<Bid, Integer> {
     List<Bid> findByAuctionOrderByBidAmountDesc(Auction auction);
     List<Bid> findByAuction(Auction auction);
-    List<Bid> findByAuction_AuctionId(int auctionId);
+    List<Bid> findByAuction_AuctionId(int auctionId);;
 }

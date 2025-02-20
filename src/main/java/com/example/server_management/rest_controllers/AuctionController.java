@@ -3,6 +3,7 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
 import com.example.server_management.models.*;
+import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidHistoryRepository;
 import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
@@ -39,6 +40,8 @@ public class AuctionController {
 
     @Autowired
     private AuctionService auctionService;
+    @Autowired
+    private AuctionRepository auctionRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -159,37 +162,80 @@ public class AuctionController {
     public ResponseEntity<?> addBid(@PathVariable int auctionId,
                                     @RequestBody Map<String, Object> bidRequest,
                                     HttpSession session) {
-        String userName = (String) session.getAttribute("user_name");
-        if (userName == null) {
-            return new ResponseEntity<>(Map.of("message", "Please log in to bid"), HttpStatus.FORBIDDEN);
+        try {
+            String userName = (String) session.getAttribute("user_name");
+            if (userName == null) {
+                return new ResponseEntity<>(Map.of("message", "Please log in to participate in the auction."),
+                        HttpStatus.FORBIDDEN);
+            }
+
+            Optional<User> optionalUser = userRepository.findUserByUserName(userName);
+            if (!optionalUser.isPresent()) {
+                return new ResponseEntity<>(Map.of("message", "User not found: " + userName),
+                        HttpStatus.NOT_FOUND);
+            }
+
+            User user = optionalUser.get();
+
+            if (!bidRequest.containsKey("bidAmount")) {
+                return new ResponseEntity<>(Map.of("message", "Missing bidAmount field"),
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            double bidAmount;
+            try {
+                bidAmount = Double.parseDouble(bidRequest.get("bidAmount").toString());
+            } catch (Exception e) {
+                return new ResponseEntity<>(Map.of("message", "Invalid bid amount format"),
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            if (bidAmount <= 0) {
+                return new ResponseEntity<>(Map.of("message", "Bid amount must be greater than zero."),
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            Optional<Auction> optionalAuction = auctionRepository.findById(auctionId);
+            if (!optionalAuction.isPresent()) {
+                return new ResponseEntity<>(Map.of("message", "Auction not found: " + auctionId),
+                        HttpStatus.NOT_FOUND);
+            }
+
+            Auction auction = optionalAuction.get();
+            LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Bangkok"));
+
+            System.out.println("🔍 Now: " + now);
+            System.out.println("📌 Auction Start: " + auction.getStartTime());
+            System.out.println("📌 Auction End: " + auction.getEndTime());
+
+            if (now.isBefore(auction.getStartTime())) {
+                return new ResponseEntity<>(Map.of("message", "Auction has not started yet."),
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            if (now.isAfter(auction.getEndTime()) || auction.getStatus() != AuctionStatus.ONGOING) {
+                return new ResponseEntity<>(Map.of("message", "Auction has already ended."),
+                        HttpStatus.BAD_REQUEST);
+            }
+
+            System.out.println("✅ Placing bid of " + bidAmount + " for auction: " + auctionId);
+
+            Bid bid = auctionService.addBid(auctionId, user, bidAmount);
+
+            if (bidAmount >= auction.getMaxBidPrice()) {
+                auctionService.determineAuctionWinner(auction);
+                return new ResponseEntity<>(Map.of("message", "Bid placed successfully! You have won the auction.",
+                        "winner", user.getUserName()), HttpStatus.OK);
+            }
+
+            return new ResponseEntity<>(Map.of("message", "Bid placed successfully!"), HttpStatus.CREATED);
+        } catch (Exception e) {
+            e.printStackTrace(); // 🔥 ดู Error เต็มๆ
+            return new ResponseEntity<>(Map.of("message", "An error occurred while processing the bid.",
+                    "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        Optional<User> optionalUser = userRepository.findUserByUserName(userName);
-        if (!optionalUser.isPresent()) {
-            return new ResponseEntity<>(Map.of("message", "User not found"), HttpStatus.NOT_FOUND);
-        }
-
-        User user = optionalUser.get();
-        double bidAmount = Double.parseDouble(bidRequest.get("bidAmount").toString());
-
-        if (bidAmount <= 0) {
-            return new ResponseEntity<>(Map.of("message", "Invalid bid amount"), HttpStatus.BAD_REQUEST);
-        }
-
-        Auction auction = auctionService.getAuctionById(auctionId);
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Bangkok"));
-
-        if (now.isBefore(auction.getStartTime())) {
-            return new ResponseEntity<>(Map.of("message", "Auction has not started yet"), HttpStatus.BAD_REQUEST);
-        }
-
-        if (now.isAfter(auction.getEndTime()) || auction.getStatus() != AuctionStatus.ONGOING) {
-            return new ResponseEntity<>(Map.of("message", "Auction has already ended"), HttpStatus.BAD_REQUEST);
-        }
-
-        Bid bid = auctionService.addBid(auctionId, user, bidAmount);
-        return new ResponseEntity<>(Map.of("message", "Bid placed successfully!"), HttpStatus.CREATED);
     }
+
     @GetMapping("/{auctionId}/bids")
     public ResponseEntity<List<BidResponse>> getBidsByAuctionId(@PathVariable int auctionId) {
         List<Bid> bids = bidRepository.findByAuction_AuctionId(auctionId); // ✅ ใช้ BidRepository

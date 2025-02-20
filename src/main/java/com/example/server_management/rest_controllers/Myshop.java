@@ -1,6 +1,5 @@
 package com.example.server_management.rest_controllers;
 
-import com.example.server_management.models.ProductResponse;
 import com.example.server_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

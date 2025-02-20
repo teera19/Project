@@ -24,13 +24,13 @@ public class Allproduct {
     @GetMapping("/all-product")
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
         try {
-            List<Product> products = userService.getAllProducts();  // ✅ ดึงรายการสินค้า
+            List<Product> products = userService.getAllProducts();  //  ดึงรายการสินค้า
             if (products.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
 
             List<ProductResponse> productResponses = products.stream()
-                    .map(ProductResponse::new)  // ✅ แปลง Product เป็น ProductResponse
+                    .map(ProductResponse::new)  //  แปลง Product เป็น ProductResponse
                     .collect(Collectors.toList());
 
             return new ResponseEntity<>(productResponses, HttpStatus.OK);

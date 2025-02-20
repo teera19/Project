@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Base64;
 import java.util.Map;
 
 
@@ -30,36 +29,36 @@ public class Editproduct {
             @RequestParam("description") String description,
             @RequestParam("price") double price,
             @RequestParam(value = "image", required = false) MultipartFile image,
-            @RequestParam("category_name") String categoryName,  // ✅ เปลี่ยนเป็น category_name
+            @RequestParam("category_name") String categoryName,  //  เปลี่ยนเป็น category_name
             @RequestParam Map<String, String> details,
             HttpSession session) throws IOException {
 
-        // ✅ Log เพื่อตรวจสอบค่าที่รับเข้ามา
-        System.out.println("📌 productId: " + productId);
-        System.out.println("📌 category_name: " + categoryName);
+        //  Log เพื่อตรวจสอบค่าที่รับเข้ามา
+        System.out.println(" productId: " + productId);
+        System.out.println(" category_name: " + categoryName);
 
-        // ✅ ตรวจสอบการล็อกอิน
+        //  ตรวจสอบการล็อกอิน
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return new ResponseEntity<>("User not logged in", HttpStatus.FORBIDDEN);
         }
 
         try {
-            // ✅ ค้นหาสินค้า
+            //  ค้นหาสินค้า
             Product product = userService.findProductById(productId);
             if (product == null) {
-                System.out.println("❌ Product not found: " + productId);
+                System.out.println(" Product not found: " + productId);
                 return new ResponseEntity<>("Product not found", HttpStatus.NOT_FOUND);
             }
 
-            // ✅ หา Category จากชื่อ
+            // หา Category จากชื่อ
             Category category = userService.findCategoryByName(categoryName);
             if (category == null) {
-                System.out.println("❌ Category not found: " + categoryName);
+                System.out.println(" Category not found: " + categoryName);
                 return new ResponseEntity<>("Invalid category: " + categoryName, HttpStatus.BAD_REQUEST);
             }
 
-            // ✅ อัปเดตข้อมูลสินค้า
+            // อัปเดตข้อมูลสินค้า
             product.setCategory(category);
             product.setName(name);
             product.setDescription(description);
@@ -67,7 +66,7 @@ public class Editproduct {
 
             Object detailObject = null;
 
-            // ✅ อัปเดตรายละเอียดสินค้าแยกตามหมวดหมู่
+            //  อัปเดตรายละเอียดสินค้าแยกตามหมวดหมู่
             switch (category.getCategoryId()) {
                 case 1:
                     detailObject = updateClothingDetails(product, details);
@@ -82,7 +81,7 @@ public class Editproduct {
                     System.out.println("⚠️ No additional details required for category: " + categoryName);
             }
 
-            // ✅ อัปเดตรูปภาพสินค้า
+            //  อัปเดตรูปภาพสินค้า
             if (image != null && !image.isEmpty()) {
                 byte[] imageBytes = image.getBytes();
                 userService.saveCompressedImage(imageBytes, product.getProductId());
@@ -90,7 +89,7 @@ public class Editproduct {
                 product.setImageUrl(imageUrl);
             }
 
-            // ✅ บันทึกสินค้า
+            //  บันทึกสินค้า
             userService.saveProduct(product);
 
             return new ResponseEntity<>(new ResponseProduct(
@@ -108,7 +107,7 @@ public class Editproduct {
         }
     }
 
-    // ✅ ฟังก์ชันอัปเดตรายละเอียดของเสื้อผ้า
+    //  ฟังก์ชันอัปเดตรายละเอียดของเสื้อผ้า
     private ClothingDetails updateClothingDetails(Product product, Map<String, String> details) {
         ClothingDetails clothingDetails = userService.findClothingDetailsByProductId(product.getProductId());
         if (clothingDetails == null) {
@@ -124,7 +123,7 @@ public class Editproduct {
         return clothingDetails;
     }
 
-    // ✅ ฟังก์ชันอัปเดตรายละเอียดของโทรศัพท์
+    //  ฟังก์ชันอัปเดตรายละเอียดของโทรศัพท์
     private PhoneDetails updatePhoneDetails(Product product, Map<String, String> details) {
         PhoneDetails phoneDetails = userService.findPhoneDetailsByProductId(product.getProductId());
         if (phoneDetails == null) {
@@ -141,7 +140,7 @@ public class Editproduct {
         return phoneDetails;
     }
 
-    // ✅ ฟังก์ชันอัปเดตรายละเอียดของรองเท้า
+    // ฟังก์ชันอัปเดตรายละเอียดของรองเท้า
     private ShoesDetails updateShoesDetails(Product product, Map<String, String> details) {
         ShoesDetails shoesDetails = userService.findShoesDetailsByProductId(product.getProductId());
         if (shoesDetails == null) {
@@ -157,7 +156,7 @@ public class Editproduct {
         return shoesDetails;
     }
 
-    // ✅ ฟังก์ชันช่วยแปลง String เป็น int
+    //  ฟังก์ชันช่วยแปลง String เป็น int
     private int parseIntOrDefault(String value, int defaultValue) {
         try {
             return Integer.parseInt(value);

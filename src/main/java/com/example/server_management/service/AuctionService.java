@@ -24,7 +24,7 @@ public class AuctionService {
     @Autowired
     private BidRepository bidRepository;
     @Autowired
-    private BidHistoryRepository bidHistoryRepository;  // ✅ ใช้ Repository ที่ extends JpaRepository
+    private BidHistoryRepository bidHistoryRepository;  // ใช้ Repository ที่ extends JpaRepository
 
 
     public List<Auction> getAllAuctions() {
@@ -53,34 +53,34 @@ public class AuctionService {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
 
-        // ✅ Debugging: ตรวจสอบค่าเวลาที่อ่านจาก MySQL (Raw Data)
-        System.out.println("📌 Raw Auction StartTime from DB: " + auction.getStartTime());
-        System.out.println("📌 Raw Auction EndTime from DB: " + auction.getEndTime());
+        // Debugging: ตรวจสอบค่าเวลาที่อ่านจาก MySQL (Raw Data)
+        System.out.println(" Raw Auction StartTime from DB: " + auction.getStartTime());
+        System.out.println(" Raw Auction EndTime from DB: " + auction.getEndTime());
 
-        // ✅ ตรวจสอบว่าค่า Hibernate อ่านออกมาเป็นโซนเวลาไหน
+        //  ตรวจสอบว่าค่า Hibernate อ่านออกมาเป็นโซนเวลาไหน
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
         LocalDateTime rawStart = auction.getStartTime();
         LocalDateTime rawEnd = auction.getEndTime();
 
-        // 🔥 Debug: เช็กว่า Hibernate คืนค่ามาเป็นโซนอะไร
-        System.out.println("🔥 Hibernate Read StartTime: " + rawStart);
-        System.out.println("🔥 Hibernate Read EndTime: " + rawEnd);
+        //  Debug: เช็กว่า Hibernate คืนค่ามาเป็นโซนอะไร
+        System.out.println(" Hibernate Read StartTime: " + rawStart);
+        System.out.println(" Hibernate Read EndTime: " + rawEnd);
 
-        // ✅ แปลงให้แน่ใจว่าค่าเป็น Asia/Bangkok
+        //  แปลงให้แน่ใจว่าค่าเป็น Asia/Bangkok
         ZonedDateTime auctionStart = rawStart.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
         ZonedDateTime auctionEnd = rawEnd.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
 
-        System.out.println("⏰ Current Server Time: " + now);
-        System.out.println("🎯 Converted Auction Start Time: " + auctionStart);
-        System.out.println("🏁 Converted Auction End Time: " + auctionEnd);
+        System.out.println(" Current Server Time: " + now);
+        System.out.println(" Converted Auction Start Time: " + auctionStart);
+        System.out.println(" Converted Auction End Time: " + auctionEnd);
 
         if (now.isBefore(auctionStart)) {
-            System.out.println("🚨 Auction has not started yet! (Check timezone)");
+            System.out.println(" Auction has not started yet! (Check timezone)");
             throw new IllegalArgumentException("Auction has not started yet.");
         }
 
         if (now.isAfter(auctionEnd)) {
-            System.out.println("🚨 Auction has already ended!");
+            System.out.println(" Auction has already ended!");
             throw new IllegalArgumentException("Auction has already ended.");
         }
 
@@ -118,16 +118,16 @@ public class AuctionService {
             return;
         }
 
-        // ✅ หาผู้ชนะที่เสนอราคาสูงสุด
+        //  หาผู้ชนะที่เสนอราคาสูงสุด
         Bid highestBid = bids.stream()
                 .max(Comparator.comparingDouble(Bid::getBidAmount))
                 .orElse(null);
 
         if (highestBid != null) {
-            // ✅ ลบข้อมูลผู้ชนะเก่าก่อนบันทึกใหม่
+            //  ลบข้อมูลผู้ชนะเก่าก่อนบันทึกใหม่
             bidHistoryRepository.deleteByAuction(auction);
 
-            // ✅ เพิ่มผู้ชนะใหม่
+            //  เพิ่มผู้ชนะใหม่
             closeAuctionWithWinner(auction, highestBid);
             auctionRepository.flush();
         }
@@ -141,10 +141,10 @@ public class AuctionService {
         auction.setWinner(highestBid.getUser());
         auction.setStatus(AuctionStatus.COMPLETED);
 
-        System.out.println("🏆 Closing auction: " + auction.getAuctionId());
-        System.out.println("🎯 Winner: " + highestBid.getUser().getUserName());
+        System.out.println(" Closing auction: " + auction.getAuctionId());
+        System.out.println(" Winner: " + highestBid.getUser().getUserName());
 
-        auctionRepository.save(auction);  // ✅ บันทึกข้อมูลผู้ชนะก่อน
+        auctionRepository.save(auction);  //  บันทึกข้อมูลผู้ชนะก่อน
 
         List<Bid> bids = bidRepository.findByAuction(auction);
         for (Bid bid : bids) {
@@ -172,7 +172,7 @@ public class AuctionService {
     @Transactional
     public void updateAuctionStatus(Auction auction) {
         try {
-            auctionRepository.save(auction); // ✅ บันทึกสถานะใหม่ลงฐานข้อมูล
+            auctionRepository.save(auction); //  บันทึกสถานะใหม่ลงฐานข้อมูล
             System.out.println(" Auction " + auction.getAuctionId() + " updated to " + auction.getStatus());
         } catch (Exception e) {
             e.printStackTrace();
@@ -180,7 +180,7 @@ public class AuctionService {
         }
     }
 
-    @Scheduled(fixedRate = 600000) // ✅ อัปเดตทุกๆ 10 นาที (600,000 ms)
+    @Scheduled(fixedRate = 600000) //  อัปเดตทุกๆ 10 นาที (600,000 ms)
     public void checkAuctionsForWinners() {
         List<Auction> auctions = auctionRepository.findAll();
         for (Auction auction : auctions) {

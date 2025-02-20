@@ -24,11 +24,15 @@ public class Products {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    @GetMapping("/by-category/{categoryId}")
-    public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable int categoryId) {
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found with ID: " + categoryId));
+    @GetMapping("/by-category/{categoryName}")
+    public ResponseEntity<?> getProductsByCategory(@PathVariable String categoryName) {
+        // ✅ ค้นหา Category ตามชื่อ
+        Category category = categoryRepository.findByName(categoryName);
+        if (category == null) {
+            return new ResponseEntity<>("Category not found: " + categoryName, HttpStatus.NOT_FOUND);
+        }
 
+        // ✅ ค้นหาสินค้าทั้งหมดที่อยู่ใน Category นี้
         List<Product> products = productRepository.findByCategory(category);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }

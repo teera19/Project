@@ -2,7 +2,6 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.models.CartItem;
 import com.example.server_management.service.CartService;
-import com.example.server_management.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

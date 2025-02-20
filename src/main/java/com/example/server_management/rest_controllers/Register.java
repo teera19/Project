@@ -35,7 +35,7 @@ public class Register {
             return ResponseEntity.badRequest().body("Username already exists");
         }
 
-        // ✅ ต้องสร้าง User object ก่อนบันทึก
+        //  ต้องสร้าง User object ก่อนบันทึก
         User newUser = new User();
         newUser.setUserName(userName);
         newUser.setName(name);
@@ -45,7 +45,7 @@ public class Register {
         newUser.setAddress(address);
         newUser.setTel(tel);
 
-        // ✅ ใช้ `registerServiceMethod` ในการบันทึก
+        //  ใช้ `registerServiceMethod` ในการบันทึก
         User savedUser = userService.registerServiceMethod(newUser);
 
         if (savedUser == null) {

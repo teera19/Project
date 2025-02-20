@@ -14,9 +14,9 @@ public class AuctionResponse {
     private double maxBidPrice;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private String imageBase64; // ✅ เปลี่ยนเป็น Base64
-    private String status; // ✅ สถานะ เช่น "Not Started", "Active", "Ended"
-    private long minutesRemaining; // ✅ นาทีที่เหลือ
+    private String imageBase64; // เปลี่ยนเป็น Base64
+    private String status; // สถานะ เช่น "Not Started", "Active", "Ended"
+    private long minutesRemaining; //  นาทีที่เหลือ
 
     public AuctionResponse(Auction auction) {
         this.auctionId = auction.getAuctionId();
@@ -27,14 +27,14 @@ public class AuctionResponse {
         this.startTime = auction.getStartTime();
         this.endTime = auction.getEndTime();
 
-        // ✅ แปลง byte[] เป็น Base64 เพื่อให้ frontend ใช้งานได้ง่าย
+        //  แปลง byte[] เป็น Base64 เพื่อให้ frontend ใช้งานได้ง่าย
         if (auction.getImage() != null) {
             this.imageBase64 = Base64.getEncoder().encodeToString(auction.getImage());
         } else {
             this.imageBase64 = null;
         }
 
-        // ✅ คำนวณสถานะและเวลาที่เหลือ
+        // คำนวณสถานะและเวลาที่เหลือ
         LocalDateTime now = LocalDateTime.now();
 
         if (now.isBefore(startTime)) {
@@ -49,7 +49,7 @@ public class AuctionResponse {
         }
     }
 
-    // ✅ Getters
+    //  Getters
     public int getAuctionId() {
         return auctionId;
     }

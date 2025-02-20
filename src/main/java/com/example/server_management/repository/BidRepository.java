@@ -2,7 +2,6 @@ package com.example.server_management.repository;
 
 import com.example.server_management.models.Auction;
 import com.example.server_management.models.Bid;
-import com.example.server_management.models.BidHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

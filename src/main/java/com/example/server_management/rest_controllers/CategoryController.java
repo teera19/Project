@@ -1,10 +1,8 @@
 package com.example.server_management.rest_controllers;
 
 import com.example.server_management.models.Category;
-import com.example.server_management.repository.CategoryRepository;
 import com.example.server_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,7 +31,7 @@ public class CategoryController {
     }
 }
 
-// ✅ สร้าง DTO สำหรับส่งข้อมูล
+//  สร้าง DTO สำหรับส่งข้อมูล
 class CategoryDTO {
     private int category_id;
     private String name;

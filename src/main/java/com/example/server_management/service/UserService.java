@@ -10,7 +10,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -98,28 +97,28 @@ public class UserService {
     @Transactional
     public ResponseProduct addProductToShop(String shopTitle, String name, String description, double price,
                                             MultipartFile image, int categoryId, Map<String, String> details) throws IOException {
-        System.out.println("📌 Checking categoryId before fetch: " + categoryId);
+        System.out.println(" Checking categoryId before fetch: " + categoryId);
 
         if (categoryId <= 0) {
             throw new IllegalArgumentException("Invalid categoryId: " + categoryId);
         }
 
-        // ✅ Debug ก่อนดึงข้อมูลจาก DB
+        //  Debug ก่อนดึงข้อมูลจาก DB
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
         if (categoryOpt.isEmpty()) {
             throw new IllegalArgumentException("Category not found with ID: " + categoryId);
         }
 
         Category category = categoryOpt.get();
-        System.out.println("✅ Fetched category from DB: " + category.getName());
+        System.out.println(" Fetched category from DB: " + category.getName());
 
-        // ✅ ค้นหาร้านค้า
+        //  ค้นหาร้านค้า
         MyShop shop = myShopRepository.findByTitle(shopTitle);
         if (shop == null) {
             throw new IllegalArgumentException("Shop not found with title: " + shopTitle);
         }
 
-        // ✅ สร้างสินค้าใหม่
+        //  สร้างสินค้าใหม่
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
@@ -127,15 +126,15 @@ public class UserService {
         product.setShop(shop);
         product.setCategory(category);
 
-        // ✅ บันทึกสินค้าในฐานข้อมูลก่อน เพื่อให้ได้ `productId`
+        //  บันทึกสินค้าในฐานข้อมูลก่อน เพื่อให้ได้ `productId`
         Product savedProduct = productRepository.save(product);
-        System.out.println("✅ Saved Product ID: " + savedProduct.getProductId());
+        System.out.println(" Saved Product ID: " + savedProduct.getProductId());
 
-        // ✅ บันทึกภาพและอัปเดต `imageUrl`
+        //  บันทึกภาพและอัปเดต `imageUrl`
         String imageUrl = saveImageToFile(image, savedProduct.getProductId());
         savedProduct.setImageUrl(imageUrl);
 
-        // ✅ บันทึกสินค้าอีกรอบ พร้อม `imageUrl`
+        //  บันทึกสินค้าอีกรอบ พร้อม `imageUrl`
         productRepository.save(savedProduct);
 
         return new ResponseProduct(
@@ -143,14 +142,14 @@ public class UserService {
                 savedProduct.getName(),
                 savedProduct.getDescription(),
                 savedProduct.getPrice(),
-                imageUrl, // ✅ URL รูปที่ถูกต้อง
-                details // ✅ รายละเอียดสินค้า
+                imageUrl, //  URL รูปที่ถูกต้อง
+                details // รายละเอียดสินค้า
         );
     }
 
     private void addProductDetails(Product product, int categoryId, Map<String, String> details) {
         switch (categoryId) {
-            case 1: // ✅ หมวดหมู่เสื้อผ้า
+            case 1: //  หมวดหมู่เสื้อผ้า
                 ClothingDetails clothingDetails = new ClothingDetails();
                 clothingDetails.setProduct(product);
                 clothingDetails.setHasStain(parseStringOrDefault(details.get("has_stain"), "ไม่มี")); // ✅ ใช้ String "มี"/"ไม่มี"
@@ -159,7 +158,7 @@ public class UserService {
                 clothingDetailsRepository.save(clothingDetails);
                 break;
 
-            case 2: // ✅ หมวดหมู่โทรศัพท์
+            case 2: //  หมวดหมู่โทรศัพท์
                 PhoneDetails phoneDetails = new PhoneDetails();
                 phoneDetails.setProduct(product);
                 phoneDetails.setBasicFunctionalityStatus(parseStringOrDefault(details.get("basic_functionality_status"), "ไม่มี")); // ✅ ใช้ String
@@ -169,7 +168,7 @@ public class UserService {
                 phoneDetailsRepository.save(phoneDetails);
                 break;
 
-            case 3: // ✅ หมวดหมู่รองเท้า
+            case 3: //  หมวดหมู่รองเท้า
                 ShoesDetails shoesDetails = new ShoesDetails();
                 shoesDetails.setProduct(product);
                 shoesDetails.setHasBrandLogo(parseStringOrDefault(details.get("hasbrand_logo"), "ไม่มี")); // ✅ ใช้ String
@@ -178,7 +177,7 @@ public class UserService {
                 shoesDetailsRepository.save(shoesDetails);
                 break;
 
-            case 4: // ✅ หมวดหมู่ `More`
+            case 4: //  หมวดหมู่ `More`
                 More more = new More();
                 more.setProduct(product);
                 more.setFlawedPoint(details.getOrDefault("flawed_point", "Unknown"));
@@ -186,7 +185,7 @@ public class UserService {
                 break;
 
             default:
-                System.out.println("⚠️ No additional details required for categoryId: " + categoryId);
+                System.out.println(" No additional details required for categoryId: " + categoryId);
         }
     }
 
@@ -195,10 +194,10 @@ public class UserService {
             return defaultValue;
         }
 
-        // ✅ ปรับให้เป็นตัวพิมพ์เล็กทั้งหมด
+        //  ปรับให้เป็นตัวพิมพ์เล็กทั้งหมด
         value = value.trim().toLowerCase();
 
-        // ✅ รองรับค่าหลายรูปแบบ
+        //  รองรับค่าหลายรูปแบบ
         if (value.equals("1") || value.equals("true") || value.equals("yes") || value.equals("have") || value.equals("มี")) {
             return "มี";
         } else if (value.equals("0") || value.equals("false") || value.equals("no") || value.equals("none") || value.equals("ไม่มี")) {
@@ -212,15 +211,15 @@ public class UserService {
 
     private int parseIntOrDefault(String value, int defaultValue) {
         if (value == null || value.trim().isEmpty()) {
-            System.out.println("⚠️ category_id is NULL or EMPTY, using default: " + defaultValue);
+            System.out.println(" category_id is NULL or EMPTY, using default: " + defaultValue);
             return defaultValue;
         }
         try {
             int result = Integer.parseInt(value);
-            System.out.println("✅ Parsed category_id: " + result);
+            System.out.println(" Parsed category_id: " + result);
             return result;
         } catch (NumberFormatException e) {
-            System.out.println("❌ Invalid category_id: " + value + ", using default: " + defaultValue);
+            System.out.println(" Invalid category_id: " + value + ", using default: " + defaultValue);
             return defaultValue;
         }
     }
@@ -252,14 +251,14 @@ public class UserService {
     // ฟังก์ชันสำหรับบันทึกภาพในระบบไฟล์
     private String saveImageToFile(MultipartFile image, int productId) throws IOException {
         if (image.isEmpty()) {
-            throw new IOException("❌ No image uploaded");
+            throw new IOException(" No image uploaded");
         }
 
-        // ✅ ใช้ `/tmp/images/`
+        //  ใช้ `/tmp/images/`
         File uploadDir = new File("/tmp/images/");
         if (!uploadDir.exists()) {
             if (!uploadDir.mkdirs()) {
-                throw new IOException("❌ Failed to create directory: " + uploadDir.getAbsolutePath());
+                throw new IOException(" Failed to create directory: " + uploadDir.getAbsolutePath());
             }
         }
 
@@ -365,28 +364,28 @@ public class UserService {
         try {
             BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
             if (originalImage == null) {
-                throw new IOException("❌ Cannot read image data.");
+                throw new IOException(" Cannot read image data.");
             }
 
-            // ✅ ตรวจสอบและสร้างโฟลเดอร์ `/tmp/images/`
+            // ตรวจสอบและสร้างโฟลเดอร์ `/tmp/images/`
             File uploadDir = new File("/tmp/images/");
             if (!uploadDir.exists() && !uploadDir.mkdirs()) {
-                throw new IOException("❌ Failed to create directory: " + uploadDir.getAbsolutePath());
+                throw new IOException(" Failed to create directory: " + uploadDir.getAbsolutePath());
             }
 
-            // ✅ ลบไฟล์เก่าก่อนบันทึกใหม่
+            // ลบไฟล์เก่าก่อนบันทึกใหม่
             File outputFile = new File(uploadDir, productId + ".png");
             if (outputFile.exists()) {
                 boolean deleted = outputFile.delete();
                 System.out.println("🗑 Deleted old image: " + deleted);
             }
 
-            // ✅ บันทึกไฟล์ใหม่
+            // บันทึกไฟล์ใหม่
             ImageIO.write(originalImage, "png", outputFile);
-            System.out.println("✅ Image saved successfully: " + outputFile.getAbsolutePath());
+            System.out.println("Image saved successfully: " + outputFile.getAbsolutePath());
 
         } catch (IOException e) {
-            throw new RuntimeException("❌ Failed to save image: " + e.getMessage());
+            throw new RuntimeException(" Failed to save image: " + e.getMessage());
         }
     }
 

@@ -42,7 +42,7 @@ public class Myproduct {
             }
 
             List<ProductResponse> productResponses = products.stream()
-                    .map(ProductResponse::new)  // ✅ แปลง Product เป็น ProductResponse
+                    .map(ProductResponse::new)  // แปลง Product เป็น ProductResponse
                     .collect(Collectors.toList());
 
             return new ResponseEntity<>(productResponses, HttpStatus.OK);

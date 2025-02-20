@@ -263,7 +263,7 @@ public class AuctionController {
             }
 
             User user = optionalUser.get();
-            Pageable pageable = PageRequest.of(page, size, Sort.by("endTime").descending());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("bidTime").descending());
 
             Page<BidHistory> testBids = bidHistoryRepository.findByUserAndIsWinnerTrue(user, pageable);
 

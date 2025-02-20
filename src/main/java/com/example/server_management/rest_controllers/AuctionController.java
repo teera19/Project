@@ -242,42 +242,42 @@ public class AuctionController {
 
     @GetMapping("/my-auction")
     public ResponseEntity<?> getMyAuctions(HttpSession session) {
+        long startTime = System.currentTimeMillis(); // ⏳ เริ่มจับเวลา
         try {
             String userName = (String) session.getAttribute("user_name");
-            System.out.println(" Session User: " + userName);
-
             if (userName == null) {
                 return new ResponseEntity<>(Map.of("message", "User not logged in"), HttpStatus.FORBIDDEN);
             }
 
             Optional<User> optionalUser = userRepository.findUserByUserName(userName);
             if (!optionalUser.isPresent()) {
-                System.out.println(" User not found: " + userName);
-                return new ResponseEntity<>(Map.of("message", "User not found with username: " + userName), HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(Map.of("message", "User not found"), HttpStatus.NOT_FOUND);
             }
 
             User user = optionalUser.get();
-            System.out.println(" Querying BidHistory for user: " + user.getUserName());
-
-            //  ดึงรายการประมูลที่ user เป็นผู้ชนะ
             List<BidHistory> testBids = bidHistoryRepository.findByUserAndIsWinnerTrue(user);
-            System.out.println(" Winning Bids Found: " + testBids.size());
 
             if (testBids.isEmpty()) {
                 return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
             }
 
             List<AuctionResponse> responses = testBids.stream()
-                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction())) // ✅ ใช้ AuctionResponse ที่มี imageUrl
+                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction()))
                     .collect(Collectors.toList());
+
+            long endTime = System.currentTimeMillis(); //  จับเวลาจบ
+            System.out.println(" API Execution Time: " + (endTime - startTime) + " ms");
 
             return new ResponseEntity<>(responses, HttpStatus.OK);
         } catch (Exception e) {
+            long endTime = System.currentTimeMillis(); //  จับเวลาจบ
             System.err.println(" Error in /my-auction: " + e.getMessage());
-            e.printStackTrace();
+            System.out.println(" API Execution Time (Error): " + (endTime - startTime) + " ms");
+
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     private String saveImageToFile(MultipartFile image, int auctionId) throws IOException {
         File uploadDir = new File("/tmp/images/");
         if (!uploadDir.exists()) {

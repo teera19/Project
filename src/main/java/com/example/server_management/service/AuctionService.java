@@ -3,17 +3,13 @@ package com.example.server_management.service;
 import com.example.server_management.models.*;
 import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidRepository;
-import com.example.server_management.repository.MyAuctionRepository;
 import com.example.server_management.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class AuctionService {
@@ -25,8 +21,6 @@ public class AuctionService {
     private BidRepository bidRepository;
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private MyAuctionRepository myAuctionRepository;
 
     public List<Auction> getWonAuctions(User user) {
         return auctionRepository.findByWinner(user);
@@ -67,48 +61,4 @@ public class AuctionService {
         bid.setBidAmount(bidAmount);
         return bidRepository.save(bid);
     }
-    public void closeAuction(int auctionId) {
-        Auction auction = auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new RuntimeException("Auction not found"));
-
-        if (auction.getStatus() != AuctionStatus.ONGOING) {
-            throw new IllegalStateException("Auction is already closed.");
-        }
-
-        auction.setStatus(AuctionStatus.ENDED);
-
-        // ✅ ค้นหาผู้ที่ประมูลสูงสุด และกำหนดเป็นผู้ชนะ
-        Optional<Bid> highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
-        highestBid.ifPresent(bid -> auction.setWinner(bid.getUser()));
-
-        auctionRepository.save(auction);
-        finalizeAuction(auction); // ✅ บันทึกลง MyAuction
-    }
-    @Scheduled(fixedRate = 60000) // รันทุก 60 วินาที
-    public void checkAndFinalizeAuctions() {
-        List<Auction> expiredAuctions = auctionRepository.findByEndTimeBeforeAndStatus(
-                LocalDateTime.now(), AuctionStatus.ONGOING
-        );
-
-        for (Auction auction : expiredAuctions) {
-            auction.setStatus(AuctionStatus.ENDED);
-
-            // หาผู้ที่ประมูลสูงสุด
-            Optional<Bid> highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
-            highestBid.ifPresent(bid -> auction.setWinner(bid.getUser()));
-
-            auctionRepository.save(auction);
-            finalizeAuction(auction);
-            auctionRepository.save(auction);
-            finalizeAuction(auction); // ✅ บันทึกลง MyAuction
-        }
-    }
-    public void finalizeAuction(Auction auction) {
-        if (auction.getStatus() == AuctionStatus.ENDED && auction.getWinner() != null) {
-            MyAuction myAuction = new MyAuction(auction, auction.getWinner());
-            myAuctionRepository.save(myAuction);
-        }
-    }
-
-
 }

@@ -163,7 +163,7 @@ public class AuctionController {
         return ResponseEntity.ok(bidResponses);
     }
 
-    @GetMapping("/my-auctions/won")
+    @GetMapping("/my-auctions")
     public ResponseEntity<?> getMyWonAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {

@@ -4,7 +4,6 @@ import com.example.server_management.dto.ResponseProduct;
 import com.example.server_management.models.*;
 import com.example.server_management.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,7 +14,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -42,14 +40,6 @@ public class UserService {
     private ShoesDetailsRepository shoesDetailsRepository;
     @Autowired
     private MoreRepository moreRepository;
-    @Autowired
-    private AuctionRepository auctionRepository;
-    @Autowired
-    private MyAuctionRepository myAuctionRepository;
-    @Autowired
-    private BidRepository bidRepository;
-
-
 
     public User registerServiceMethod(User user) {
         System.out.println("Registering user: " + user.getUserName() + ", Email: " + user.getEmail());
@@ -452,22 +442,4 @@ public class UserService {
     }
 
 
-    public List<Auction> getWonAuctions(User user) {
-        return auctionRepository.findByWinner(user);
-    }
-
-    public void saveWinningAuction(Auction auction) {
-        if (auction.getWinner() != null) {
-            MyAuction myAuction = new MyAuction(auction, auction.getWinner());
-            myAuctionRepository.save(myAuction);
-        }
-    }
-    public void finalizeAuction(Auction auction) {
-        if (auction.getStatus() == AuctionStatus.ENDED && auction.getWinner() != null) {
-            saveWinningAuction(auction);
-        }
-    }
-
 }
-
-

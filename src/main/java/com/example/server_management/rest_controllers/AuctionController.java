@@ -3,6 +3,7 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
 import com.example.server_management.models.*;
+import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidHistoryRepository;
 import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
@@ -42,6 +43,8 @@ public class AuctionController {
     BidHistoryRepository bidHistoryRepository;
     @Autowired
     BidRepository bidRepository;
+    @Autowired
+    AuctionRepository auctionRepository;
 
 
     @GetMapping
@@ -255,14 +258,17 @@ public class AuctionController {
             }
 
             User user = optionalUser.get();
-            List<BidHistory> testBids = bidHistoryRepository.findByUserAndIsWinnerTrue(user);
 
-            if (testBids.isEmpty()) {
+            // ✅ ดึงแค่ auctionId เพื่อลดโหลดข้อมูลที่ไม่จำเป็น
+            List<Integer> auctionIds = bidHistoryRepository.findWinningAuctionIdsByUser(user);
+            if (auctionIds.isEmpty()) {
                 return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
             }
 
-            List<AuctionResponse> responses = testBids.stream()
-                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction()))
+            // ✅ ใช้ Query ที่โหลด `Auction` ทีเดียว (Optimized)
+            List<Auction> auctions = auctionRepository.findAllByAuctionIds(auctionIds);
+            List<AuctionResponse> responses = auctions.stream()
+                    .map(AuctionResponse::new)
                     .collect(Collectors.toList());
 
             long endTime = System.currentTimeMillis(); // ⏳ จับเวลาจบ

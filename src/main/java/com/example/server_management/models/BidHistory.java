@@ -1,5 +1,6 @@
 package com.example.server_management.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -11,13 +12,16 @@ public class BidHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)  //  โหลดเฉพาะเมื่อเรียกใช้
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore  //  ป้องกันการโหลดข้อมูลซ้ำๆ
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)  //  โหลดเฉพาะเมื่อเรียกใช้
     @JoinColumn(name = "auction_id", nullable = false)
+    @JsonIgnore  //  ป้องกันการโหลดข้อมูลซ้ำๆ
     private Auction auction;
+
 
     private double bidAmount;
     private LocalDateTime bidTime;
@@ -27,11 +31,11 @@ public class BidHistory {
 
 
 
-    // ✅ ต้องมี default constructor
+    //  ต้องมี default constructor
     public BidHistory() {
     }
 
-    // ✅ Constructor ที่ใช้
+    //  Constructor ที่ใช้
     public BidHistory(User user, Auction auction, double bidAmount, LocalDateTime bidTime, boolean isWinner) {
         this.user = user;
         this.auction = auction;
@@ -40,7 +44,7 @@ public class BidHistory {
         this.isWinner = isWinner;
     }
 
-    // ✅ Getters & Setters
+    //  Getters & Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 

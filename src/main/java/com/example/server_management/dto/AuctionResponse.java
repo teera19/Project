@@ -29,7 +29,8 @@ public class AuctionResponse {
 
         // ✅ แปลง byte[] เป็น Base64 เพื่อให้ frontend ใช้งานได้ง่าย
         if (auction.getImage() != null) {
-            this.imageBase64 = Base64.getEncoder().encodeToString(auction.getImage());
+            String fullBase64 = Base64.getEncoder().encodeToString(auction.getImage());
+            this.imageBase64 = fullBase64.substring(0, Math.min(fullBase64.length(), 100));
         } else {
             this.imageBase64 = null;
         }

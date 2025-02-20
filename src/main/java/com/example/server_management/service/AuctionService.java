@@ -3,10 +3,11 @@ package com.example.server_management.service;
 import com.example.server_management.models.*;
 import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidRepository;
-import com.example.server_management.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -19,12 +20,6 @@ public class AuctionService {
 
     @Autowired
     private BidRepository bidRepository;
-    @Autowired
-    private UserRepository userRepository;
-
-    public List<Auction> getWonAuctions(User user) {
-        return auctionRepository.findByWinner(user);
-    }
 
     public List<Auction> getAllAuctions() {
         return auctionRepository.findByOrderByAuctionIdDesc();
@@ -60,5 +55,8 @@ public class AuctionService {
         bid.setUser(user);
         bid.setBidAmount(bidAmount);
         return bidRepository.save(bid);
+    }
+    public List<Auction> getWonAuctions(User user) {
+        return auctionRepository.findByWinner(user);
     }
 }

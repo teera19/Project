@@ -2,49 +2,91 @@ package com.example.server_management.dto;
 
 import com.example.server_management.models.Auction;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
-import javax.imageio.ImageIO;
 
 public class AuctionResponse {
-    private String imageBase64; // ✅ ลดขนาดภาพก่อนแปลงเป็น Base64
+    private int auctionId;
+    private String productName;
+    private String description;
+    private double startingPrice;
+    private double maxBidPrice;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private String imageBase64; // ✅ เปลี่ยนเป็น Base64
+    private String status; // ✅ สถานะ เช่น "Not Started", "Active", "Ended"
+    private long minutesRemaining; // ✅ นาทีที่เหลือ
 
     public AuctionResponse(Auction auction) {
+        this.auctionId = auction.getAuctionId();
+        this.productName = auction.getProductName();
+        this.description = auction.getDescription();
+        this.startingPrice = auction.getStartingPrice();
+        this.maxBidPrice = auction.getMaxBidPrice();
+        this.startTime = auction.getStartTime();
+        this.endTime = auction.getEndTime();
+
+        // ✅ แปลง byte[] เป็น Base64 เพื่อให้ frontend ใช้งานได้ง่าย
         if (auction.getImage() != null) {
-            this.imageBase64 = convertToBase64Thumbnail(auction.getImage());
+            this.imageBase64 = Base64.getEncoder().encodeToString(auction.getImage());
         } else {
             this.imageBase64 = null;
         }
+
+        // ✅ คำนวณสถานะและเวลาที่เหลือ
+        LocalDateTime now = LocalDateTime.now();
+
+        if (now.isBefore(startTime)) {
+            this.status = "Not Started";
+            this.minutesRemaining = ChronoUnit.MINUTES.between(now, startTime);
+        } else if (now.isAfter(endTime)) {
+            this.status = "Ended";
+            this.minutesRemaining = 0;
+        } else {
+            this.status = "Active";
+            this.minutesRemaining = ChronoUnit.MINUTES.between(now, endTime);
+        }
     }
 
-    private String convertToBase64Thumbnail(byte[] imageBytes) {
-        try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
-            BufferedImage originalImage = ImageIO.read(bais);
+    // ✅ Getters
+    public int getAuctionId() {
+        return auctionId;
+    }
 
-            // ✅ กำหนดขนาด Thumbnail
-            int targetWidth = 200;  // ปรับขนาดภาพให้เล็กลง
-            int targetHeight = (originalImage.getHeight() * targetWidth) / originalImage.getWidth();
-            Image resizedImage = originalImage.getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
+    public String getProductName() {
+        return productName;
+    }
 
-            // ✅ แปลงกลับเป็น BufferedImage
-            BufferedImage bufferedThumbnail = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
-            Graphics2D g2d = bufferedThumbnail.createGraphics();
-            g2d.drawImage(resizedImage, 0, 0, null);
-            g2d.dispose();
+    public String getDescription() {
+        return description;
+    }
 
-            // ✅ แปลง BufferedImage เป็น byte[]
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(bufferedThumbnail, "jpg", baos);
+    public double getStartingPrice() {
+        return startingPrice;
+    }
 
-            // ✅ แปลงเป็น Base64
-            return Base64.getEncoder().encodeToString(baos.toByteArray());
+    public double getMaxBidPrice() {
+        return maxBidPrice;
+    }
 
-        } catch (Exception e) {
-            return null; // กรณีเกิดข้อผิดพลาด
-        }
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public String getImageBase64() { // ✅ ใช้ชื่อใหม่
+        return imageBase64;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public long getMinutesRemaining() {
+        return minutesRemaining;
     }
 }

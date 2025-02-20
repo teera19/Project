@@ -24,8 +24,8 @@ public class AuctionResponse {
         this.description = auction.getDescription();
         this.startingPrice = auction.getStartingPrice();
         this.maxBidPrice = auction.getMaxBidPrice();
-        this.startTime = auction.getStartTime();
-        this.endTime = auction.getEndTime();
+        this.startTime = auction.getStartTime().toLocalDateTime();
+        this.endTime = auction.getEndTime().toLocalDateTime();
 
         // ✅ ใช้ imageUrl จากฐานข้อมูล ถ้ามี, ถ้าไม่มีให้สร้าง URL
         if (auction.getImageUrl() != null && !auction.getImageUrl().isEmpty()) {

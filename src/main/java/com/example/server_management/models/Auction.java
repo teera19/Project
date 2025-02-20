@@ -17,9 +17,9 @@ public class Auction {
     private String productName;
     private String description;
     private double startingPrice;
-    private double maxBidPrice;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private Double maxBidPrice;
+    private ZonedDateTime startTime;
+    private ZonedDateTime endTime;
     @Column(name = "owneruser_name", nullable = false)
     private String ownerUserName;
     @ManyToOne
@@ -33,15 +33,20 @@ public class Auction {
     @Enumerated(EnumType.STRING)
     private AuctionStatus status; // สถานะการประมูล
 
-    @PrePersist
-    @PreUpdate
-    public void adjustTimezone() {
-        if (startTime != null) {
-            this.startTime = ZonedDateTime.of(startTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
-        }
-        if (endTime != null) {
-            this.endTime = ZonedDateTime.of(endTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
-        }
+    public ZonedDateTime getStartTime() {
+        return startTime.withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
+    }
+
+    public void setStartTime(ZonedDateTime startTime) {
+        this.startTime = startTime.withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
+    }
+
+    public ZonedDateTime getEndTime() {
+        return endTime.withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
+    }
+
+    public void setEndTime(ZonedDateTime endTime) {
+        this.endTime = endTime.withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
     }
 
 
@@ -78,28 +83,12 @@ public class Auction {
         this.startingPrice = startingPrice;
     }
 
-    public double getMaxBidPrice() {
+    public Double getMaxBidPrice() {
         return maxBidPrice;
     }
 
     public void setMaxBidPrice(double maxBidPrice) {
         this.maxBidPrice = maxBidPrice;
-    }
-
-    public LocalDateTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = ZonedDateTime.of(startTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
-    }
-
-    public LocalDateTime getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = ZonedDateTime.of(endTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
     }
 
 

@@ -12,7 +12,8 @@ public class AuctionSummaryResponse {
         this.auctionId = auction.getAuctionId();
         this.productName = auction.getProductName();
         this.description = auction.getDescription();
-        this.imageUrl = auction.getImageUrl() != null ? auction.getImageUrl() : "https://project-production-f4db.up.railway.app/images/default.jpg";
+        this.imageUrl = "/images/" + auction.getAuctionId() + ".jpg";
+
     }
 
     // ✅ Getters

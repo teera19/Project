@@ -265,14 +265,14 @@ public class AuctionController {
                     .map(bidHistory -> new AuctionResponse(bidHistory.getAuction()))
                     .collect(Collectors.toList());
 
-            long endTime = System.currentTimeMillis(); //  จับเวลาจบ
-            System.out.println(" API Execution Time: " + (endTime - startTime) + " ms");
+            long endTime = System.currentTimeMillis(); // ⏳ จับเวลาจบ
+            System.out.println("⏳ API Execution Time: " + (endTime - startTime) + " ms");
 
             return new ResponseEntity<>(responses, HttpStatus.OK);
         } catch (Exception e) {
-            long endTime = System.currentTimeMillis(); //  จับเวลาจบ
-            System.err.println(" Error in /my-auction: " + e.getMessage());
-            System.out.println(" API Execution Time (Error): " + (endTime - startTime) + " ms");
+            long endTime = System.currentTimeMillis(); // ⏳ จับเวลาจบ
+            System.err.println("❌ Error in /my-auction: " + e.getMessage());
+            System.out.println("⏳ API Execution Time (Error): " + (endTime - startTime) + " ms");
 
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }

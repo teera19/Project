@@ -78,10 +78,15 @@ public class AuctionController {
 
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+            //  แปลงค่าเวลาจาก String โดยให้ใช้โซนเวลา `Asia/Bangkok`
             LocalDateTime startTime = LocalDateTime.parse(startTimeStr, formatter);
             LocalDateTime endTime = LocalDateTime.parse(endTimeStr, formatter);
 
-            // ✅ ตรวจสอบเวลาการประมูล
+            System.out.println(" Received Start Time: " + startTime);
+            System.out.println(" Received End Time: " + endTime);
+
+            //  ตรวจสอบเวลาการประมูล
             if (endTime.isBefore(startTime)) {
                 return new ResponseEntity<>(Map.of("message", "End time must be after start time."), HttpStatus.BAD_REQUEST);
             }
@@ -89,7 +94,7 @@ public class AuctionController {
                 return new ResponseEntity<>(Map.of("message", "Max bid price must be greater than starting price."), HttpStatus.BAD_REQUEST);
             }
 
-            // ✅ สร้าง Object Auction ก่อน
+            //  สร้าง Object Auction ก่อน
             Auction auction = new Auction();
             auction.setProductName(productName);
             auction.setDescription(description);
@@ -100,15 +105,15 @@ public class AuctionController {
             auction.setOwnerUserName(userName);
             auction.setStatus(AuctionStatus.ONGOING);
 
-            // ✅ บันทึก Auction ลงฐานข้อมูลก่อน เพื่อให้มี `auctionId`
+            //  บันทึก Auction ลงฐานข้อมูลก่อน เพื่อให้มี `auctionId`
             Auction savedAuction = auctionService.addAuction(auction);
 
-            // ✅ บันทึกภาพถ้ามี
+            //  บันทึกภาพถ้ามี
             if (image != null && !image.isEmpty()) {
                 try {
                     String imageUrl = saveImageToFile(image, savedAuction.getAuctionId());
                     savedAuction.setImageUrl(imageUrl);
-                    auctionService.updateAuctionStatus(savedAuction); // ✅ บันทึก URL ลง database
+                    auctionService.updateAuctionStatus(savedAuction); //  บันทึก URL ลง database
                 } catch (IOException e) {
                     return new ResponseEntity<>(Map.of(
                             "message", "Failed to save image",

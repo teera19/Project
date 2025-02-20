@@ -30,10 +30,6 @@ public class Auction {
     private String imageUrl;
 
 
-
-    @Lob // ใช้เพื่อเก็บข้อมูล binary ขนาดใหญ่ (BLOB)
-    private byte[] image; // แทน imageUrl ด้วย imageData
-
     @Enumerated(EnumType.STRING)
     private AuctionStatus status; // สถานะการประมูล
 
@@ -106,13 +102,7 @@ public class Auction {
         this.endTime = ZonedDateTime.of(endTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
     }
 
-    public byte[] getImage() {
-        return image;
-    }
 
-    public void setImage(byte[] image) {
-        this.image = image;
-    }
 
     public AuctionStatus getStatus() {
         return status;

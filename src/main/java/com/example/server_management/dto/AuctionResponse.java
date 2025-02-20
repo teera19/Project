@@ -5,6 +5,7 @@ import com.example.server_management.models.Auction;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
+
 public class AuctionResponse {
     private int auctionId;
     private String productName;
@@ -13,9 +14,9 @@ public class AuctionResponse {
     private double maxBidPrice;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private String imageUrl; // ✅ เปลี่ยนเป็น URL ของรูปภาพ
-    private String status; // ✅ สถานะ เช่น "Not Started", "Active", "Ended"
-    private long minutesRemaining; // ✅ นาทีที่เหลือก่อนสิ้นสุดการประมูล
+    private String imageUrl; // ✅ ใช้ imageUrl จากฐานข้อมูล ถ้ามี
+    private String status;
+    private long minutesRemaining;
 
     public AuctionResponse(Auction auction) {
         this.auctionId = auction.getAuctionId();
@@ -26,11 +27,11 @@ public class AuctionResponse {
         this.startTime = auction.getStartTime();
         this.endTime = auction.getEndTime();
 
-        // ✅ ใช้ URL ของรูปภาพแทน Base64
-        if (auction.getAuctionId() > 0) {
-            this.imageUrl = "https://project-production-f4db.up.railway.app/images/" + auction.getAuctionId() + ".jpg";
+        // ✅ ใช้ imageUrl จากฐานข้อมูล ถ้ามี, ถ้าไม่มีให้สร้าง URL
+        if (auction.getImageUrl() != null && !auction.getImageUrl().isEmpty()) {
+            this.imageUrl = auction.getImageUrl();
         } else {
-            this.imageUrl = null;
+            this.imageUrl = "https://project-production-f4db.up.railway.app/images/" + auction.getAuctionId() + ".jpg";
         }
 
         // ✅ คำนวณสถานะและเวลาที่เหลือ
@@ -48,43 +49,14 @@ public class AuctionResponse {
     }
 
     // ✅ Getters
-    public int getAuctionId() {
-        return auctionId;
-    }
-
-    public String getProductName() {
-        return productName;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public double getStartingPrice() {
-        return startingPrice;
-    }
-
-    public double getMaxBidPrice() {
-        return maxBidPrice;
-    }
-
-    public LocalDateTime getStartTime() {
-        return startTime;
-    }
-
-    public LocalDateTime getEndTime() {
-        return endTime;
-    }
-
-    public String getImageUrl() { // เปลี่ยนเป็น imageUrl
-        return imageUrl;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public long getMinutesRemaining() {
-        return minutesRemaining;
-    }
+    public int getAuctionId() { return auctionId; }
+    public String getProductName() { return productName; }
+    public String getDescription() { return description; }
+    public double getStartingPrice() { return startingPrice; }
+    public double getMaxBidPrice() { return maxBidPrice; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
+    public String getImageUrl() { return imageUrl; }
+    public String getStatus() { return status; }
+    public long getMinutesRemaining() { return minutesRemaining; }
 }

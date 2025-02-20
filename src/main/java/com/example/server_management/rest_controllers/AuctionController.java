@@ -77,15 +77,38 @@ public class AuctionController {
         }
 
         try {
-            // ✅ บันทึกข้อมูลการประมูล
-            Auction savedAuction = auctionService.addAuction(new Auction());
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+            LocalDateTime startTime = LocalDateTime.parse(startTimeStr, formatter);
+            LocalDateTime endTime = LocalDateTime.parse(endTimeStr, formatter);
 
-            // ✅ ตรวจสอบว่ามีรูปหรือไม่ และบันทึก URL แทน
+            // ✅ ตรวจสอบเวลาการประมูล
+            if (endTime.isBefore(startTime)) {
+                return new ResponseEntity<>(Map.of("message", "End time must be after start time."), HttpStatus.BAD_REQUEST);
+            }
+            if (maxBidPrice <= startingPrice) {
+                return new ResponseEntity<>(Map.of("message", "Max bid price must be greater than starting price."), HttpStatus.BAD_REQUEST);
+            }
+
+            // ✅ สร้าง Object Auction ก่อน
+            Auction auction = new Auction();
+            auction.setProductName(productName);
+            auction.setDescription(description);
+            auction.setStartingPrice(startingPrice);
+            auction.setMaxBidPrice(maxBidPrice);
+            auction.setStartTime(startTime);
+            auction.setEndTime(endTime);
+            auction.setOwnerUserName(userName);
+            auction.setStatus(AuctionStatus.ONGOING);
+
+            // ✅ บันทึก Auction ลงฐานข้อมูลก่อน เพื่อให้มี `auctionId`
+            Auction savedAuction = auctionService.addAuction(auction);
+
+            // ✅ บันทึกภาพถ้ามี
             if (image != null && !image.isEmpty()) {
                 try {
                     String imageUrl = saveImageToFile(image, savedAuction.getAuctionId());
                     savedAuction.setImageUrl(imageUrl);
-                    auctionService.updateAuctionStatus(savedAuction);
+                    auctionService.updateAuctionStatus(savedAuction); // ✅ บันทึก URL ลง database
                 } catch (IOException e) {
                     return new ResponseEntity<>(Map.of(
                             "message", "Failed to save image",
@@ -96,12 +119,10 @@ public class AuctionController {
 
             return new ResponseEntity<>(savedAuction, HttpStatus.CREATED);
         } catch (Exception e) {
-            return new ResponseEntity<>(Map.of(
-                    "message", "An error occurred",
-                    "error", e.getMessage()
-            ), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(Map.of("message", "An error occurred", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     private static final Logger log = LoggerFactory.getLogger(AuctionController.class);
 
@@ -259,10 +280,11 @@ public class AuctionController {
 
         String fileName = auctionId + ".jpg";
         File savedFile = new File(uploadDir, fileName);
+
         image.transferTo(savedFile);
+        System.out.println("✅ Image saved successfully: " + savedFile.getAbsolutePath());
 
-        return "https://project-production-f4db.up.railway.app/images/" + fileName; // ✅ คืนค่า URL ที่จะใช้
+        return "https://project-production-f4db.up.railway.app/images/" + fileName; // ✅ คืนค่า URL ของไฟล์
     }
-
 
 }

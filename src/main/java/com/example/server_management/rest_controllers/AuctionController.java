@@ -77,10 +77,9 @@ public class AuctionController {
         }
 
         try {
-            // ✅ แปลงเวลาที่รับจาก Frontend
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-            ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter).atZone(ZoneId.of("Asia/Bangkok"));
-            ZonedDateTime endTime = LocalDateTime.parse(endTimeStr, formatter).atZone(ZoneId.of("Asia/Bangkok"));
+            LocalDateTime startTime = LocalDateTime.parse(startTimeStr, formatter);
+            LocalDateTime endTime = LocalDateTime.parse(endTimeStr, formatter);
 
             // ✅ ตรวจสอบเวลาการประมูล
             if (endTime.isBefore(startTime)) {
@@ -90,7 +89,7 @@ public class AuctionController {
                 return new ResponseEntity<>(Map.of("message", "Max bid price must be greater than starting price."), HttpStatus.BAD_REQUEST);
             }
 
-            // ✅ สร้าง Auction
+            // ✅ สร้าง Object Auction ก่อน
             Auction auction = new Auction();
             auction.setProductName(productName);
             auction.setDescription(description);
@@ -109,7 +108,7 @@ public class AuctionController {
                 try {
                     String imageUrl = saveImageToFile(image, savedAuction.getAuctionId());
                     savedAuction.setImageUrl(imageUrl);
-                    auctionService.updateAuctionStatus(savedAuction);
+                    auctionService.updateAuctionStatus(savedAuction); // ✅ บันทึก URL ลง database
                 } catch (IOException e) {
                     return new ResponseEntity<>(Map.of(
                             "message", "Failed to save image",
@@ -154,7 +153,6 @@ public class AuctionController {
     public ResponseEntity<?> addBid(@PathVariable int auctionId,
                                     @RequestBody Map<String, Object> bidRequest,
                                     HttpSession session) {
-        // ✅ ตรวจสอบว่าผู้ใช้ล็อกอินหรือไม่
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return new ResponseEntity<>(Map.of(
@@ -163,7 +161,7 @@ public class AuctionController {
         }
 
         Optional<User> optionalUser = userRepository.findUserByUserName(userName);
-        if (optionalUser.isEmpty()) {
+        if (!optionalUser.isPresent()) {
             return new ResponseEntity<>(Map.of(
                     "message", "User not found with username: " + userName
             ), HttpStatus.NOT_FOUND);
@@ -171,7 +169,6 @@ public class AuctionController {
 
         User user = optionalUser.get();
 
-        // ✅ ตรวจสอบจำนวนเงินที่บิด
         double bidAmount;
         try {
             bidAmount = Double.parseDouble(bidRequest.get("bidAmount").toString());
@@ -188,11 +185,9 @@ public class AuctionController {
         }
 
         try {
-            // ✅ ดึงข้อมูลการประมูล
             Auction auction = auctionService.getAuctionById(auctionId);
-            ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
+            LocalDateTime now = LocalDateTime.now();
 
-            // ✅ ตรวจสอบเวลาการประมูล
             if (now.isBefore(auction.getStartTime())) {
                 return new ResponseEntity<>(Map.of(
                         "message", "Auction has not started yet."
@@ -204,24 +199,9 @@ public class AuctionController {
                 ), HttpStatus.BAD_REQUEST);
             }
 
-            // ✅ ตรวจสอบว่า `maxBidPrice` มีค่า
-            if (auction.getMaxBidPrice() == null) {
-                auction.setMaxBidPrice(auction.getStartingPrice());
-            }
-
-            // ✅ ตรวจสอบว่า `bidAmount` สูงกว่าหรือไม่
-            if (bidAmount <= auction.getMaxBidPrice()) {
-                return new ResponseEntity<>(Map.of(
-                        "message", "Your bid must be higher than the current max bid price (" + auction.getMaxBidPrice() + ")."
-                ), HttpStatus.BAD_REQUEST);
-            }
-
-            // ✅ บันทึกการประมูล
             Bid bid = auctionService.addBid(auctionId, user, bidAmount);
-            auction.setMaxBidPrice(bidAmount); // ✅ อัปเดตราคาสูงสุด
-            auctionService.updateAuctionStatus(auction);
 
-            // ✅ ตรวจสอบว่ามีการเสนอราคาสูงสุดแล้วหรือไม่
+            //  ตรวจสอบว่ามีการเสนอราคาสูงสุดแล้วหรือไม่
             if (bidAmount >= auction.getMaxBidPrice()) {
                 auctionService.determineAuctionWinner(auction);
                 return new ResponseEntity<>(Map.of(
@@ -234,12 +214,10 @@ public class AuctionController {
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(Map.of(
-                    "message", "An error occurred while processing the bid.",
-                    "error", e.getMessage()
+                    "message", "An error occurred while processing the bid."
             ), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
     @GetMapping("/{auctionId}/bids")
     public ResponseEntity<List<BidResponse>> getBidsByAuctionId(@PathVariable int auctionId) {
         List<Bid> bids = bidRepository.findByAuction_AuctionId(auctionId); // ใช้ BidRepository

@@ -59,9 +59,8 @@ public class AuctionService {
 
         //  ตรวจสอบว่าค่า Hibernate อ่านออกมาเป็นโซนเวลาไหน
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
-        LocalDateTime rawStart = auction.getStartTime().toLocalDateTime();  //  แปลง ZonedDateTime → LocalDateTime
-        LocalDateTime rawEnd = auction.getEndTime().toLocalDateTime();      //  แปลง ZonedDateTime → LocalDateTime
-
+        LocalDateTime rawStart = auction.getStartTime();
+        LocalDateTime rawEnd = auction.getEndTime();
 
         //  Debug: เช็กว่า Hibernate คืนค่ามาเป็นโซนอะไร
         System.out.println(" Hibernate Read StartTime: " + rawStart);
@@ -101,7 +100,7 @@ public class AuctionService {
         if (bidAmount >= auction.getMaxBidPrice()) {
             // ปิดการประมูล
             auction.setStatus(AuctionStatus.COMPLETED);
-            auction.setEndTime(ZonedDateTime.now(ZoneId.of("Asia/Bangkok"))); //  ใช้ ZonedDateTime ตรงกับ Model
+            auction.setEndTime(LocalDateTime.now());
             auctionRepository.save(auction);
         }
 

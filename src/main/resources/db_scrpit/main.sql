@@ -96,4 +96,7 @@ ALTER TABLE auction MODIFY COLUMN status ENUM('ONGOING', 'COMPLETED', 'CANCELLED
 
 
 
+SELECT NOW(), @@global.time_zone, @@session.time_zone;
+SET GLOBAL time_zone = 'Asia/Bangkok';
+SET SESSION time_zone = 'Asia/Bangkok';
 

@@ -3,7 +3,6 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
 import com.example.server_management.models.*;
-import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidHistoryRepository;
 import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
@@ -43,8 +42,6 @@ public class AuctionController {
     BidHistoryRepository bidHistoryRepository;
     @Autowired
     BidRepository bidRepository;
-    @Autowired
-    AuctionRepository auctionRepository;
 
 
     @GetMapping
@@ -245,45 +242,42 @@ public class AuctionController {
 
     @GetMapping("/my-auction")
     public ResponseEntity<?> getMyAuctions(HttpSession session) {
-        long startTime = System.currentTimeMillis(); // ⏳ เริ่มจับเวลา
         try {
             String userName = (String) session.getAttribute("user_name");
+            System.out.println(" Session User: " + userName);
+
             if (userName == null) {
                 return new ResponseEntity<>(Map.of("message", "User not logged in"), HttpStatus.FORBIDDEN);
             }
 
             Optional<User> optionalUser = userRepository.findUserByUserName(userName);
             if (!optionalUser.isPresent()) {
-                return new ResponseEntity<>(Map.of("message", "User not found"), HttpStatus.NOT_FOUND);
+                System.out.println(" User not found: " + userName);
+                return new ResponseEntity<>(Map.of("message", "User not found with username: " + userName), HttpStatus.NOT_FOUND);
             }
 
             User user = optionalUser.get();
+            System.out.println(" Querying BidHistory for user: " + user.getUserName());
 
-            // ✅ ดึงแค่ auctionId เพื่อลดโหลดข้อมูลที่ไม่จำเป็น
-            List<Integer> auctionIds = bidHistoryRepository.findWinningAuctionIdsByUser(user);
-            if (auctionIds.isEmpty()) {
+            //  ดึงรายการประมูลที่ user เป็นผู้ชนะ
+            List<BidHistory> testBids = bidHistoryRepository.findByUserAndIsWinnerTrue(user);
+            System.out.println(" Winning Bids Found: " + testBids.size());
+
+            if (testBids.isEmpty()) {
                 return new ResponseEntity<>(Map.of("message", "No winning auctions found"), HttpStatus.OK);
             }
 
-            // ✅ ใช้ Query ที่โหลด `Auction` ทีเดียว (Optimized)
-            List<Auction> auctions = auctionRepository.findAllByAuctionIds(auctionIds);
-            List<AuctionResponse> responses = auctions.stream()
-                    .map(AuctionResponse::new)
+            List<AuctionResponse> responses = testBids.stream()
+                    .map(bidHistory -> new AuctionResponse(bidHistory.getAuction())) // ✅ ใช้ AuctionResponse ที่มี imageUrl
                     .collect(Collectors.toList());
-
-            long endTime = System.currentTimeMillis(); // ⏳ จับเวลาจบ
-            System.out.println("⏳ API Execution Time: " + (endTime - startTime) + " ms");
 
             return new ResponseEntity<>(responses, HttpStatus.OK);
         } catch (Exception e) {
-            long endTime = System.currentTimeMillis(); // ⏳ จับเวลาจบ
-            System.err.println("❌ Error in /my-auction: " + e.getMessage());
-            System.out.println("⏳ API Execution Time (Error): " + (endTime - startTime) + " ms");
-
+            System.err.println(" Error in /my-auction: " + e.getMessage());
+            e.printStackTrace();
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
     private String saveImageToFile(MultipartFile image, int auctionId) throws IOException {
         File uploadDir = new File("/tmp/images/");
         if (!uploadDir.exists()) {
@@ -295,7 +289,7 @@ public class AuctionController {
 
         // ✅ บีบอัดรูปก่อนบันทึก
         Thumbnails.of(image.getInputStream())
-                .size(100, 100) // ลดขนาดรูปเป็น 500x500
+                .size(500, 500) // ลดขนาดรูปเป็น 500x500
                 .outputQuality(0.7) // ลดคุณภาพรูปให้ขนาดไฟล์เล็กลง
                 .toFile(savedFile);
 

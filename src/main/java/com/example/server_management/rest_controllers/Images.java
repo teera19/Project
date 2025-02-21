@@ -18,15 +18,16 @@ public class Images {
     @GetMapping("/{filename}")
     public ResponseEntity<Resource> getImage(@PathVariable String filename) {
         try {
-            // ✅ ป้องกัน Path Traversal Attack (`../`)
-            Path filePath = Paths.get(imagesDirectory).resolve(filename).normalize();
+            Path filePath = Paths.get("/tmp/images/").resolve(filename).normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
             if (!resource.exists() || !resource.isReadable()) {
+                System.out.println("❌ Image not found: " + filePath.toString());
                 return ResponseEntity.notFound().build();
             }
 
-            // ✅ ตรวจสอบ Content-Type ของไฟล์
+            System.out.println("✅ Serving image: " + filePath.toString());
+
             String contentType = filename.endsWith(".png") ? "image/png" : "image/jpeg";
 
             return ResponseEntity.ok()

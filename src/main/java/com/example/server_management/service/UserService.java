@@ -364,30 +364,31 @@ public class UserService {
         try {
             BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
             if (originalImage == null) {
-                throw new IOException(" Cannot read image data.");
+                throw new IOException("❌ Cannot read image data.");
             }
 
             // ตรวจสอบและสร้างโฟลเดอร์ `/tmp/images/`
             File uploadDir = new File("/tmp/images/");
             if (!uploadDir.exists() && !uploadDir.mkdirs()) {
-                throw new IOException(" Failed to create directory: " + uploadDir.getAbsolutePath());
+                throw new IOException("❌ Failed to create directory: " + uploadDir.getAbsolutePath());
             }
 
             // ลบไฟล์เก่าก่อนบันทึกใหม่
-            File outputFile = new File(uploadDir, productId + ".png");
+            File outputFile = new File(uploadDir, productId + ".jpg");
             if (outputFile.exists()) {
                 boolean deleted = outputFile.delete();
                 System.out.println("🗑 Deleted old image: " + deleted);
             }
 
             // บันทึกไฟล์ใหม่
-            ImageIO.write(originalImage, "png", outputFile);
-            System.out.println("Image saved successfully: " + outputFile.getAbsolutePath());
+            ImageIO.write(originalImage, "jpg", outputFile);
+            System.out.println("✅ Image saved successfully: " + outputFile.getAbsolutePath());
 
         } catch (IOException e) {
-            throw new RuntimeException(" Failed to save image: " + e.getMessage());
+            throw new RuntimeException("❌ Failed to save image: " + e.getMessage());
         }
     }
+
 
 
 
@@ -442,9 +443,14 @@ public class UserService {
     }
     @Transactional
     public void updateProductImage(Product product, byte[] imageBytes) {
+        System.out.println("🔄 Updating image for product ID: " + product.getProductId());
+
         saveCompressedImage(imageBytes, product.getProductId()); // ✅ บันทึกรูปภาพใหม่
         String imageUrl = "https://project-production-f4db.up.railway.app/images/" + product.getProductId() + ".jpg";
         product.setImageUrl(imageUrl);  // ✅ ตั้งค่า URL ใหม่
+
+        System.out.println("✅ New image URL: " + imageUrl);
+
         productRepository.save(product);  // ✅ บันทึกข้อมูลในฐานข้อมูล
     }
 

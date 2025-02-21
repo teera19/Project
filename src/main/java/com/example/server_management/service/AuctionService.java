@@ -57,9 +57,10 @@ public class AuctionService {
             auction.setStatus(AuctionStatus.COMPLETED); // **ปิดประมูลทันที**
         }
 
-        // ✅ **อัปเดตราคาสูงสุด**
-        auction.setMaxBidPrice(bidAmount);
-        auctionRepository.save(auction);
+        if (bidAmount > auction.getMaxBidPrice()) {
+            auction.setMaxBidPrice(bidAmount);
+            auctionRepository.save(auction);
+        }
 
         Bid bid = new Bid();
         bid.setAuction(auction);

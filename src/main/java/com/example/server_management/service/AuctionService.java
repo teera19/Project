@@ -39,24 +39,26 @@ public class AuctionService {
                 .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
-        ZonedDateTime auctionStart = auction.getStartTime().atZone(ZoneId.of("Asia/Bangkok"));
         ZonedDateTime auctionEnd = auction.getEndTime().atZone(ZoneId.of("Asia/Bangkok"));
-
-        if (now.isBefore(auctionStart)) {
-            throw new IllegalArgumentException("Auction has not started yet.");
-        }
 
         if (now.isAfter(auctionEnd)) {
             throw new IllegalArgumentException("Auction has already ended.");
         }
 
+        if (bidAmount <= auction.getMaxBidPrice()) {
+            throw new IllegalArgumentException("Your bid must be higher than the current max bid price.");
+        }
+
+        // ✅ อัปเดตราคาสูงสุดและผู้ชนะ
+        auction.setMaxBidPrice(bidAmount);
+        auction.setWinner(user); // ตั้งผู้ชนะเป็นผู้ที่บิดล่าสุด
+        auctionRepository.save(auction);
+
         Bid bid = new Bid();
         bid.setAuction(auction);
         bid.setUser(user);
         bid.setBidAmount(bidAmount);
+
         return bidRepository.save(bid);
-    }
-    public List<Auction> getWonAuctions(User user) {
-        return auctionRepository.findByWinner(user);
     }
 }

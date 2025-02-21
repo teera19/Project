@@ -3,6 +3,7 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.dto.ResponseProduct;
 import com.example.server_management.models.Category;
 import com.example.server_management.service.UserService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,10 +30,14 @@ public class Addproduct {
                                              @RequestParam("price") double price,
                                              @RequestParam("image") MultipartFile image,
                                              @RequestParam("category_name") String categoryName, // 🛠 รับเป็นชื่อแทน
-                                             @RequestParam Map<String, String> details) throws IOException {
+                                             @RequestParam Map<String, String> details, HttpSession session) throws IOException {
         try {
             System.out.println(" category_name = " + categoryName);
 
+            String userName = (String) session.getAttribute("user_name");
+            if (userName == null) {
+                return new ResponseEntity<>("User not logged in", HttpStatus.FORBIDDEN);
+            }
             //  หา category_id ตามชื่อ
             Category category = userService.findCategoryByName(categoryName);
             if (category == null) {

@@ -32,7 +32,7 @@ public class Editprofile {
     @Autowired
     private UserRepository userRepository;
 
-    @PostMapping(value = "/edit-profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/edit-profile")
     public ResponseEntity<?> editProfile(@ModelAttribute EditProfile editProfile, HttpSession session) {
         // ตรวจสอบว่า user ล็อกอินอยู่หรือไม่
         String userName = (String) session.getAttribute("user_name");

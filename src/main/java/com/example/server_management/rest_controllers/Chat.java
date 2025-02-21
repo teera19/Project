@@ -24,16 +24,19 @@ public class Chat {
     @Autowired
     private ProductService productService;
 
+    /**
+     * เริ่มต้นสร้างแชท
+     */
     @PostMapping("/start")
     public ResponseEntity<Map<String, Object>> startChat(
-            HttpSession session, // ใช้ HttpSession แทน
+            HttpSession session,
             @RequestBody ChatRequest chatRequest
     ) {
         String user1 = (String) session.getAttribute("user_name");
 
         if (user1 == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "message", "User not logged in. Please log in first."
+                    "message", "⚠️ User not logged in. Please log in first."
             ));
         }
 
@@ -41,7 +44,9 @@ public class Chat {
         String user2 = productService.findSellerByProductId(productId);
 
         if (user2 == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "message", "⚠️ Product seller not found."
+            ));
         }
 
         ChatRoom chatRoom = chatService.getOrCreateChatRoom(user1, user2, productId);
@@ -49,30 +54,33 @@ public class Chat {
         return ResponseEntity.ok(Map.of("chatId", chatRoom.getChatId()));
     }
 
-
-
+    /**
+     * ดึงประวัติแชท
+     */
     @GetMapping("/{chatId}/history")
     public ResponseEntity<?> getChatHistory(
-            HttpSession session, // ใช้ HttpSession
+            HttpSession session,
             @PathVariable int chatId
     ) {
         String currentUser = (String) session.getAttribute("user_name");
 
         if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not logged in.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("⚠️ User not logged in.");
         }
 
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
 
         if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้ ");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("⛔ คุณไม่มีสิทธิ์ดูแชทนี้");
         }
 
         List<Message> messages = chatService.getChatHistory(chatId);
         return ResponseEntity.ok(messages);
     }
 
-
+    /**
+     * ส่งข้อความไปยังแชท
+     */
     @PostMapping("/{chatId}/send")
     public ResponseEntity<Message> sendMessage(
             HttpSession session,
@@ -95,13 +103,19 @@ public class Chat {
         return ResponseEntity.ok(message);
     }
 
+    /**
+     * ดึงรายการแชทของผู้ใช้
+     */
     @GetMapping("/my-chats")
     public ResponseEntity<List<ChatRoomDTO>> getMyChats(HttpSession session) {
         String currentUser = (String) session.getAttribute("user_name");
 
         if (currentUser == null) {
+            System.out.println("🚨 User not logged in (session is null)");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
+
+        System.out.println("✅ Current user: " + currentUser);
 
         List<ChatRoom> chatRooms = chatService.getChatsByUser(currentUser);
 
@@ -116,6 +130,4 @@ public class Chat {
 
         return ResponseEntity.ok(chatRoomDTOs);
     }
-
 }
-

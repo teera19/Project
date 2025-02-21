@@ -17,37 +17,73 @@ public class ChatService {
     @Autowired
     private MessageRepository messageRepository;
 
+    /**
+     * หา ChatRoom ถ้ายังไม่มีให้สร้างใหม่
+     */
     public ChatRoom getOrCreateChatRoom(String user1, String user2, int productId) {
         return chatRoomRepository.findByUser1AndUser2AndProductId(user1, user2, productId)
-                .orElseGet(() -> chatRoomRepository.save(new ChatRoom(user1, user2, productId)));
+                .orElseGet(() -> {
+                    ChatRoom newChat = new ChatRoom(user1, user2, productId);
+                    return chatRoomRepository.save(newChat);
+                });
     }
 
-
+    /**
+     * ดึงประวัติแชทจาก chatId (แก้ปัญหา NullPointerException)
+     */
     public List<Message> getChatHistory(int chatId) {
-        return messageRepository.findByChatRoom(chatRoomRepository.findById(chatId).orElse(null));
+        ChatRoom chatRoom = chatRoomRepository.findById(chatId)
+                .orElseThrow(() -> new RuntimeException("⚠️ Chat room not found for chatId: " + chatId));
+        return messageRepository.findByChatRoom(chatRoom);
     }
 
+    /**
+     * ส่งข้อความไปยังแชท (ป้องกัน Error 500 และเพิ่ม Log Debugging)
+     */
     public Message sendMessage(int chatId, String sender, String message) {
-        ChatRoom chatRoom = chatRoomRepository.findById(chatId).orElseThrow(() -> new RuntimeException("Chat not found"));
+        System.out.println("📩 Sending message to chatId: " + chatId + " from " + sender + " -> " + message);
+
+        ChatRoom chatRoom = chatRoomRepository.findById(chatId)
+                .orElseThrow(() -> new RuntimeException("⚠️ Chat not found for chatId: " + chatId));
+
         Message newMessage = new Message();
         newMessage.setChatRoom(chatRoom);
         newMessage.setSender(sender);
         newMessage.setMessage(message);
-        return messageRepository.save(newMessage);
+
+        Message savedMessage = messageRepository.save(newMessage);
+        System.out.println("✅ Message saved: " + savedMessage.getMessage() + " at " + savedMessage.getCreatedAt());
+
+        return savedMessage;
     }
+
+    /**
+     * ดึง ChatRoom จาก chatId (แก้ปัญหา NullPointerException)
+     */
     public ChatRoom getChatRoomById(int chatId) {
         return chatRoomRepository.findById(chatId)
-                .orElseThrow(() -> new RuntimeException("ChatRoom not found"));
+                .orElseThrow(() -> new RuntimeException("⚠️ ChatRoom not found for chatId: " + chatId));
     }
+
+    /**
+     * ดึงรายการแชทของผู้ใช้
+     */
     public List<ChatRoom> getChatsByUser(String userName) {
         return chatRoomRepository.findByUser1OrUser2(userName, userName);
     }
+
+    /**
+     * ดึงข้อความล่าสุดของแชท
+     */
     public Message getLatestMessage(int chatId) {
-        ChatRoom chatRoom = this.getChatRoomById(chatId);
-        return messageRepository.findTopByChatRoomOrderByTimestampDesc(chatRoom);
+        ChatRoom chatRoom = getChatRoomById(chatId);
+        Message latestMessage = messageRepository.findTopByChatRoomOrderByTimestampDesc(chatRoom);
+
+        if (latestMessage == null) {
+            System.out.println("⚠️ No messages found for chatId: " + chatId);
+            return null;
+        }
+
+        return latestMessage;
     }
-
-
-
 }
-

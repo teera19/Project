@@ -73,13 +73,10 @@ public class AuctionController {
         }
 
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 
-            ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter)
-                    .atZone(ZoneId.of("Asia/Bangkok"));
-
-            ZonedDateTime endTime = LocalDateTime.parse(endTimeStr, formatter)
-                    .atZone(ZoneId.of("Asia/Bangkok"));
+            ZonedDateTime startTime = ZonedDateTime.parse(startTimeStr, formatter);
+            ZonedDateTime endTime = ZonedDateTime.parse(endTimeStr, formatter);
 
             if (endTime.isBefore(startTime)) {
                 return ResponseEntity.badRequest().body(Map.of("message", "End time must be after start time."));

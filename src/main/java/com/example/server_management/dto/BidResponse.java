@@ -11,16 +11,16 @@ public class BidResponse {
     private String fullName;         // ชื่อ-นามสกุลของผู้ที่บิด
     private LocalDateTime bidTime;   // เวลาที่บิด
 
-    // ✅ Constructor รับ `Bid`
+    //  Constructor รับ `Bid`
     public BidResponse(Bid bid) {
-        this.bidId = bid.getBidId(); // ✅ ใช้ `id` จาก `Bid`
+        this.bidId = bid.getBidId(); //  ใช้ `id` จาก `Bid`
         this.bidAmount = bid.getBidAmount();
         this.username = bid.getUser().getUserName();
         this.fullName = bid.getUser().getName() + " " + bid.getUser().getLastName();
         this.bidTime = bid.getBidTime();
     }
 
-    // ✅ Getters
+    //  Getters
     public int getBidId() { return bidId; }
     public double getBidAmount() { return bidAmount; }
     public String getUsername() { return username; }

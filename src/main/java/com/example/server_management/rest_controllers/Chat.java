@@ -26,7 +26,7 @@ public class Chat {
     @PostMapping("/start") //ปุ่มเริ่มแชทในราลเอียดสินค้า
     public ResponseEntity<Map<String, Object>> startChat(
             @SessionAttribute("user_name") String user1,
-            @RequestBody ChatRequest chatRequest // ✅ ใช้ @RequestBody เพื่อรับ JSON Body
+            @RequestBody ChatRequest chatRequest //  ใช้ @RequestBody เพื่อรับ JSON Body
     ) {
         int productId = chatRequest.getProductId();
 
@@ -49,18 +49,18 @@ public class Chat {
 
     @GetMapping("/{chatId}/history") //ประวัติแชท
     public ResponseEntity<?> getChatHistory(
-            @SessionAttribute("user_name") String currentUser, // ✅ ดึง user จาก session
+            @SessionAttribute("user_name") String currentUser, //  ดึง user จาก session
             @PathVariable int chatId
     ) {
-        // ✅ ดึงห้องแชทจากฐานข้อมูล
+        // ดึงห้องแชทจากฐานข้อมูล
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
 
-        // ✅ ตรวจสอบว่าผู้ใช้ที่ขอเป็น `user1` หรือ `user2` หรือไม่
+        //  ตรวจสอบว่าผู้ใช้ที่ขอเป็น `user1` หรือ `user2` หรือไม่
         if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้ ❌");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้ ");
         }
 
-        // ✅ ถ้าผ่านการตรวจสอบ ดึงประวัติแชท
+        //  ถ้าผ่านการตรวจสอบ ดึงประวัติแชท
         List<Message> messages = chatService.getChatHistory(chatId);
         return ResponseEntity.ok(messages);
     }
@@ -68,17 +68,17 @@ public class Chat {
 
     @PostMapping("/{chatId}/send") //ส่งข้อความ
     public ResponseEntity<Message> sendMessage(
-            @SessionAttribute("user_name") String sender, // ✅ ดึง sender จาก Session
+            @SessionAttribute("user_name") String sender, // ดึง sender จาก Session
             @PathVariable int chatId,
-            @RequestBody MessageRequest request // ✅ รับเฉพาะ message จาก Body
+            @RequestBody MessageRequest request //  รับเฉพาะ message จาก Body
     ) {
-        // ✅ ตรวจสอบว่า sender มีสิทธิ์ส่งข้อความในห้องแชทนี้หรือไม่
+        //  ตรวจสอบว่า sender มีสิทธิ์ส่งข้อความในห้องแชทนี้หรือไม่
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
         if (!chatRoom.getUser1().equals(sender) && !chatRoom.getUser2().equals(sender)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
-        // ✅ ส่งข้อความ
+        // ส่งข้อความ
         Message message = chatService.sendMessage(chatId, sender, request.getMessage());
         return ResponseEntity.ok(message);
     }

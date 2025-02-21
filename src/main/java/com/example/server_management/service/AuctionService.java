@@ -51,7 +51,7 @@ public class AuctionService {
             throw new IllegalArgumentException("Bid must be between " + auction.getStartingPrice() + " and " + auction.getMaxBidPrice() + ".");
         }
 
-        // ✅ **ถ้ามีคนบิด 5000 บาท ให้เป็นผู้ชนะทันที**
+        //  **ถ้ามีคนบิด 5000 บาท ให้เป็นผู้ชนะทันที**
         if (bidAmount == auction.getMaxBidPrice()) {
             auction.setWinner(user);
             auction.setStatus(AuctionStatus.COMPLETED); // **ปิดประมูลทันที**

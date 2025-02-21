@@ -17,11 +17,11 @@ public class ProductResponse {
 
     public ProductResponse(Product product) {
         this.id = product.getProductId();
-        this.name = product.getName();  // ✅ ดึงชื่อสินค้า
-        this.description = product.getDescription();  // ✅ ดึงคำอธิบายสินค้า
-        this.price = product.getPrice();  // ✅ ดึงราคาสินค้า
-        this.imageUrl = "/images/" + product.getProductId() + ".jpg";  // ✅ URL รูปภาพ
-        this.categoryName = product.getCategoryName();  // ✅ ดึงชื่อหมวดหมู่สินค้า
+        this.name = product.getName();  //  ดึงชื่อสินค้า
+        this.description = product.getDescription();  //  ดึงคำอธิบายสินค้า
+        this.price = product.getPrice();  //  ดึงราคาสินค้า
+        this.imageUrl = "/images/" + product.getProductId() + ".jpg";  //  URL รูปภาพ
+        this.categoryName = product.getCategoryName();  //  ดึงชื่อหมวดหมู่สินค้า
 
         if (product.getShop() != null) {
             this.shopTitle = product.getShop().getTitle();

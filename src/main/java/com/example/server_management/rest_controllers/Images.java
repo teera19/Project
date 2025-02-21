@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 @RestController
 @RequestMapping("/images")
 public class Images {
-    private final String imagesDirectory = "/tmp/images"; // ✅ โฟลเดอร์ที่เก็บรูป
+    private final String imagesDirectory = "/tmp/images"; //  โฟลเดอร์ที่เก็บรูป
 
     @GetMapping("/{filename}")
     public ResponseEntity<Resource> getImage(@PathVariable String filename) {
@@ -22,11 +22,11 @@ public class Images {
             Resource resource = new UrlResource(filePath.toUri());
 
             if (!resource.exists() || !resource.isReadable()) {
-                System.out.println("❌ Image not found: " + filePath.toString());
+                System.out.println(" Image not found: " + filePath.toString());
                 return ResponseEntity.notFound().build();
             }
 
-            System.out.println("✅ Serving image: " + filePath.toString());
+            System.out.println(" Serving image: " + filePath.toString());
 
             String contentType = filename.endsWith(".png") ? "image/png" : "image/jpeg";
 

@@ -27,11 +27,11 @@ public class BidHistory {
 
 
 
-    // ✅ ต้องมี default constructor
+    //  ต้องมี default constructor
     public BidHistory() {
     }
 
-    // ✅ Constructor ที่ใช้
+    //  Constructor ที่ใช้
     public BidHistory(User user, Auction auction, double bidAmount, LocalDateTime bidTime, boolean isWinner) {
         this.user = user;
         this.auction = auction;
@@ -40,7 +40,7 @@ public class BidHistory {
         this.isWinner = isWinner;
     }
 
-    // ✅ Getters & Setters
+    //  Getters & Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 

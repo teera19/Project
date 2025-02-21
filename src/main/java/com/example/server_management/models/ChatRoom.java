@@ -36,7 +36,7 @@ public class ChatRoom {
         this.productId = productId;
     }
 
-    // ✅ Getter & Setter
+    //  Getter & Setter
     public int getChatId() {
         return chatId;
     }

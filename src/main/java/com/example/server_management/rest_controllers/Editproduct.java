@@ -78,7 +78,7 @@ public class Editproduct {
                     detailObject = updateShoesDetails(product, details);
                     break;
                 default:
-                    System.out.println("⚠️ No additional details required for category: " + categoryName);
+                    System.out.println("️ No additional details required for category: " + categoryName);
             }
 
             //  อัปเดตรูปภาพสินค้า

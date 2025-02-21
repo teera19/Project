@@ -382,10 +382,10 @@ public class UserService {
 
             // บันทึกไฟล์ใหม่
             ImageIO.write(originalImage, "jpg", outputFile);
-            System.out.println("✅ Image saved successfully: " + outputFile.getAbsolutePath());
+            System.out.println("Image saved successfully: " + outputFile.getAbsolutePath());
 
         } catch (IOException e) {
-            throw new RuntimeException("❌ Failed to save image: " + e.getMessage());
+            throw new RuntimeException(" Failed to save image: " + e.getMessage());
         }
     }
 
@@ -443,15 +443,15 @@ public class UserService {
     }
     @Transactional
     public void updateProductImage(Product product, byte[] imageBytes) {
-        System.out.println("🔄 Updating image for product ID: " + product.getProductId());
+        System.out.println("Updating image for product ID: " + product.getProductId());
 
-        saveCompressedImage(imageBytes, product.getProductId()); // ✅ บันทึกรูปภาพใหม่
+        saveCompressedImage(imageBytes, product.getProductId()); //  บันทึกรูปภาพใหม่
         String imageUrl = "https://project-production-f4db.up.railway.app/images/" + product.getProductId() + ".jpg";
-        product.setImageUrl(imageUrl);  // ✅ ตั้งค่า URL ใหม่
+        product.setImageUrl(imageUrl);  //  ตั้งค่า URL ใหม่
 
-        System.out.println("✅ New image URL: " + imageUrl);
+        System.out.println(" New image URL: " + imageUrl);
 
-        productRepository.save(product);  // ✅ บันทึกข้อมูลในฐานข้อมูล
+        productRepository.save(product);  //  บันทึกข้อมูลในฐานข้อมูล
     }
 
 

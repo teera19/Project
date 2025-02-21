@@ -14,7 +14,7 @@ import java.util.List;
 
 public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
 
-    // ✅ ดึงเฉพาะรายการที่ผู้ใช้ชนะ
+    //  ดึงเฉพาะรายการที่ผู้ใช้ชนะ
 
     List<BidHistory> findByUserAndIsWinnerTrue(User user);
     @Modifying

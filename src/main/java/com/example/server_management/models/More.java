@@ -12,12 +12,12 @@ public class More {
     @Column(name = "flawed_point")
     private String flawedPoint;
 
-    // ✅ เพิ่มความสัมพันธ์กับ `Product`
+    //  เพิ่มความสัมพันธ์กับ `Product`
     @OneToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    // ✅ Getters & Setters
+    //  Getters & Setters
     public int getId() {
         return id;
     }

@@ -11,7 +11,7 @@ public class ShoesDetails {
     private int id;
 
     @Column(name = "hasbrand_logo")
-    private String hasBrandLogo; // ✅ เปลี่ยนจาก `boolean` เป็น `String`
+    private String hasBrandLogo; // เปลี่ยนจาก `boolean` เป็น `String`
 
     @Column(name = "tear_location")
     private String tearLocation;
@@ -23,7 +23,7 @@ public class ShoesDetails {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    // ✅ Getters & Setters
+    //  Getters & Setters
     public int getId() {
         return id;
     }

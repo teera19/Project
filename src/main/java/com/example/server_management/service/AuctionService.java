@@ -46,13 +46,19 @@ public class AuctionService {
             throw new IllegalArgumentException("Auction has already ended.");
         }
 
-        if (bidAmount <= auction.getMaxBidPrice()) {
-            throw new IllegalArgumentException("Your bid must be higher than the current max bid price.");
+        // 🛠 **ตรวจสอบว่าการบิดอยู่ในช่วงที่กำหนด**
+        if (bidAmount < auction.getStartingPrice() || bidAmount > auction.getMaxBidPrice()) {
+            throw new IllegalArgumentException("Bid must be between " + auction.getStartingPrice() + " and " + auction.getMaxBidPrice() + ".");
         }
 
-        // ✅ อัปเดตราคาสูงสุดและผู้ชนะ
+        // ✅ **ถ้ามีคนบิด 5000 บาท ให้เป็นผู้ชนะทันที**
+        if (bidAmount == auction.getMaxBidPrice()) {
+            auction.setWinner(user);
+            auction.setStatus(AuctionStatus.COMPLETED); // **ปิดประมูลทันที**
+        }
+
+        // ✅ **อัปเดตราคาสูงสุด**
         auction.setMaxBidPrice(bidAmount);
-        auction.setWinner(user); // ตั้งผู้ชนะเป็นผู้ที่บิดล่าสุด
         auctionRepository.save(auction);
 
         Bid bid = new Bid();
@@ -62,6 +68,7 @@ public class AuctionService {
 
         return bidRepository.save(bid);
     }
+
     public List<Auction> getWonAuctions(User user) {
         return auctionRepository.findByWinner(user);
     }

@@ -40,9 +40,6 @@ public class UserService {
     private ShoesDetailsRepository shoesDetailsRepository;
     @Autowired
     private MoreRepository moreRepository;
-    @Autowired
-    private CloudinaryService cloudinaryService;
-
 
     public User registerServiceMethod(User user) {
         System.out.println("Registering user: " + user.getUserName() + ", Email: " + user.getEmail());
@@ -100,25 +97,28 @@ public class UserService {
     @Transactional
     public ResponseProduct addProductToShop(String shopTitle, String name, String description, double price,
                                             MultipartFile image, int categoryId, Map<String, String> details) throws IOException {
+        System.out.println(" Checking categoryId before fetch: " + categoryId);
 
         if (categoryId <= 0) {
             throw new IllegalArgumentException("Invalid categoryId: " + categoryId);
         }
 
-        // ค้นหา Category
+        //  Debug ก่อนดึงข้อมูลจาก DB
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
         if (categoryOpt.isEmpty()) {
             throw new IllegalArgumentException("Category not found with ID: " + categoryId);
         }
-        Category category = categoryOpt.get();
 
-        // ค้นหา MyShop ตาม shopTitle
+        Category category = categoryOpt.get();
+        System.out.println(" Fetched category from DB: " + category.getName());
+
+        //  ค้นหาร้านค้า
         MyShop shop = myShopRepository.findByTitle(shopTitle);
         if (shop == null) {
             throw new IllegalArgumentException("Shop not found with title: " + shopTitle);
         }
 
-        // สร้างสินค้าใหม่
+        //  สร้างสินค้าใหม่
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
@@ -126,22 +126,24 @@ public class UserService {
         product.setShop(shop);
         product.setCategory(category);
 
-        // ✅ อัปโหลดรูปไปยัง Cloudinary
-        if (image != null && !image.isEmpty()) {
-            String imageUrl = cloudinaryService.uploadImage(image);
-            product.setImageUrl(imageUrl);
-        }
-
-        // บันทึกสินค้า
+        //  บันทึกสินค้าในฐานข้อมูลก่อน เพื่อให้ได้ `productId`
         Product savedProduct = productRepository.save(product);
+        System.out.println(" Saved Product ID: " + savedProduct.getProductId());
+
+        //  บันทึกภาพและอัปเดต `imageUrl`
+        String imageUrl = saveImageToFile(image, savedProduct.getProductId());
+        savedProduct.setImageUrl(imageUrl);
+
+        //  บันทึกสินค้าอีกรอบ พร้อม `imageUrl`
+        productRepository.save(savedProduct);
 
         return new ResponseProduct(
                 savedProduct.getProductId(),
                 savedProduct.getName(),
                 savedProduct.getDescription(),
                 savedProduct.getPrice(),
-                savedProduct.getImageUrl(), // ✅ URL ของรูปภาพจาก Cloudinary
-                details
+                imageUrl, //  URL รูปที่ถูกต้อง
+                details // รายละเอียดสินค้า
         );
     }
 

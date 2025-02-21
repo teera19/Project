@@ -440,6 +440,13 @@ public class UserService {
     public Category findCategoryByName(String categoryName) {
         return categoryRepository.findByName(categoryName);
     }
+    @Transactional
+    public void updateProductImage(Product product, byte[] imageBytes) {
+        saveCompressedImage(imageBytes, product.getProductId()); // ✅ บันทึกรูปภาพใหม่
+        String imageUrl = "https://project-production-f4db.up.railway.app/images/" + product.getProductId() + ".jpg";
+        product.setImageUrl(imageUrl);  // ✅ ตั้งค่า URL ใหม่
+        productRepository.save(product);  // ✅ บันทึกข้อมูลในฐานข้อมูล
+    }
 
 
 }

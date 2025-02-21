@@ -83,10 +83,7 @@ public class Editproduct {
 
             //  อัปเดตรูปภาพสินค้า
             if (image != null && !image.isEmpty()) {
-                byte[] imageBytes = image.getBytes();
-                userService.saveCompressedImage(imageBytes, product.getProductId());
-                String imageUrl = "https://project-production-f4db.up.railway.app/images/" + product.getProductId() + ".jpg";
-                product.setImageUrl(imageUrl);
+                userService.updateProductImage(product, image.getBytes());
             }
 
             //  บันทึกสินค้า

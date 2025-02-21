@@ -34,6 +34,7 @@ public class AuctionService {
         return auctionRepository.save(auction);
     }
 
+    @Transactional
     public Bid addBid(int auctionId, User user, double bidAmount) {
         Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("Auction not found"));

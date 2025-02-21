@@ -186,6 +186,8 @@ public class AuctionController {
         }
 
         User user = optionalUser.get();
+
+        // ✅ ดึงเฉพาะการประมูลที่ User ชนะจริง ๆ
         List<Auction> wonAuctions = auctionService.getWonAuctions(user);
 
         List<AuctionResponse> responses = wonAuctions.stream()
@@ -194,5 +196,6 @@ public class AuctionController {
 
         return ResponseEntity.ok(responses);
     }
+
 
 }

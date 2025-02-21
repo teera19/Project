@@ -61,4 +61,7 @@ public class AuctionService {
 
         return bidRepository.save(bid);
     }
+    public List<Auction> getWonAuctions(User user) {
+        return auctionRepository.findByWinner(user);
+    }
 }

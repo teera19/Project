@@ -27,11 +27,10 @@ public class Auction {
     private User winner;
     @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Bid> bids;
+    @Column(nullable = true) // ✅ เก็บ URL ของรูปใน Database
+    private String imageUrl;
 
 
-
-    @Lob // ใช้เพื่อเก็บข้อมูล binary ขนาดใหญ่ (BLOB)
-    private byte[] image; // แทน imageUrl ด้วย imageData
 
     @Enumerated(EnumType.STRING)
     private AuctionStatus status; // สถานะการประมูล
@@ -105,12 +104,12 @@ public class Auction {
         this.endTime = ZonedDateTime.of(endTime, ZoneId.of("Asia/Bangkok")).toLocalDateTime();
     }
 
-    public byte[] getImage() {
-        return image;
+    public String getImageUrl() {
+        return imageUrl;
     }
 
-    public void setImage(byte[] image) {
-        this.image = image;
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public AuctionStatus getStatus() {

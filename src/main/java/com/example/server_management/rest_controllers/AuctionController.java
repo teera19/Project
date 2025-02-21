@@ -7,6 +7,7 @@ import com.example.server_management.repository.BidHistoryRepository;
 import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.AuctionService;
+import com.example.server_management.service.CloudinaryService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,8 @@ public class AuctionController {
     private BidHistoryRepository bidHistoryRepository;
     @Autowired
     private BidRepository bidRepository;
+    @Autowired
+    CloudinaryService cloudinaryService;
 
     @GetMapping
     public ResponseEntity<List<AuctionResponse>> getAllAuctions() {
@@ -92,6 +95,12 @@ public class AuctionController {
             auction.setStatus(AuctionStatus.ONGOING);
             auction.setOwnerUserName(userName);
 
+            // ✅ อัพโหลดรูปไปยัง Cloudinary และบันทึก URL ลงใน Database
+            if (image != null && !image.isEmpty()) {
+                String imageUrl = cloudinaryService.uploadImage(image);
+                auction.setImageUrl(imageUrl);
+            }
+
             Auction savedAuction = auctionService.addAuction(auction);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedAuction);
 
@@ -100,7 +109,6 @@ public class AuctionController {
                     .body(Map.of("message", "An error occurred while adding the auction.", "error", e.getMessage()));
         }
     }
-
     @PostMapping("/{auctionId}/bids")
     public ResponseEntity<?> addBid(@PathVariable int auctionId,
                                     @RequestBody Map<String, Object> bidRequest,

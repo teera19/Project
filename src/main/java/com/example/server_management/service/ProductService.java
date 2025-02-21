@@ -10,6 +10,7 @@ public class ProductService {
     private ProductRepository productRepository;
 
     public String findSellerByProductId(int productId) {
+
         return productRepository.findSellerByProductId(productId);
     }
 }

@@ -1,18 +1,17 @@
 package com.example.server_management.rest_controllers;
 
 import com.example.server_management.dto.ChatRequest;
-import com.example.server_management.dto.ChatRoomDTO;
 import com.example.server_management.dto.MessageRequest;
 import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
 import com.example.server_management.service.ChatService;
 import com.example.server_management.service.ProductService;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,110 +23,69 @@ public class Chat {
     @Autowired
     private ProductService productService;
 
-    /**
-     * เริ่มต้นสร้างแชท
-     */
-    @PostMapping("/start")
+    @PostMapping("/start") //ปุ่มเริ่มแชทในราลเอียดสินค้า
     public ResponseEntity<Map<String, Object>> startChat(
-            HttpSession session,
-            @RequestBody ChatRequest chatRequest
+            @SessionAttribute("user_name") String user1,
+            @RequestBody ChatRequest chatRequest // ✅ ใช้ @RequestBody เพื่อรับ JSON Body
     ) {
-        String user1 = (String) session.getAttribute("user_name");
-
-        if (user1 == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "message", "⚠️ User not logged in. Please log in first."
-            ));
-        }
-
         int productId = chatRequest.getProductId();
-        String user2 = productService.findSellerByProductId(productId);
 
+        // ค้นหาเจ้าของสินค้า (user2) จากฐานข้อมูล
+        String user2 = productService.findSellerByProductId(productId);
         if (user2 == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "message", "⚠️ Product seller not found."
-            ));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
+        // เช็คว่ามีห้องแชทอยู่แล้วหรือไม่
         ChatRoom chatRoom = chatService.getOrCreateChatRoom(user1, user2, productId);
 
-        return ResponseEntity.ok(Map.of("chatId", chatRoom.getChatId()));
+        // ส่ง `chatId` กลับไปให้ Frontend
+        Map<String, Object> response = new HashMap<>();
+        response.put("chatId", chatRoom.getChatId());
+
+        return ResponseEntity.ok(response);
     }
 
-    /**
-     * ดึงประวัติแชท
-     */
-    @GetMapping("/{chatId}/history")
+
+    @GetMapping("/{chatId}/history") //ประวัติแชท
     public ResponseEntity<?> getChatHistory(
-            HttpSession session,
+            @SessionAttribute("user_name") String currentUser, // ✅ ดึง user จาก session
             @PathVariable int chatId
     ) {
-        String currentUser = (String) session.getAttribute("user_name");
-
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("⚠️ User not logged in.");
-        }
-
+        // ✅ ดึงห้องแชทจากฐานข้อมูล
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
 
+        // ✅ ตรวจสอบว่าผู้ใช้ที่ขอเป็น `user1` หรือ `user2` หรือไม่
         if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("⛔ คุณไม่มีสิทธิ์ดูแชทนี้");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้ ❌");
         }
 
+        // ✅ ถ้าผ่านการตรวจสอบ ดึงประวัติแชท
         List<Message> messages = chatService.getChatHistory(chatId);
         return ResponseEntity.ok(messages);
     }
 
-    /**
-     * ส่งข้อความไปยังแชท
-     */
-    @PostMapping("/{chatId}/send")
+
+    @PostMapping("/{chatId}/send") //ส่งข้อความ
     public ResponseEntity<Message> sendMessage(
-            HttpSession session,
+            @SessionAttribute("user_name") String sender, // ✅ ดึง sender จาก Session
             @PathVariable int chatId,
-            @RequestBody MessageRequest request
+            @RequestBody MessageRequest request // ✅ รับเฉพาะ message จาก Body
     ) {
-        String sender = (String) session.getAttribute("user_name");
-
-        if (sender == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-        }
-
+        // ✅ ตรวจสอบว่า sender มีสิทธิ์ส่งข้อความในห้องแชทนี้หรือไม่
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
-
         if (!chatRoom.getUser1().equals(sender) && !chatRoom.getUser2().equals(sender)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
+        // ✅ ส่งข้อความ
         Message message = chatService.sendMessage(chatId, sender, request.getMessage());
         return ResponseEntity.ok(message);
     }
-
-    /**
-     * ดึงรายการแชทของผู้ใช้
-     */
-    @GetMapping("/my-chats")
-    public ResponseEntity<List<ChatRoomDTO>> getMyChats(HttpSession session) {
-        String currentUser = (String) session.getAttribute("user_name");
-
-        if (currentUser == null) {
-            System.out.println("🚨 User not logged in (session is null)");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-        }
-
-        System.out.println("✅ Current user: " + currentUser);
-
+    @GetMapping("/my-chats") //ปุ่มไอค่อนรูปข้อความ
+    public ResponseEntity<List<ChatRoom>> getMyChats(@SessionAttribute("user_name") String currentUser) {
         List<ChatRoom> chatRooms = chatService.getChatsByUser(currentUser);
-
-        List<ChatRoomDTO> chatRoomDTOs = chatRooms.stream().map(chatRoom -> {
-            Message latestMessage = chatService.getLatestMessage(chatRoom.getChatId());
-            return new ChatRoomDTO(
-                    chatRoom,
-                    latestMessage != null ? latestMessage.getMessage() : "ไม่มีข้อความ",
-                    latestMessage != null ? latestMessage.getTimestamp().toString() : ""
-            );
-        }).toList();
-
-        return ResponseEntity.ok(chatRoomDTOs);
+        return ResponseEntity.ok(chatRooms);
     }
+
 }

@@ -73,10 +73,13 @@ public class AuctionController {
         }
 
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-            ZonedDateTime startTime = ZonedDateTime.parse(startTimeStr, formatter);
-            ZonedDateTime endTime = ZonedDateTime.parse(endTimeStr, formatter);
+            ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter)
+                    .atZone(ZoneId.of("Asia/Bangkok"));
+
+            ZonedDateTime endTime = LocalDateTime.parse(endTimeStr, formatter)
+                    .atZone(ZoneId.of("Asia/Bangkok"));
 
             if (endTime.isBefore(startTime)) {
                 return ResponseEntity.badRequest().body(Map.of("message", "End time must be after start time."));
@@ -183,8 +186,6 @@ public class AuctionController {
         }
 
         User user = optionalUser.get();
-
-        // ✅ ดึงเฉพาะการประมูลที่ User ชนะจริง ๆ
         List<Auction> wonAuctions = auctionService.getWonAuctions(user);
 
         List<AuctionResponse> responses = wonAuctions.stream()
@@ -193,6 +194,5 @@ public class AuctionController {
 
         return ResponseEntity.ok(responses);
     }
-
 
 }

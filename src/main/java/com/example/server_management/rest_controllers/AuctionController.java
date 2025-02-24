@@ -75,12 +75,14 @@ public class AuctionController {
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-            ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter)
-                    .atZone(ZoneId.of("Asia/Bangkok"));
+            // ✅ ใช้ ZoneId.of("Asia/Bangkok") เพื่อแน่ใจว่าใช้เวลา Bangkok
+            LocalDateTime startLocalTime = LocalDateTime.parse(startTimeStr, formatter);
+            LocalDateTime endLocalTime = LocalDateTime.parse(endTimeStr, formatter);
 
-            ZonedDateTime endTime = LocalDateTime.parse(endTimeStr, formatter)
-                    .atZone(ZoneId.of("Asia/Bangkok"));
+            ZonedDateTime startTime = startLocalTime.atZone(ZoneId.of("Asia/Bangkok"));
+            ZonedDateTime endTime = endLocalTime.atZone(ZoneId.of("Asia/Bangkok"));
 
+            // ✅ ตรวจสอบว่าเวลาสิ้นสุดต้องมากกว่าการเริ่ม
             if (endTime.isBefore(startTime)) {
                 return ResponseEntity.badRequest().body(Map.of("message", "End time must be after start time."));
             }
@@ -90,7 +92,7 @@ public class AuctionController {
             auction.setDescription(description);
             auction.setStartingPrice(startingPrice);
             auction.setMaxBidPrice(maxBidPrice);
-            auction.setStartTime(startTime.toLocalDateTime());
+            auction.setStartTime(startTime.toLocalDateTime()); // ✅ ใช้ LocalDateTime เพื่อบันทึกลง Database
             auction.setEndTime(endTime.toLocalDateTime());
             auction.setStatus(AuctionStatus.ONGOING);
             auction.setOwnerUserName(userName);
@@ -109,6 +111,7 @@ public class AuctionController {
                     .body(Map.of("message", "An error occurred while adding the auction.", "error", e.getMessage()));
         }
     }
+
     @PostMapping("/{auctionId}/bids")
     public ResponseEntity<?> addBid(@PathVariable int auctionId,
                                     @RequestBody Map<String, Object> bidRequest,

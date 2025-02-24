@@ -4,6 +4,7 @@ import com.example.server_management.models.*;
 import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,4 +90,19 @@ public class AuctionService {
     public List<Auction> getWonAuctions(User user) {
         return auctionRepository.findByWinner(user);
     }
+    @Scheduled(fixedRate = 300000) // ทำงานทุก 5 นาที
+    public void updateAuctionStatus() {
+        List<Auction> ongoingAuctions = auctionRepository.findByStatus(AuctionStatus.ONGOING);
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC")); // ใช้เวลา UTC
+
+        for (Auction auction : ongoingAuctions) {
+            ZonedDateTime auctionEndTime = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"));
+
+            if (now.isAfter(auctionEndTime)) {
+                auction.setStatus(AuctionStatus.COMPLETED); // เปลี่ยนสถานะเมื่อหมดเวลา
+                auctionRepository.save(auction);
+            }
+        }
+    }
+
 }

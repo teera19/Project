@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -41,46 +42,49 @@ public class AuctionService {
         //  ใช้เวลา Bangkok
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
 
-        //  แปลงเวลาจาก UTC เป็น Bangkok ก่อนเปรียบเทียบ
+        //  แปลงเวลาประมูลจาก UTC → Bangkok
         ZonedDateTime auctionStart = ZonedDateTime.of(auction.getStartTime(), ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
 
         ZonedDateTime auctionEnd = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
 
-        //  ห้ามบิดก่อนที่ประมูลจะเริ่ม
+        //  ตรวจสอบว่าอยู่ในช่วงเวลาหรือไม่
         if (now.isBefore(auctionStart)) {
             throw new IllegalArgumentException("Auction has not started yet.");
         }
 
-        //  ตรวจสอบว่าหมดเวลาแล้วหรือยัง
         if (now.isAfter(auctionEnd)) {
             throw new IllegalArgumentException("Auction has already ended.");
         }
 
-        //  ตรวจสอบว่าการบิดอยู่ในช่วงที่กำหนด
+        //  ตรวจสอบว่าบิดอยู่ในช่วงราคาหรือไม่
         if (bidAmount < auction.getStartingPrice() || bidAmount > auction.getMaxBidPrice()) {
             throw new IllegalArgumentException("Bid must be between " + auction.getStartingPrice() + " and " + auction.getMaxBidPrice() + ".");
         }
 
-        // ถ้ามีคนบิด 5000 บาท ให้เป็นผู้ชนะทันที
-        if (bidAmount == auction.getMaxBidPrice()) {
-            auction.setWinner(user);
-            auction.setStatus(AuctionStatus.COMPLETED); //  ปิดประมูลทันที
+        //  ตรวจสอบว่ามีคนบิดราคาเดียวกันหรือไม่
+        List<Bid> existingBids = bidRepository.findByAuctionAndBidAmount(auction, bidAmount);
+        if (!existingBids.isEmpty()) {
+            //  หา bid ที่บิดเร็วที่สุด
+            Bid earliestBid = existingBids.stream()
+                    .min((b1, b2) -> b1.getBidTime().compareTo(b2.getBidTime()))
+                    .orElse(null);
+            if (earliestBid != null) {
+                auction.setWinner(earliestBid.getUser()); //  ให้คนที่บิดก่อนเป็นผู้ชนะ
+            }
         }
 
-        if (bidAmount > auction.getMaxBidPrice()) {
-            auction.setMaxBidPrice(bidAmount);
-            auctionRepository.save(auction);
-        }
-
+        //  สร้าง Bid ใหม่ และบันทึกลงฐานข้อมูล
         Bid bid = new Bid();
         bid.setAuction(auction);
         bid.setUser(user);
         bid.setBidAmount(bidAmount);
+        bid.setBidTime(LocalDateTime.now(ZoneId.of("UTC"))); //  ตั้งเวลาเป็น UTC
 
         return bidRepository.save(bid);
     }
+
 
     public List<Auction> getWonAuctions(User user) {
         return auctionRepository.findByWinner(user);

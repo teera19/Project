@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "bid")
@@ -26,15 +28,19 @@ public class Bid {
     @Column(name = "bid_amount", nullable = false)
     private double bidAmount;
 
-    @Column(name = "bid_time", nullable = false, updatable = false)
+    //  รองรับ millisecond/nanosecond
+    @Column(name = "bid_time", nullable = false, updatable = false, columnDefinition = "TIMESTAMP(6)")
     private LocalDateTime bidTime;
 
     @PrePersist
     protected void onCreate() {
-        this.bidTime = LocalDateTime.now(); // กำหนดเวลา bidTime เป็นเวลาปัจจุบันเมื่อบันทึก
+        // บันทึก bidTime เป็น UTC เพื่อให้จัดการเวลาได้ง่ายขึ้น
+        this.bidTime = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"))
+                .withZoneSameInstant(ZoneId.of("UTC"))
+                .toLocalDateTime();
     }
 
-    // Getters และ Setters
+    //  Getters และ Setters
     public int getBidId() {
         return bidId;
     }

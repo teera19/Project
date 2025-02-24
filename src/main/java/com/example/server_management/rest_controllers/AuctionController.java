@@ -73,14 +73,17 @@ public class AuctionController {
         }
 
         try {
+            // ✅ ตั้งค่า Formatter ให้รองรับเวลาของผู้ใช้ใน Bangkok
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-            // ✅ ใช้ ZoneId.of("Asia/Bangkok") เพื่อแน่ใจว่าใช้เวลา Bangkok
-            LocalDateTime startLocalTime = LocalDateTime.parse(startTimeStr, formatter);
-            LocalDateTime endLocalTime = LocalDateTime.parse(endTimeStr, formatter);
+            // ✅ รับค่าเป็นเวลาของ Bangkok แล้วแปลงเป็น UTC ก่อนบันทึก
+            ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter)
+                    .atZone(ZoneId.of("Asia/Bangkok"))  // ✅ รับค่าเป็น Bangkok Time
+                    .withZoneSameInstant(ZoneId.of("UTC")); // ✅ แปลงเป็น UTC ก่อนบันทึก
 
-            ZonedDateTime startTime = startLocalTime.atZone(ZoneId.of("Asia/Bangkok"));
-            ZonedDateTime endTime = endLocalTime.atZone(ZoneId.of("Asia/Bangkok"));
+            ZonedDateTime endTime = LocalDateTime.parse(endTimeStr, formatter)
+                    .atZone(ZoneId.of("Asia/Bangkok"))
+                    .withZoneSameInstant(ZoneId.of("UTC"));
 
             // ✅ ตรวจสอบว่าเวลาสิ้นสุดต้องมากกว่าการเริ่ม
             if (endTime.isBefore(startTime)) {
@@ -92,7 +95,7 @@ public class AuctionController {
             auction.setDescription(description);
             auction.setStartingPrice(startingPrice);
             auction.setMaxBidPrice(maxBidPrice);
-            auction.setStartTime(startTime.toLocalDateTime()); // ✅ ใช้ LocalDateTime เพื่อบันทึกลง Database
+            auction.setStartTime(startTime.toLocalDateTime()); // ✅ บันทึกเป็น UTC
             auction.setEndTime(endTime.toLocalDateTime());
             auction.setStatus(AuctionStatus.ONGOING);
             auction.setOwnerUserName(userName);
@@ -111,6 +114,7 @@ public class AuctionController {
                     .body(Map.of("message", "An error occurred while adding the auction.", "error", e.getMessage()));
         }
     }
+
 
     @PostMapping("/{auctionId}/bids")
     public ResponseEntity<?> addBid(@PathVariable int auctionId,

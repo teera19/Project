@@ -12,6 +12,8 @@ import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class AuctionService {
 
@@ -33,7 +35,6 @@ public class AuctionService {
     public Auction addAuction(Auction auction) {
         return auctionRepository.save(auction);
     }
-
     @Transactional
     public Bid addBid(int auctionId, User user, double bidAmount) {
         Auction auction = auctionRepository.findById(auctionId)
@@ -89,12 +90,13 @@ public class AuctionService {
         return auctionRepository.findByWinner(user);
     }
 
-    // ✅ เช็คสถานะการประมูลทุก 1 นาที
+
+    // ✅ ใช้ @Transactional เฉพาะใน updateAuctionStatus
     @Scheduled(fixedRate = 60000) // 60 วินาที
     @Transactional
     public void updateAuctionStatus() {
         List<Auction> ongoingAuctions = auctionRepository.findByStatus(AuctionStatus.ONGOING);
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC")); // 🔹 ใช้เวลา UTC
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC")); // ✅ ใช้เวลา UTC
 
         System.out.println("🔄 Running scheduled task at: " + now);
         System.out.println("🛒 Found " + ongoingAuctions.size() + " ongoing auctions");
@@ -109,8 +111,8 @@ public class AuctionService {
             if (now.isAfter(auctionEndTime)) {
                 System.out.println("✅ Auction " + auction.getAuctionId() + " has ended. Updating status...");
                 auction.setStatus(AuctionStatus.COMPLETED);
-                auctionRepository.save(auction);
-                auctionRepository.flush(); // 🔹 บังคับให้ Hibernate บันทึกค่า
+                auctionRepository.saveAndFlush(auction); // ✅ ใช้ saveAndFlush() บังคับ commit
+                System.out.println("✅ Auction " + auction.getAuctionId() + " updated to COMPLETED");
             }
         }
     }

@@ -98,24 +98,22 @@ public class AuctionService {
     @Transactional
     public void updateAuctionStatus() {
         List<Auction> ongoingAuctions = auctionRepository.findByStatus(AuctionStatus.ONGOING);
-        ZonedDateTime nowBangkok = ZonedDateTime.now(ZoneId.of("Asia/Bangkok")); // ✅ ใช้เวลา Bangkok
+        ZonedDateTime nowUTC = ZonedDateTime.now(ZoneId.of("UTC")); // ✅ ใช้ UTC เปรียบเทียบกับ DB
 
-        System.out.println("🔄 Running scheduled auction update at: " + nowBangkok);
+        System.out.println("🔄 Running scheduled auction update at: " + nowUTC);
         System.out.println("🛒 Found " + ongoingAuctions.size() + " ongoing auctions");
 
         for (Auction auction : ongoingAuctions) {
-            // 🔹 แปลงเวลาสิ้นสุดจาก UTC → Bangkok
-            ZonedDateTime auctionEndTime = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"))
-                    .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
+            ZonedDateTime auctionEndTime = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"));
 
             System.out.println("🕒 Checking auction ID: " + auction.getAuctionId());
-            System.out.println("   - End Time (Bangkok): " + auctionEndTime);
-            System.out.println("   - Now (Bangkok): " + nowBangkok);
+            System.out.println("   - End Time (UTC): " + auctionEndTime);
+            System.out.println("   - Now (UTC): " + nowUTC);
 
-            if (nowBangkok.isAfter(auctionEndTime)) {
+            if (nowUTC.isAfter(auctionEndTime)) {
                 System.out.println("✅ Auction " + auction.getAuctionId() + " has ended. Updating status...");
                 auction.setStatus(AuctionStatus.COMPLETED);
-                auctionRepository.saveAndFlush(auction); // ✅ ใช้ saveAndFlush() บังคับ Hibernate ให้ commit
+                auctionRepository.saveAndFlush(auction); // ✅ บังคับ Hibernate ให้ commit
                 System.out.println("✅ Auction " + auction.getAuctionId() + " updated to COMPLETED");
             }
         }

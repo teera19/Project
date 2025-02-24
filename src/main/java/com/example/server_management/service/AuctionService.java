@@ -35,6 +35,7 @@ public class AuctionService {
     public Auction addAuction(Auction auction) {
         return auctionRepository.save(auction);
     }
+
     @Transactional
     public Bid addBid(int auctionId, User user, double bidAmount) {
         Auction auction = auctionRepository.findById(auctionId)
@@ -96,9 +97,9 @@ public class AuctionService {
     @Transactional
     public void updateAuctionStatus() {
         List<Auction> ongoingAuctions = auctionRepository.findByStatus(AuctionStatus.ONGOING);
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC")); // ✅ ใช้เวลา UTC
+        ZonedDateTime nowUTC = ZonedDateTime.now(ZoneId.of("UTC")); // ใช้ UTC เป็นค่าอ้างอิง
 
-        System.out.println("🔄 Running scheduled task at: " + now);
+        System.out.println("🔄 Running scheduled auction update at: " + nowUTC);
         System.out.println("🛒 Found " + ongoingAuctions.size() + " ongoing auctions");
 
         for (Auction auction : ongoingAuctions) {
@@ -106,14 +107,15 @@ public class AuctionService {
 
             System.out.println("🕒 Checking auction ID: " + auction.getAuctionId());
             System.out.println("   - End Time (UTC): " + auctionEndTime);
-            System.out.println("   - Now (UTC): " + now);
+            System.out.println("   - Now (UTC): " + nowUTC);
 
-            if (now.isAfter(auctionEndTime)) {
+            if (nowUTC.isAfter(auctionEndTime)) {
                 System.out.println("✅ Auction " + auction.getAuctionId() + " has ended. Updating status...");
                 auction.setStatus(AuctionStatus.COMPLETED);
-                auctionRepository.saveAndFlush(auction); // ✅ ใช้ saveAndFlush() บังคับ commit
-                System.out.println("✅ Auction " + auction.getAuctionId() + " updated to COMPLETED");
             }
         }
+
+        auctionRepository.flush(); // 🔹 บังคับ Hibernate อัปเดตค่าลงฐานข้อมูลทันที
+        System.out.println("✅ Auction statuses updated successfully.");
     }
 }

@@ -90,7 +90,7 @@ public class AuctionService {
     public List<Auction> getWonAuctions(User user) {
         return auctionRepository.findByWinner(user);
     }
-    @Scheduled(fixedRate = 300000) // ทำงานทุก 5 นาที
+    @Scheduled(fixedRate = 60000) // ทำงานทุก 1 นาที
     public void updateAuctionStatus() {
         List<Auction> ongoingAuctions = auctionRepository.findByStatus(AuctionStatus.ONGOING);
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC")); // ใช้เวลา UTC

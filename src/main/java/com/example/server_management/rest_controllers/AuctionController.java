@@ -73,19 +73,16 @@ public class AuctionController {
         }
 
         try {
-            // ✅ ตั้งค่า Formatter ให้รองรับเวลาของผู้ใช้ใน Bangkok
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+            // ✅ ใช้ DateTimeFormatter ที่รองรับโซนเวลา (XXX รองรับ +07:00)
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 
-            // ✅ รับค่าเป็นเวลาของ Bangkok แล้วแปลงเป็น UTC ก่อนบันทึก
-            ZonedDateTime startTime = LocalDateTime.parse(startTimeStr, formatter)
-                    .atZone(ZoneId.of("Asia/Bangkok"))  // ✅ รับค่าเป็น Bangkok Time
-                    .withZoneSameInstant(ZoneId.of("UTC")); // ✅ แปลงเป็น UTC ก่อนบันทึก
+            // ✅ รับค่าเป็น Bangkok Time และแปลงเป็น UTC ก่อนบันทึก
+            ZonedDateTime startTime = ZonedDateTime.parse(startTimeStr, formatter)
+                    .withZoneSameInstant(ZoneId.of("UTC")); // แปลงเป็น UTC
 
-            ZonedDateTime endTime = LocalDateTime.parse(endTimeStr, formatter)
-                    .atZone(ZoneId.of("Asia/Bangkok"))
+            ZonedDateTime endTime = ZonedDateTime.parse(endTimeStr, formatter)
                     .withZoneSameInstant(ZoneId.of("UTC"));
 
-            // ✅ ตรวจสอบว่าเวลาสิ้นสุดต้องมากกว่าการเริ่ม
             if (endTime.isBefore(startTime)) {
                 return ResponseEntity.badRequest().body(Map.of("message", "End time must be after start time."));
             }
@@ -100,7 +97,6 @@ public class AuctionController {
             auction.setStatus(AuctionStatus.ONGOING);
             auction.setOwnerUserName(userName);
 
-            // ✅ อัพโหลดรูปไปยัง Cloudinary และบันทึก URL ลงใน Database
             if (image != null && !image.isEmpty()) {
                 String imageUrl = cloudinaryService.uploadImage(image);
                 auction.setImageUrl(imageUrl);

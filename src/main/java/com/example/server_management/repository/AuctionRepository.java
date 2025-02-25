@@ -21,7 +21,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Integer> {
             SELECT auction_id, 
                    MAX(bid_amount) AS highest_bid, 
                    (SELECT u.user_name FROM bid b2 
-                    JOIN user u ON b2.user_id = u.user_id 
+                    JOIN users u ON b2.user_id = u.user_id 
                     WHERE b2.auction_id = b1.auction_id 
                     ORDER BY b2.bid_amount DESC, b2.bid_time ASC LIMIT 1) AS highest_bidder
             FROM bid b1

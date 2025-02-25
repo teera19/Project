@@ -191,7 +191,7 @@ public class AuctionController {
         User user = optionalUser.get();
 
         System.out.println("🔍 Fetching participated auctions for user: " + user.getUserName());
-        List<Auction> participatedAuctions = bidRepository.findAllParticipatedAuctions(user);
+        List<Auction> participatedAuctions = bidRepository.findAllParticipatedAuctionsNative(user.getUserId());
         System.out.println("✅ Total Auctions Retrieved: " + participatedAuctions.size());
         participatedAuctions.forEach(a -> System.out.println("Auction ID: " + a.getAuctionId()));
 

@@ -1,6 +1,9 @@
 package com.example.server_management.dto;
 
 import com.example.server_management.models.Auction;
+import com.example.server_management.models.Bid;
+import com.example.server_management.repository.BidRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -27,11 +30,45 @@ public class AuctionResponse {
         this.auctionId = auction.getAuctionId();
         this.productName = auction.getProductName();
         this.description = auction.getDescription();
+        this.imageUrl = auction.getImageUrl();
+        this.maxBidPrice = auction.getMaxBidPrice();
+        this.highestBidder = "N/A";  // ตั้งค่าเริ่มต้น
+        this.highestBid = auction.getStartingPrice(); // ถ้าไม่มี bid ให้ใช้ราคาตั้งต้น
+
+        setFormattedTimes(auction.getStartTime(), auction.getEndTime());
+
+        // ✅ ถ้าการประมูลมีผู้ชนะแล้ว ให้กำหนดข้อมูล
+        if (auction.getWinner() != null) {
+            this.highestBidder = auction.getWinner().getUserName();
+            this.highestBid = auction.getMaxBidPrice();
+            this.status = "Ended";
+        }
+    }
+
+    public AuctionResponse(Auction auction, BidRepository bidRepository) {
+        this.auctionId = auction.getAuctionId();
+        this.productName = auction.getProductName();
+        this.description = auction.getDescription();
         this.highestBid = auction.getMaxBidPrice(); // ใช้ราคาสูงสุดที่ตั้งไว้
         this.highestBidder = "N/A"; // ค่าเริ่มต้น ถ้ายังไม่มีคนบิด
         this.imageUrl = auction.getImageUrl();
 
         setFormattedTimes(auction.getStartTime(), auction.getEndTime());
+        Bid highestBidObj = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
+        if (highestBidObj != null) {
+            this.highestBid = highestBidObj.getBidAmount();
+            this.highestBidder = highestBidObj.getUser().getUserName();
+        } else {
+            this.highestBid = auction.getStartingPrice();
+            this.highestBidder = "N/A";
+        }
+
+        // ✅ เช็คว่าใครเป็นผู้ชนะแล้วหรือยัง
+        if (auction.getWinner() != null) {
+            this.highestBidder = auction.getWinner().getUserName();
+            this.highestBid = auction.getMaxBidPrice();
+            this.status = "Ended";
+        }
     }
 
     // ✅ Constructor สำหรับแมปจาก Query (Object[])
@@ -51,7 +88,10 @@ public class AuctionResponse {
         LocalDateTime endTime = endTimestamp != null ? endTimestamp.toLocalDateTime() : null;
 
         setFormattedTimes(startTime, endTime);
+
     }
+
+
 
     private void setFormattedTimes(LocalDateTime startTime, LocalDateTime endTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");

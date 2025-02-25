@@ -16,6 +16,7 @@ import java.util.List;
 @Repository
 public interface BidRepository extends JpaRepository<Bid, Integer> {
     List<Bid> findByAuctionOrderByBidAmountDesc(Auction auction);
+    Bid findTopByAuctionOrderByBidAmountDesc(Auction auction);
     List<Bid> findByAuction(Auction auction);
     List<Bid> findByAuction_AuctionId(int auctionId);;
     @Query(value = """

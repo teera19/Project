@@ -45,18 +45,8 @@ public class AuctionResponse {
         this.imageUrl = (String) obj[8]; // image_url
 
         // ✅ ตรวจสอบ `null` ก่อนแปลงเป็น LocalDateTime
-        LocalDateTime startTime = null;
-        LocalDateTime endTime = null;
-
-        if (obj[6] != null) {
-            Timestamp startTimestamp = (Timestamp) obj[6];
-            startTime = startTimestamp.toLocalDateTime();
-        }
-        if (obj[7] != null) {
-            Timestamp endTimestamp = (Timestamp) obj[7];
-            endTime = endTimestamp.toLocalDateTime();
-        }
-
+        LocalDateTime startTime = obj[6] instanceof Timestamp ? ((Timestamp) obj[6]).toLocalDateTime() : null;
+        LocalDateTime endTime = obj[7] instanceof Timestamp ? ((Timestamp) obj[7]).toLocalDateTime() : null;
         setFormattedTimes(startTime, endTime);
     }
 

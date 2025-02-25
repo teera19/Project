@@ -22,8 +22,8 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
     @Transactional
     @Query("DELETE FROM BidHistory b WHERE b.auction = :auction AND b.isWinner = true")
     void deleteByAuction(@Param("auction") Auction auction);
-    List<BidHistory> findByAuction(Auction auction);
-    @Query("SELECT MAX(b.bidAmount) FROM BidHistory b WHERE b.auction = :auction")
-    Optional<Double> findHighestBidByAuction(@Param("auction") Auction auction);
+//    List<BidHistory> findByAuction(Auction auction);
+//    @Query("SELECT MAX(b.bidAmount) FROM BidHistory b WHERE b.auction = :auction")
+//    Optional<Double> findHighestBidByAuction(@Param("auction") Auction auction);
 
 }

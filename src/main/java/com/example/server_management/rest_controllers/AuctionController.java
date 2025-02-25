@@ -198,7 +198,11 @@ public class AuctionController {
                 .map(AuctionResponse::new)
                 .collect(Collectors.toList());
 
+        System.out.println("Total Auction Responses: " + responses.size());
+        responses.forEach(a -> System.out.println("Auction ID: " + a.getAuctionId()));
+
         return ResponseEntity.ok(responses);
+
     }
 
 

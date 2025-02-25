@@ -25,7 +25,7 @@ public class Auction {
     @ManyToOne
     @JoinColumn(name = "winner_id", nullable = true) //  winner สามารถเป็น null ได้
     private User winner;
-    @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Bid> bids;
     @Column(nullable = true) //  เก็บ URL ของรูปใน Database
     private String imageUrl;

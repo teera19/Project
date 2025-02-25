@@ -182,25 +182,36 @@ public class AuctionController {
                     .body(Map.of("message", "Please log in to view your auctions."));
         }
 
-        Optional<User> optionalUser = userRepository.findUserByUserName(userName);
-        if (!optionalUser.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "User not found with username: " + userName));
+        try {
+            Optional<User> optionalUser = userRepository.findUserByUserName(userName);
+            if (!optionalUser.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found with username: " + userName));
+            }
+
+            User user = optionalUser.get();
+
+            System.out.println("🔍 Fetching participated auctions for user: " + user.getUserName());
+
+            // ✅ ใช้ Native Query
+            List<Auction> participatedAuctions = bidRepository.findAllParticipatedAuctionsNative(user.getUserId());
+
+            System.out.println("✅ Total Auctions Retrieved: " + participatedAuctions.size());
+            participatedAuctions.forEach(a -> System.out.println("Auction ID: " + a.getAuctionId()));
+
+            // ✅ แปลงเป็น AuctionResponse
+            List<AuctionResponse> responses = participatedAuctions.stream()
+                    .map(AuctionResponse::new)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(responses);
+        } catch (Exception e) {
+            System.err.println("❌ Error in getMyAuctions: " + e.getMessage());
+            e.printStackTrace(); // ✅ ให้แสดง Stack Trace ที่ Console
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An error occurred while fetching your auctions.", "error", e.getMessage()));
         }
-
-        User user = optionalUser.get();
-
-        System.out.println("🔍 Fetching participated auctions for user: " + user.getUserName());
-        List<Auction> participatedAuctions = bidRepository.findAllParticipatedAuctionsNative(user.getUserId());
-        System.out.println("✅ Total Auctions Retrieved: " + participatedAuctions.size());
-        participatedAuctions.forEach(a -> System.out.println("Auction ID: " + a.getAuctionId()));
-
-        // ✅ แปลงเป็น AuctionResponse
-        List<AuctionResponse> responses = participatedAuctions.stream()
-                .map(AuctionResponse::new)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(responses);
     }
 
 

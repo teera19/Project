@@ -180,7 +180,7 @@ public class AuctionController {
     }
 
     @GetMapping("/my-auction")
-    public ResponseEntity<?> getMyAuctions(HttpSession session) {
+    public ResponseEntity<?> getMyBidAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -206,31 +206,25 @@ public class AuctionController {
         return ResponseEntity.ok(responses);
     }
     @GetMapping("/my-auctions")
-    public ResponseEntity<?> getMyOwnedAuctions(HttpSession session) {
+    public ResponseEntity<?> getMyAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-
-        System.out.println("🔍 Debug: user_name from session = " + userName);
-
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Please log in to view your auctions."));
+                    .body(Map.of("message", "Please log in to view your own auctions."));
         }
 
-        try {
-            List<Object[]> auctionData = auctionRepository.findAllAuctionsByOwner(userName);
-            System.out.println("✅ Total Auctions Retrieved: " + auctionData.size());
+        List<Auction> myAuctions = auctionRepository.findByOwnerUserName(userName);
 
-            List<AuctionResponse> responses = auctionData.stream()
-                    .map(AuctionResponse::new)
-                    .toList();
-
-            return ResponseEntity.ok(responses);
-        } catch (Exception e) {
-            System.err.println("❌ Error fetching auctions: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "An error occurred while fetching your auctions.", "error", e.getMessage()));
+        if (myAuctions.isEmpty()) {
+            return ResponseEntity.ok(Map.of("message", "You have not listed any auctions."));
         }
+
+        List<AuctionResponse> responses = myAuctions.stream()
+                .map(AuctionResponse::new)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responses);
     }
+
 
 }

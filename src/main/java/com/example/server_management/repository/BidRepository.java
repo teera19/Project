@@ -22,6 +22,7 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
     SELECT DISTINCT a.auction_id, a.product_name, a.description, 
            COALESCE(b2.bid_amount, 0) as highest_bid, 
            COALESCE(u.user_name, 'No Bids') as highest_bidder,
+           a.max_bid_price, 
            a.start_time, a.end_time, a.image_url, a.status 
     FROM auction a
     LEFT JOIN bid b2 ON b2.auction_id = a.auction_id 
@@ -31,11 +32,6 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
     WHERE b.user_id = :userId
 """, nativeQuery = true)
     List<Object[]> findAllParticipatedAuctions(@Param("userId") int userId);
-
-
-
-
-
 
     List<Bid> findByAuctionAndBidAmount(Auction auction, double bidAmount);
 }

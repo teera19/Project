@@ -203,5 +203,4 @@ public class AuctionController {
         return ResponseEntity.ok(responses);
     }
 
-
 }

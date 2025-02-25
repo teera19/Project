@@ -15,6 +15,7 @@ public class AuctionResponse {
     private String description;
     private String highestBidder; // ✅ ผู้ที่บิดราคาสูงสุด
     private double highestBid; // ✅ ราคาสูงสุด ณ ปัจจุบัน
+    private double maxBidPrice;
     private String startTime;
     private String endTime;
     private String imageUrl;
@@ -38,13 +39,13 @@ public class AuctionResponse {
         this.auctionId = ((Number) obj[0]).intValue(); // auction_id
         this.productName = (String) obj[1]; // product_name
         this.description = (String) obj[2]; // description
-        this.highestBid = obj[3] != null ? ((Number) obj[3]).doubleValue() : 0.0; // ✅ ราคาสูงสุด
+        this.highestBid = obj[3] != null ? ((Number) obj[3]).doubleValue() : 0.0; // ✅ ราคาสูงสุดที่ถูกเสนอ
         this.highestBidder = obj[4] != null ? (String) obj[4] : "No Bids"; // ✅ ชื่อผู้ที่บิดสูงสุด
-        this.imageUrl = (String) obj[7]; // image_url
+        this.maxBidPrice = ((Number) obj[5]).doubleValue(); // ✅ เพิ่ม maxBidPrice
+        this.imageUrl = (String) obj[8]; // image_url
 
-        // ✅ ตรวจสอบ timestamp และแปลงเป็น LocalDateTime
-        Timestamp startTimestamp = (Timestamp) obj[5];
-        Timestamp endTimestamp = (Timestamp) obj[6];
+        Timestamp startTimestamp = (Timestamp) obj[6];
+        Timestamp endTimestamp = (Timestamp) obj[7];
 
         LocalDateTime startTime = startTimestamp != null ? startTimestamp.toLocalDateTime() : null;
         LocalDateTime endTime = endTimestamp != null ? endTimestamp.toLocalDateTime() : null;
@@ -75,6 +76,7 @@ public class AuctionResponse {
     public String getDescription() { return description; }
     public String getHighestBidder() { return highestBidder; }
     public double getHighestBid() { return highestBid; }
+    public double getMaxBidPrice() { return maxBidPrice; } // ✅ Getter ใหม่
     public String getStartTime() { return startTime; }
     public String getEndTime() { return endTime; }
     public String getImageUrl() { return imageUrl; }

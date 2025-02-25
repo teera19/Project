@@ -201,10 +201,11 @@ public class AuctionController {
         List<MyauctionResponse> responses = auctions.stream()
                 .map(auction -> {
                     List<BidHistory> bidHistories = bidHistoryRepository.findByAuction(auction);
-                    return new MyauctionResponse(auction, bidHistories, userName);
+                    return new MyauctionResponse(auction, bidHistories, bidHistoryRepository, userName);
                 })
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(responses);
     }
+
 }

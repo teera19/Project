@@ -1,7 +1,9 @@
 package com.example.server_management.dto;
 
 import com.example.server_management.models.Auction;
+import com.example.server_management.models.AuctionStatus;
 import com.example.server_management.models.BidHistory;
+import com.example.server_management.repository.BidHistoryRepository;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -19,21 +21,18 @@ public class MyauctionResponse {
     private String startTime;
     private String endTime;
     private String imageUrl;
-    private String status;
+    private String status; // ✅ ใช้ AuctionStatus
     private long minutesRemaining;
 
-    public MyauctionResponse(Auction auction, List<BidHistory> bidHistories, String userName) {
+    public MyauctionResponse(Auction auction, List<BidHistory> bidHistories, BidHistoryRepository bidHistoryRepository, String userName) {
         this.auctionId = auction.getAuctionId();
         this.productName = auction.getProductName();
         this.description = auction.getDescription();
         this.startingPrice = auction.getStartingPrice();
         this.maxBidPrice = auction.getMaxBidPrice();
-        this.highestBidPrice = bidHistories.stream()
-                .mapToDouble(BidHistory::getBidAmount)
-                .max()
-                .orElse(auction.getStartingPrice()); // ถ้าไม่มีการประมูลใช้ราคาเริ่มต้น
 
-        // ✅ แปลงโซนเวลาเป็น Bangkok
+        this.highestBidPrice = bidHistoryRepository.findHighestBidByAuction(auction).orElse(auction.getStartingPrice());
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 
         this.startTime = ZonedDateTime.of(auction.getStartTime(), ZoneId.of("UTC"))
@@ -51,15 +50,20 @@ public class MyauctionResponse {
         ZonedDateTime endZoned = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
 
-        if (now.isBefore(endZoned)) {
+        this.minutesRemaining = Math.max(ChronoUnit.MINUTES.between(now, endZoned), 0);
+
+        // ✅ ใช้ AuctionStatus
+        if (auction.getStatus() == AuctionStatus.ONGOING) {
             this.status = "ONGOING";
-            this.minutesRemaining = ChronoUnit.MINUTES.between(now, endZoned);
-        } else {
+        } else if (auction.getStatus() == AuctionStatus.CANCELLED) {
+            this.status = "CANCELLED";
+        } else if (auction.getStatus() == AuctionStatus.ENDED) {
+            this.status = "ENDED (No Bidders)";
+        } else if (auction.getStatus() == AuctionStatus.COMPLETED) {
             boolean isWinner = bidHistories.stream()
                     .anyMatch(bid -> bid.getUser().getUserName().equals(userName) && bid.isWinner());
 
-            this.status = isWinner ? "COMPLETED - Won" : "COMPLETED - Lost";
-            this.minutesRemaining = 0;
+            this.status = isWinner ? "COMPLETED (Won)" : "COMPLETED (Lost)";
         }
     }
 

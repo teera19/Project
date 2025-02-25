@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
 
@@ -22,5 +23,7 @@ public interface BidHistoryRepository extends JpaRepository<BidHistory, Long> {
     @Query("DELETE FROM BidHistory b WHERE b.auction = :auction AND b.isWinner = true")
     void deleteByAuction(@Param("auction") Auction auction);
     List<BidHistory> findByAuction(Auction auction);
+    @Query("SELECT MAX(b.bidAmount) FROM BidHistory b WHERE b.auction = :auction")
+    Optional<Double> findHighestBidByAuction(@Param("auction") Auction auction);
 
 }

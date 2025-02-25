@@ -213,16 +213,32 @@ public class AuctionController {
                     .body(Map.of("message", "Please log in to view your auctions."));
         }
 
-        System.out.println("🔍 Fetching owned auctions for user: " + userName);
-        List<Object[]> auctionData = auctionRepository.findAllAuctionsByOwner(userName);
-        System.out.println("✅ Total Auctions Retrieved: " + auctionData.size());
+        try {
+            System.out.println("🔍 Fetching owned auctions for user: " + userName);
+            List<Object[]> auctionData = auctionRepository.findAllAuctionsByOwner(userName);
+            System.out.println("✅ Total Auctions Retrieved: " + auctionData.size());
 
-        List<AuctionResponse> responses = auctionData.stream()
-                .map(AuctionResponse::new)
-                .toList();
+            List<AuctionResponse> responses = auctionData.stream()
+                    .map(obj -> {
+                        try {
+                            return new AuctionResponse(obj);
+                        } catch (Exception e) {
+                            System.err.println("❌ Error mapping auction response: " + e.getMessage());
+                            return null; // หรือจะโยน Exception ก็ได้
+                        }
+                    })
+                    .filter(response -> response != null)
+                    .toList();
 
-        return ResponseEntity.ok(responses);
+            return ResponseEntity.ok(responses);
+        } catch (Exception e) {
+            System.err.println("❌ Error fetching auctions: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An error occurred while fetching your auctions.", "error", e.getMessage()));
+        }
     }
+
 
 
 }

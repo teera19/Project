@@ -209,28 +209,19 @@ public class AuctionController {
     public ResponseEntity<?> getMyOwnedAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
 
+        System.out.println("🔍 Debug: user_name from session = " + userName);
+
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Please log in to view your auctions."));
         }
 
         try {
-            // 🔍 Debugging
-            System.out.println("🔍 user_name from session: " + userName);
-
             List<Object[]> auctionData = auctionRepository.findAllAuctionsByOwner(userName);
             System.out.println("✅ Total Auctions Retrieved: " + auctionData.size());
 
             List<AuctionResponse> responses = auctionData.stream()
-                    .map(obj -> {
-                        try {
-                            return new AuctionResponse(obj);
-                        } catch (Exception e) {
-                            System.err.println("❌ Error mapping auction response: " + e.getMessage());
-                            return null;
-                        }
-                    })
-                    .filter(response -> response != null)
+                    .map(AuctionResponse::new)
                     .toList();
 
             return ResponseEntity.ok(responses);

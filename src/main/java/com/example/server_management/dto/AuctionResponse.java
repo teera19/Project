@@ -36,38 +36,24 @@ public class AuctionResponse {
 
     // ✅ Constructor สำหรับแมปจาก Query (Object[])
     public AuctionResponse(Object[] obj) {
-        this.auctionId = ((Number) obj[0]).intValue();
-        this.productName = (String) obj[1];
-        this.description = (String) obj[2];
-        this.highestBid = obj[3] != null ? ((Number) obj[3]).doubleValue() : 0.0;
-        this.highestBidder = obj[4] != null ? (String) obj[4] : "No Bids";
-        this.maxBidPrice = ((Number) obj[5]).doubleValue();
-        this.imageUrl = (String) obj[8];
+        this.auctionId = ((Number) obj[0]).intValue(); // auction_id
+        this.productName = (String) obj[1]; // product_name
+        this.description = (String) obj[2]; // description
+        this.highestBid = obj[3] != null ? ((Number) obj[3]).doubleValue() : 0.0; // ✅ ราคาสูงสุดที่ถูกเสนอ
+        this.highestBidder = obj[4] != null ? (String) obj[4] : "No Bids"; // ✅ ชื่อผู้ที่บิดสูงสุด
+        this.maxBidPrice = ((Number) obj[5]).doubleValue(); // ✅ เพิ่ม maxBidPrice
+        this.imageUrl = (String) obj[8]; // image_url
 
-        // ✅ แก้ไขให้รองรับ `Timestamp` และป้องกัน error
-        LocalDateTime startTime = null;
-        LocalDateTime endTime = null;
+        Timestamp startTimestamp = (Timestamp) obj[6];
+        Timestamp endTimestamp = (Timestamp) obj[7];
 
-        if (obj[6] instanceof Timestamp) {
-            startTime = ((Timestamp) obj[6]).toLocalDateTime();
-        }
-        if (obj[7] instanceof Timestamp) {
-            endTime = ((Timestamp) obj[7]).toLocalDateTime();
-        }
+        LocalDateTime startTime = startTimestamp != null ? startTimestamp.toLocalDateTime() : null;
+        LocalDateTime endTime = endTimestamp != null ? endTimestamp.toLocalDateTime() : null;
 
         setFormattedTimes(startTime, endTime);
     }
 
-
     private void setFormattedTimes(LocalDateTime startTime, LocalDateTime endTime) {
-        if (startTime == null || endTime == null) {
-            this.startTime = "N/A";
-            this.endTime = "N/A";
-            this.status = "Unknown";
-            this.minutesRemaining = 0;
-            return;
-        }
-
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 
         this.startTime = ZonedDateTime.of(startTime, ZoneId.of("UTC"))
@@ -94,13 +80,14 @@ public class AuctionResponse {
         }
     }
 
+
     // ✅ Getters
     public int getAuctionId() { return auctionId; }
     public String getProductName() { return productName; }
     public String getDescription() { return description; }
     public String getHighestBidder() { return highestBidder; }
     public double getHighestBid() { return highestBid; }
-    public double getMaxBidPrice() { return maxBidPrice; }
+    public double getMaxBidPrice() { return maxBidPrice; } // ✅ Getter ใหม่
     public String getStartTime() { return startTime; }
     public String getEndTime() { return endTime; }
     public String getImageUrl() { return imageUrl; }

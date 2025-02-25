@@ -3,6 +3,7 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
 import com.example.server_management.models.*;
+import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidHistoryRepository;
 import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
@@ -40,6 +41,8 @@ public class AuctionController {
     private BidRepository bidRepository;
     @Autowired
     CloudinaryService cloudinaryService;
+    @Autowired
+    private AuctionRepository auctionRepository;
 
     @GetMapping
     public ResponseEntity<List<AuctionResponse>> getAllAuctions() {
@@ -202,5 +205,24 @@ public class AuctionController {
 
         return ResponseEntity.ok(responses);
     }
+    @GetMapping("/my-auctions")
+    public ResponseEntity<?> getMyOwnedAuctions(HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Please log in to view your auctions."));
+        }
+
+        System.out.println("🔍 Fetching owned auctions for user: " + userName);
+        List<Object[]> auctionData = auctionRepository.findAllAuctionsByOwner(userName);
+        System.out.println("✅ Total Auctions Retrieved: " + auctionData.size());
+
+        List<AuctionResponse> responses = auctionData.stream()
+                .map(AuctionResponse::new)
+                .toList();
+
+        return ResponseEntity.ok(responses);
+    }
+
 
 }

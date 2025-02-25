@@ -65,10 +65,21 @@ public class AuctionResponse {
                 .format(formatter);
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
+        ZonedDateTime startZoned = ZonedDateTime.parse(this.startTime);
         ZonedDateTime endZoned = ZonedDateTime.parse(this.endTime);
 
-        this.minutesRemaining = now.isBefore(endZoned) ? ChronoUnit.MINUTES.between(now, endZoned) : 0;
+        if (now.isBefore(startZoned)) {
+            this.status = "Not Started"; // 🔹 การประมูลยังไม่เริ่ม
+            this.minutesRemaining = ChronoUnit.MINUTES.between(now, startZoned);
+        } else if (now.isAfter(endZoned)) {
+            this.status = "Ended"; // 🔹 การประมูลจบแล้ว
+            this.minutesRemaining = 0;
+        } else {
+            this.status = "Active"; // 🔹 การประมูลกำลังดำเนินการ
+            this.minutesRemaining = ChronoUnit.MINUTES.between(now, endZoned);
+        }
     }
+
 
     // ✅ Getters
     public int getAuctionId() { return auctionId; }

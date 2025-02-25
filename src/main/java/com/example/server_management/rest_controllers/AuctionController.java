@@ -8,6 +8,7 @@ import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.AuctionService;
 import com.example.server_management.service.CloudinaryService;
+import jakarta.persistence.Tuple;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -151,6 +152,7 @@ public class AuctionController {
                     .body(Map.of("message", "An error occurred while processing the bid."));
         }
     }
+
     @GetMapping("/{auctionId}/bids")
     public ResponseEntity<?> getBidsForAuction(@PathVariable int auctionId) {
         // ตรวจสอบว่าสินค้าประมูลมีอยู่หรือไม่
@@ -190,29 +192,22 @@ public class AuctionController {
             }
 
             User user = optionalUser.get();
-
             System.out.println("🔍 Fetching participated auctions for user: " + user.getUserName());
 
-            // ✅ ใช้ Native Query
-            List<Auction> participatedAuctions = bidRepository.findAllParticipatedAuctionsNative(user.getUserId());
+            // ✅ ดึงข้อมูลจาก Native Query ที่คืนค่าเป็น Tuple
+            List<Tuple> result = bidRepository.findAllParticipatedAuctionsNative(user.getUserId());
 
-            System.out.println("✅ Total Auctions Retrieved: " + participatedAuctions.size());
-            participatedAuctions.forEach(a -> System.out.println("Auction ID: " + a.getAuctionId()));
-
-            // ✅ แปลงเป็น AuctionResponse
-            List<AuctionResponse> responses = participatedAuctions.stream()
+            // ✅ แปลงข้อมูลจาก Tuple → AuctionResponse
+            List<AuctionResponse> responses = result.stream()
                     .map(AuctionResponse::new)
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
             System.err.println("❌ Error in getMyAuctions: " + e.getMessage());
-            e.printStackTrace(); // ✅ ให้แสดง Stack Trace ที่ Console
-
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "An error occurred while fetching your auctions.", "error", e.getMessage()));
         }
     }
-
-
 }

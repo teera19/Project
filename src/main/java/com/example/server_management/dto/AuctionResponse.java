@@ -1,6 +1,8 @@
 package com.example.server_management.dto;
 
 import com.example.server_management.models.Auction;
+import jakarta.persistence.Tuple;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -19,32 +21,50 @@ public class AuctionResponse {
     private String status;
     private long minutesRemaining;
 
+    // ✅ Constructor สำหรับแมปจาก Entity `Auction`
     public AuctionResponse(Auction auction) {
         this.auctionId = auction.getAuctionId();
         this.productName = auction.getProductName();
         this.description = auction.getDescription();
         this.startingPrice = auction.getStartingPrice();
         this.maxBidPrice = auction.getMaxBidPrice();
+        this.imageUrl = auction.getImageUrl();
 
+        setFormattedTimes(auction.getStartTime(), auction.getEndTime());
+    }
+
+    // ✅ Constructor สำหรับแมปจาก `Tuple` (ใช้สำหรับ Native Query)
+    public AuctionResponse(Tuple tuple) {
+        this.auctionId = tuple.get(0, Integer.class);
+        this.productName = tuple.get(1, String.class);
+        this.description = tuple.get(2, String.class);
+        this.startingPrice = tuple.get(3, Double.class);
+        this.maxBidPrice = tuple.get(4, Double.class);
+        this.imageUrl = tuple.get(7, String.class);
+
+        LocalDateTime startTime = tuple.get(5, LocalDateTime.class);
+        LocalDateTime endTime = tuple.get(6, LocalDateTime.class);
+
+        setFormattedTimes(startTime, endTime);
+    }
+
+    private void setFormattedTimes(LocalDateTime startTime, LocalDateTime endTime) {
         // ✅ ใช้ ZoneId เพื่อแปลง UTC → Asia/Bangkok
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 
-        this.startTime = ZonedDateTime.of(auction.getStartTime(), ZoneId.of("UTC"))
+        this.startTime = ZonedDateTime.of(startTime, ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"))
                 .format(formatter);
 
-        this.endTime = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"))
+        this.endTime = ZonedDateTime.of(endTime, ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"))
                 .format(formatter);
-
-        this.imageUrl = auction.getImageUrl();
 
         // ✅ คำนวณเวลาที่เหลือโดยใช้โซนเวลา Bangkok
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
-
-        ZonedDateTime startZoned = ZonedDateTime.of(auction.getStartTime(), ZoneId.of("UTC"))
+        ZonedDateTime startZoned = ZonedDateTime.of(startTime, ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
-        ZonedDateTime endZoned = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"))
+        ZonedDateTime endZoned = ZonedDateTime.of(endTime, ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
 
         if (now.isBefore(startZoned)) {
@@ -65,8 +85,8 @@ public class AuctionResponse {
     public String getDescription() { return description; }
     public double getStartingPrice() { return startingPrice; }
     public double getMaxBidPrice() { return maxBidPrice; }
-    public String getStartTime() { return startTime; } // ✅ ส่งค่าเป็น Bangkok
-    public String getEndTime() { return endTime; } // ✅ ส่งค่าเป็น Bangkok
+    public String getStartTime() { return startTime; }
+    public String getEndTime() { return endTime; }
     public String getImageUrl() { return imageUrl; }
     public String getStatus() { return status; }
     public long getMinutesRemaining() { return minutesRemaining; }

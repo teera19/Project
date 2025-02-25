@@ -19,13 +19,20 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
     List<Bid> findByAuction(Auction auction);
     List<Bid> findByAuction_AuctionId(int auctionId);;
     @Query(value = """
-    SELECT DISTINCT a.auction_id, a.product_name, a.description, a.starting_price, 
-           a.max_bid_price, a.start_time, a.end_time, a.image_url, a.status 
+    SELECT DISTINCT a.auction_id, a.product_name, a.description, 
+           COALESCE(b2.bid_amount, 0) as highest_bid, 
+           COALESCE(u.user_name, 'No Bids') as highest_bidder,
+           a.start_time, a.end_time, a.image_url, a.status 
     FROM auction a
+    LEFT JOIN bid b2 ON b2.auction_id = a.auction_id 
+                      AND b2.bid_amount = (SELECT MAX(b1.bid_amount) FROM bid b1 WHERE b1.auction_id = a.auction_id)
+    LEFT JOIN users u ON u.user_id = b2.user_id
     INNER JOIN bid b ON b.auction_id = a.auction_id
     WHERE b.user_id = :userId
 """, nativeQuery = true)
     List<Object[]> findAllParticipatedAuctions(@Param("userId") int userId);
+
+
 
 
 

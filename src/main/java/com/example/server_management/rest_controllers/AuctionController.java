@@ -196,14 +196,12 @@ public class AuctionController {
         List<Object[]> auctionData = bidRepository.findAllParticipatedAuctions(user.getUserId());
         System.out.println("✅ Total Auctions Retrieved: " + auctionData.size());
 
-        // 🔹 แปลง Object[] → AuctionResponse (ใช้ Lambda เพื่อแปลงข้อมูล)
         List<AuctionResponse> responses = auctionData.stream()
-                .map(obj -> new AuctionResponse((Object[]) obj)) // ✅ แก้เป็นใช้ Lambda
+                .map(AuctionResponse::new)
                 .toList();
 
         return ResponseEntity.ok(responses);
     }
-
 
 
 }

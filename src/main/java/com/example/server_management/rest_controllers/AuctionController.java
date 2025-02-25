@@ -190,24 +190,19 @@ public class AuctionController {
 
         User user = optionalUser.get();
 
-        // ✅ ดึงรายการประมูลที่ผู้ใช้เคยประมูล
-        System.out.println("🔍 Fetching auctions for user: " + user.getUserName());
-        List<Auction> participatedAuctions = bidRepository.findDistinctAuctionsByUser(user);
+        // ✅ ดึงรายการประมูลที่ User เคยเข้าร่วม
+        System.out.println("🔍 Fetching participated auctions for user: " + user.getUserName());
+        List<Auction> participatedAuctions = bidRepository.findAllParticipatedAuctions(user);
+
         System.out.println("✅ Total Auctions Retrieved: " + participatedAuctions.size());
         participatedAuctions.forEach(a -> System.out.println("Auction ID: " + a.getAuctionId()));
-
 
         // ✅ แปลงเป็น AuctionResponse
         List<AuctionResponse> responses = participatedAuctions.stream()
                 .map(AuctionResponse::new)
                 .collect(Collectors.toList());
 
-        System.out.println("Total Auction Responses: " + responses.size());
-        responses.forEach(a -> System.out.println("Auction ID: " + a.getAuctionId()));
-
         return ResponseEntity.ok(responses);
-
     }
-
 
 }

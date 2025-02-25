@@ -3,6 +3,7 @@ package com.example.server_management.dto;
 import com.example.server_management.models.Auction;
 import jakarta.persistence.Tuple;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -42,8 +43,11 @@ public class AuctionResponse {
         this.maxBidPrice = tuple.get(4, Double.class);
         this.imageUrl = tuple.get(7, String.class);
 
-        LocalDateTime startTime = tuple.get(5, LocalDateTime.class);
-        LocalDateTime endTime = tuple.get(6, LocalDateTime.class);
+        // 🔥 **ใช้ Timestamp และแปลงเป็น LocalDateTime**
+        Timestamp startTimestamp = tuple.get(5, Timestamp.class);
+        Timestamp endTimestamp = tuple.get(6, Timestamp.class);
+        LocalDateTime startTime = startTimestamp.toLocalDateTime();
+        LocalDateTime endTime = endTimestamp.toLocalDateTime();
 
         setFormattedTimes(startTime, endTime);
     }

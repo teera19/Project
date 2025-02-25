@@ -45,8 +45,21 @@ public class AuctionResponse {
         this.imageUrl = (String) obj[8]; // image_url
 
         // ✅ ตรวจสอบ `null` ก่อนแปลงเป็น LocalDateTime
-        LocalDateTime startTime = obj[6] instanceof Timestamp ? ((Timestamp) obj[6]).toLocalDateTime() : null;
-        LocalDateTime endTime = obj[7] instanceof Timestamp ? ((Timestamp) obj[7]).toLocalDateTime() : null;
+        LocalDateTime startTime = null;
+        LocalDateTime endTime = null;
+
+        if (obj[4] instanceof Timestamp) {
+            startTime = ((Timestamp) obj[4]).toLocalDateTime();
+        } else if (obj[4] instanceof String) {
+            startTime = LocalDateTime.parse((String) obj[4]); // กรณีเก็บเป็น String
+        }
+
+        if (obj[5] instanceof Timestamp) {
+            endTime = ((Timestamp) obj[5]).toLocalDateTime();
+        } else if (obj[5] instanceof String) {
+            endTime = LocalDateTime.parse((String) obj[5]);
+        }
+
         setFormattedTimes(startTime, endTime);
     }
 

@@ -220,10 +220,11 @@ public class AuctionController {
         }
 
         List<AuctionResponse> responses = myAuctions.stream()
-                .map(AuctionResponse::new) // ✅ ต้องใช้ Constructor ที่รองรับ Auction ไม่ใช่ Object[]
+                .map(auction -> new AuctionResponse(auction, bidRepository)) // ✅ ต้องส่ง bidRepository เข้าไป
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(responses);
     }
+
 
 }

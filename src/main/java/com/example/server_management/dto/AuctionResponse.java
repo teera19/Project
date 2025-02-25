@@ -36,32 +36,28 @@ public class AuctionResponse {
 
     // ✅ Constructor สำหรับแมปจาก Query (Object[])
     public AuctionResponse(Object[] obj) {
-        this.auctionId = ((Number) obj[0]).intValue(); // auction_id
-        this.productName = (String) obj[1]; // product_name
-        this.description = (String) obj[2]; // description
-        this.highestBid = obj[3] != null ? ((Number) obj[3]).doubleValue() : 0.0; // ✅ ราคาสูงสุดที่ถูกเสนอ
-        this.highestBidder = obj[4] != null ? (String) obj[4] : "No Bids"; // ✅ ชื่อผู้ที่บิดสูงสุด
-        this.maxBidPrice = ((Number) obj[5]).doubleValue(); // ✅ เพิ่ม maxBidPrice
-        this.imageUrl = (String) obj[8]; // image_url
+        this.auctionId = ((Number) obj[0]).intValue();
+        this.productName = (String) obj[1];
+        this.description = (String) obj[2];
+        this.highestBid = obj[3] != null ? ((Number) obj[3]).doubleValue() : 0.0;
+        this.highestBidder = obj[4] != null ? (String) obj[4] : "No Bids";
+        this.maxBidPrice = ((Number) obj[5]).doubleValue();
+        this.imageUrl = (String) obj[8];
 
-        // ✅ ตรวจสอบ `null` ก่อนแปลงเป็น LocalDateTime
+        // ✅ แก้ไขให้รองรับ `Timestamp` และป้องกัน error
         LocalDateTime startTime = null;
         LocalDateTime endTime = null;
 
-        if (obj[4] instanceof Timestamp) {
-            startTime = ((Timestamp) obj[4]).toLocalDateTime();
-        } else if (obj[4] instanceof String) {
-            startTime = LocalDateTime.parse((String) obj[4]); // กรณีเก็บเป็น String
+        if (obj[6] instanceof Timestamp) {
+            startTime = ((Timestamp) obj[6]).toLocalDateTime();
         }
-
-        if (obj[5] instanceof Timestamp) {
-            endTime = ((Timestamp) obj[5]).toLocalDateTime();
-        } else if (obj[5] instanceof String) {
-            endTime = LocalDateTime.parse((String) obj[5]);
+        if (obj[7] instanceof Timestamp) {
+            endTime = ((Timestamp) obj[7]).toLocalDateTime();
         }
 
         setFormattedTimes(startTime, endTime);
     }
+
 
     private void setFormattedTimes(LocalDateTime startTime, LocalDateTime endTime) {
         if (startTime == null || endTime == null) {

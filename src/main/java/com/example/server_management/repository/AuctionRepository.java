@@ -12,7 +12,6 @@ import java.util.List;
 public interface AuctionRepository extends JpaRepository<Auction, Integer> {
     List<Auction> findByOrderByAuctionIdDesc();
     List<Auction> findByWinner(User winner);
-//    List<Auction> findAuctionsByBidHistories_User(User user);
 
     List<Auction> findByStatus(AuctionStatus auctionStatus);
 }

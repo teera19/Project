@@ -175,11 +175,11 @@ public class AuctionController {
     }
 
     @GetMapping("/my-auction")
-    public ResponseEntity<?> getMyWonAuctions(HttpSession session) {
+    public ResponseEntity<?> getMyAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Please log in to view your won auctions."));
+                    .body(Map.of("message", "Please log in to view your auctions."));
         }
 
         Optional<User> optionalUser = userRepository.findUserByUserName(userName);
@@ -189,9 +189,12 @@ public class AuctionController {
         }
 
         User user = optionalUser.get();
-        List<Auction> wonAuctions = auctionService.getWonAuctions(user);
 
-        List<AuctionResponse> responses = wonAuctions.stream()
+        // ✅ ดึงรายการประมูลที่ผู้ใช้เคยประมูล
+        List<Auction> participatedAuctions = bidRepository.findDistinctAuctionsByUser(user);
+
+        // ✅ แปลงเป็น AuctionResponse
+        List<AuctionResponse> responses = participatedAuctions.stream()
                 .map(AuctionResponse::new)
                 .collect(Collectors.toList());
 

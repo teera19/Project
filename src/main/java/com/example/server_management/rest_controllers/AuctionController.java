@@ -208,13 +208,16 @@ public class AuctionController {
     @GetMapping("/my-auctions")
     public ResponseEntity<?> getMyOwnedAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
+
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Please log in to view your auctions."));
         }
 
         try {
-            System.out.println("🔍 Fetching owned auctions for user: " + userName);
+            // 🔍 Debugging
+            System.out.println("🔍 user_name from session: " + userName);
+
             List<Object[]> auctionData = auctionRepository.findAllAuctionsByOwner(userName);
             System.out.println("✅ Total Auctions Retrieved: " + auctionData.size());
 
@@ -224,7 +227,7 @@ public class AuctionController {
                             return new AuctionResponse(obj);
                         } catch (Exception e) {
                             System.err.println("❌ Error mapping auction response: " + e.getMessage());
-                            return null; // หรือจะโยน Exception ก็ได้
+                            return null;
                         }
                     })
                     .filter(response -> response != null)
@@ -238,7 +241,5 @@ public class AuctionController {
                     .body(Map.of("message", "An error occurred while fetching your auctions.", "error", e.getMessage()));
         }
     }
-
-
 
 }

@@ -2,7 +2,9 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
+import com.example.server_management.dto.MyauctionResponse;
 import com.example.server_management.models.*;
+import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidHistoryRepository;
 import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
@@ -39,6 +41,8 @@ public class AuctionController {
     private BidRepository bidRepository;
     @Autowired
     CloudinaryService cloudinaryService;
+    @Autowired
+    AuctionRepository auctionRepository;
 
     @GetMapping
     public ResponseEntity<List<AuctionResponse>> getAllAuctions() {
@@ -174,12 +178,12 @@ public class AuctionController {
         return ResponseEntity.ok(bidResponses);
     }
 
-    @GetMapping("/my-auction")
-    public ResponseEntity<?> getMyWonAuctions(HttpSession session) {
+    @GetMapping("/my-auctions")
+    public ResponseEntity<?> getMyAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Please log in to view your won auctions."));
+                    .body(Map.of("message", "Please log in to view your auctions."));
         }
 
         Optional<User> optionalUser = userRepository.findUserByUserName(userName);
@@ -189,13 +193,18 @@ public class AuctionController {
         }
 
         User user = optionalUser.get();
-        List<Auction> wonAuctions = auctionService.getWonAuctions(user);
 
-        List<AuctionResponse> responses = wonAuctions.stream()
-                .map(AuctionResponse::new)
+        // ✅ ดึงรายการประมูลที่ผู้ใช้เคยเข้าร่วม
+        List<Auction> auctions = auctionRepository.findAuctionsByBidHistories_User(user);
+
+        // ✅ ดึงข้อมูล BidHistory ของการประมูลแต่ละอัน
+        List<MyauctionResponse> responses = auctions.stream()
+                .map(auction -> {
+                    List<BidHistory> bidHistories = bidHistoryRepository.findByAuction(auction);
+                    return new MyauctionResponse(auction, bidHistories, userName);
+                })
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(responses);
     }
-
 }

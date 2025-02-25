@@ -2,6 +2,7 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.dto.AuctionResponse;
 import com.example.server_management.dto.BidResponse;
+import com.example.server_management.dto.MyAuctionResponse;
 import com.example.server_management.models.*;
 import com.example.server_management.repository.BidHistoryRepository;
 import com.example.server_management.repository.BidRepository;
@@ -194,11 +195,15 @@ public class AuctionController {
         List<Auction> participatedAuctions = bidRepository.findDistinctAuctionsByUser(user);
 
         // ✅ แปลงเป็น AuctionResponse
-        List<AuctionResponse> responses = participatedAuctions.stream()
-                .map(AuctionResponse::new)
+        List<MyAuctionResponse> responses = participatedAuctions.stream()
+                .map(MyAuctionResponse::new)
                 .collect(Collectors.toList());
 
+        System.out.println("Total Auctions Retrieved: " + responses.size());
+        responses.forEach(auction -> System.out.println(auction.getAuctionId()));
+
         return ResponseEntity.ok(responses);
+
     }
 
 }

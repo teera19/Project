@@ -16,7 +16,7 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
     List<Bid> findByAuctionOrderByBidAmountDesc(Auction auction);
     List<Bid> findByAuction(Auction auction);
     List<Bid> findByAuction_AuctionId(int auctionId);;
-    @Query("SELECT DISTINCT a FROM Auction a INNER JOIN Bid b ON b.auction = a WHERE b.user = :user")
+    @Query("SELECT DISTINCT a FROM Auction a JOIN Bid b ON b.auction = a WHERE b.user = :user")
     List<Auction> findDistinctAuctionsByUser(@Param("user") User user);
 
     List<Bid> findByAuctionAndBidAmount(Auction auction, double bidAmount);

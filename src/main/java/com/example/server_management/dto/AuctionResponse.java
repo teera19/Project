@@ -44,16 +44,31 @@ public class AuctionResponse {
         this.maxBidPrice = ((Number) obj[5]).doubleValue(); // ✅ เพิ่ม maxBidPrice
         this.imageUrl = (String) obj[8]; // image_url
 
-        Timestamp startTimestamp = (Timestamp) obj[6];
-        Timestamp endTimestamp = (Timestamp) obj[7];
+        // ✅ ตรวจสอบ `null` ก่อนแปลงเป็น LocalDateTime
+        LocalDateTime startTime = null;
+        LocalDateTime endTime = null;
 
-        LocalDateTime startTime = startTimestamp != null ? startTimestamp.toLocalDateTime() : null;
-        LocalDateTime endTime = endTimestamp != null ? endTimestamp.toLocalDateTime() : null;
+        if (obj[6] != null) {
+            Timestamp startTimestamp = (Timestamp) obj[6];
+            startTime = startTimestamp.toLocalDateTime();
+        }
+        if (obj[7] != null) {
+            Timestamp endTimestamp = (Timestamp) obj[7];
+            endTime = endTimestamp.toLocalDateTime();
+        }
 
         setFormattedTimes(startTime, endTime);
     }
 
     private void setFormattedTimes(LocalDateTime startTime, LocalDateTime endTime) {
+        if (startTime == null || endTime == null) {
+            this.startTime = "N/A";
+            this.endTime = "N/A";
+            this.status = "Unknown";
+            this.minutesRemaining = 0;
+            return;
+        }
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 
         this.startTime = ZonedDateTime.of(startTime, ZoneId.of("UTC"))
@@ -80,14 +95,13 @@ public class AuctionResponse {
         }
     }
 
-
     // ✅ Getters
     public int getAuctionId() { return auctionId; }
     public String getProductName() { return productName; }
     public String getDescription() { return description; }
     public String getHighestBidder() { return highestBidder; }
     public double getHighestBid() { return highestBid; }
-    public double getMaxBidPrice() { return maxBidPrice; } // ✅ Getter ใหม่
+    public double getMaxBidPrice() { return maxBidPrice; }
     public String getStartTime() { return startTime; }
     public String getEndTime() { return endTime; }
     public String getImageUrl() { return imageUrl; }

@@ -19,21 +19,14 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
     List<Bid> findByAuction(Auction auction);
     List<Bid> findByAuction_AuctionId(int auctionId);;
     @Query(value = """
-        SELECT DISTINCT 
-            a.auction_id, 
-            a.product_name, 
-            a.description, 
-            a.starting_price, 
-            a.max_bid_price, 
-            a.start_time, 
-            a.end_time, 
-            a.image_url, 
-            a.status 
-        FROM auction a 
-        INNER JOIN bid b ON b.auction_id = a.auction_id 
-        WHERE b.user_id = :userId
-    """, nativeQuery = true)
-    List<Tuple> findAllParticipatedAuctionsNative(@Param("userId") int userId);
+    SELECT DISTINCT a.auction_id, a.product_name, a.description, a.starting_price, 
+           a.max_bid_price, a.start_time, a.end_time, a.image_url, a.status 
+    FROM auction a
+    INNER JOIN bid b ON b.auction_id = a.auction_id
+    WHERE b.user_id = :userId
+""", nativeQuery = true)
+    List<Object[]> findAllParticipatedAuctions(@Param("userId") int userId);
+
 
 
 

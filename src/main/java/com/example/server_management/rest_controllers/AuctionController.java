@@ -184,30 +184,26 @@ public class AuctionController {
                     .body(Map.of("message", "Please log in to view your auctions."));
         }
 
-        try {
-            Optional<User> optionalUser = userRepository.findUserByUserName(userName);
-            if (!optionalUser.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "User not found with username: " + userName));
-            }
-
-            User user = optionalUser.get();
-            System.out.println("🔍 Fetching participated auctions for user: " + user.getUserName());
-
-            // ✅ ดึงข้อมูลจาก Native Query ที่คืนค่าเป็น Tuple
-            List<Tuple> result = bidRepository.findAllParticipatedAuctionsNative(user.getUserId());
-
-            // ✅ แปลงข้อมูลจาก Tuple → AuctionResponse
-            List<AuctionResponse> responses = result.stream()
-                    .map(AuctionResponse::new)
-                    .collect(Collectors.toList());
-
-            return ResponseEntity.ok(responses);
-        } catch (Exception e) {
-            System.err.println("❌ Error in getMyAuctions: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "An error occurred while fetching your auctions.", "error", e.getMessage()));
+        Optional<User> optionalUser = userRepository.findUserByUserName(userName);
+        if (!optionalUser.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found with username: " + userName));
         }
+
+        User user = optionalUser.get();
+
+        System.out.println("🔍 Fetching participated auctions for user: " + user.getUserName());
+        List<Object[]> auctionData = bidRepository.findAllParticipatedAuctions(user.getUserId());
+        System.out.println("✅ Total Auctions Retrieved: " + auctionData.size());
+
+        // 🔹 แปลง Object[] → AuctionResponse (ใช้ Lambda เพื่อแปลงข้อมูล)
+        List<AuctionResponse> responses = auctionData.stream()
+                .map(obj -> new AuctionResponse((Object[]) obj)) // ✅ แก้เป็นใช้ Lambda
+                .toList();
+
+        return ResponseEntity.ok(responses);
     }
+
+
+
 }

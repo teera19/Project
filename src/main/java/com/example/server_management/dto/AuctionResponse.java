@@ -35,22 +35,24 @@ public class AuctionResponse {
     }
 
     // ✅ Constructor สำหรับแมปจาก `Tuple` (ใช้สำหรับ Native Query)
-    public AuctionResponse(Tuple tuple) {
-        this.auctionId = tuple.get(0, Integer.class);
-        this.productName = tuple.get(1, String.class);
-        this.description = tuple.get(2, String.class);
-        this.startingPrice = tuple.get(3, Double.class);
-        this.maxBidPrice = tuple.get(4, Double.class);
-        this.imageUrl = tuple.get(7, String.class);
+    public AuctionResponse(Object[] obj) {
+        this.auctionId = ((Number) obj[0]).intValue(); // auction_id
+        this.productName = (String) obj[1]; // product_name
+        this.description = (String) obj[2]; // description
+        this.startingPrice = ((Number) obj[3]).doubleValue(); // starting_price
+        this.maxBidPrice = ((Number) obj[4]).doubleValue(); // max_bid_price
+        this.imageUrl = (String) obj[7]; // image_url
 
-        // 🔥 **ใช้ Timestamp และแปลงเป็น LocalDateTime**
-        Timestamp startTimestamp = tuple.get(5, Timestamp.class);
-        Timestamp endTimestamp = tuple.get(6, Timestamp.class);
-        LocalDateTime startTime = startTimestamp.toLocalDateTime();
-        LocalDateTime endTime = endTimestamp.toLocalDateTime();
+        // ✅ ตรวจสอบ timestamp และแปลงเป็น LocalDateTime
+        Timestamp startTimestamp = (Timestamp) obj[5];
+        Timestamp endTimestamp = (Timestamp) obj[6];
+
+        LocalDateTime startTime = startTimestamp != null ? startTimestamp.toLocalDateTime() : null;
+        LocalDateTime endTime = endTimestamp != null ? endTimestamp.toLocalDateTime() : null;
 
         setFormattedTimes(startTime, endTime);
     }
+
 
     private void setFormattedTimes(LocalDateTime startTime, LocalDateTime endTime) {
         // ✅ ใช้ ZoneId เพื่อแปลง UTC → Asia/Bangkok

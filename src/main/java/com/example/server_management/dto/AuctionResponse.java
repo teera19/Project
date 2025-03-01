@@ -25,6 +25,7 @@ public class AuctionResponse {
     private String imageUrl;
     private String status;
     private long minutesRemaining;
+    private long secondsRemaining;
 
     // ✅ Constructor สำหรับแมปจาก Entity `Auction`
     public AuctionResponse(Auction auction, BidRepository bidRepository) {
@@ -82,7 +83,7 @@ public class AuctionResponse {
         ZonedDateTime endZoned = ZonedDateTime.of(endTime, ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
 
-        // ✅ แปลงเป็น String ให้เข้าใจง่าย
+        // ✅ แปลงเป็น String ที่เข้าใจง่าย
         this.startTime = startZoned.format(formatter);
         this.endTime = endZoned.format(formatter);
 
@@ -97,14 +98,21 @@ public class AuctionResponse {
         if (now.isBefore(startZoned)) {
             this.status = "Not Started";
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, startZoned);
+            this.secondsRemaining = ChronoUnit.SECONDS.between(now, startZoned) % 60; // ✅ แสดงวินาที
         } else if (now.isBefore(endZoned)) { // ✅ ถ้ายังไม่หมดเวลา
             this.status = "Active"; // ✅ ตอนนี้ต้องเป็น "Active"
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, endZoned);
+            this.secondsRemaining = ChronoUnit.SECONDS.between(now, endZoned) % 60; // ✅ แสดงวินาที
         } else {
             this.status = "Ended";
             this.minutesRemaining = 0;
+            this.secondsRemaining = 0;
         }
     }
+
+    // ✅ เพิ่ม Getter
+    public long getSecondsRemaining() { return secondsRemaining; }
+
 
     // ✅ Getters
     public int getAuctionId() { return auctionId; }

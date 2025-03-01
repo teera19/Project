@@ -75,17 +75,18 @@ public class AuctionResponse {
     private void setFormattedTimes(LocalDateTime startTime, LocalDateTime endTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-        this.startTime = ZonedDateTime.of(startTime, ZoneId.of("UTC"))
-                .withZoneSameInstant(ZoneId.of("Asia/Bangkok"))
-                .format(formatter);
+        // ✅ แปลงจาก UTC -> Bangkok
+        ZonedDateTime startZoned = ZonedDateTime.of(startTime, ZoneId.of("UTC"))
+                .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
+        ZonedDateTime endZoned = ZonedDateTime.of(endTime, ZoneId.of("UTC"))
+                .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
 
-        this.endTime = ZonedDateTime.of(endTime, ZoneId.of("UTC"))
-                .withZoneSameInstant(ZoneId.of("Asia/Bangkok"))
-                .format(formatter);
+        // ✅ แปลงเป็น String ที่เข้าใจง่าย
+        this.startTime = startZoned.format(formatter);
+        this.endTime = endZoned.format(formatter);
 
+        // ✅ ตรวจสอบสถานะ
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
-        ZonedDateTime startZoned = ZonedDateTime.parse(this.startTime, formatter.withZone(ZoneId.of("Asia/Bangkok")));
-        ZonedDateTime endZoned = ZonedDateTime.parse(this.endTime, formatter.withZone(ZoneId.of("Asia/Bangkok")));
 
         if (now.isBefore(startZoned)) {
             this.status = "Not Started";
@@ -98,6 +99,7 @@ public class AuctionResponse {
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, endZoned);
         }
     }
+
 
     // ✅ Getters
     public int getAuctionId() { return auctionId; }

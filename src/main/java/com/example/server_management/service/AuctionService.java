@@ -101,9 +101,16 @@ public class AuctionService {
         ZonedDateTime nowUTC = ZonedDateTime.now(ZoneId.of("UTC"));
 
         for (Auction auction : ongoingAuctions) {
-            ZonedDateTime auctionEndTime = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"));
+            ZonedDateTime auctionEndTime = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("Asia/Bangkok"))
+                    .withZoneSameInstant(ZoneId.of("UTC")); // ✅ แปลงเป็น UTC
 
-            if (nowUTC.isAfter(auctionEndTime)) { // ✅ เช็คว่าหมดเวลาแล้ว
+            // ✅ Debug ดูเวลาจริง
+            System.out.println("🔍 Checking auction ID: " + auction.getAuctionId());
+            System.out.println("   - Now (UTC): " + nowUTC);
+            System.out.println("   - End Time (DB): " + auction.getEndTime());
+            System.out.println("   - Converted End Time (UTC): " + auctionEndTime);
+
+            if (nowUTC.isAfter(auctionEndTime)) { // ✅ เช็คว่าหมดเวลาแล้วจริงๆ
                 Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
                 if (highestBid != null) {
                     auction.setWinner(highestBid.getUser()); // ✅ กำหนดผู้ชนะ
@@ -114,4 +121,6 @@ public class AuctionService {
             }
         }
     }
+
 }
+

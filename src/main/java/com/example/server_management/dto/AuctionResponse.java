@@ -81,25 +81,29 @@ public class AuctionResponse {
         ZonedDateTime endZoned = ZonedDateTime.of(endTime, ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
 
-        // ✅ แปลงเป็น String ที่เข้าใจง่าย
+        // ✅ แปลงเป็น String ให้เข้าใจง่าย
         this.startTime = startZoned.format(formatter);
         this.endTime = endZoned.format(formatter);
 
         // ✅ ตรวจสอบสถานะ
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
 
+        System.out.println("🔍 Debug: Checking auction status");
+        System.out.println("   - Now (Bangkok): " + now);
+        System.out.println("   - Start Time (Bangkok): " + startZoned);
+        System.out.println("   - End Time (Bangkok): " + endZoned);
+
         if (now.isBefore(startZoned)) {
             this.status = "Not Started";
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, startZoned);
-        } else if (now.isAfter(endZoned)) {
+        } else if (now.isBefore(endZoned)) { // ✅ ถ้ายังไม่หมดเวลา
+            this.status = "Active"; // ✅ ตอนนี้ต้องเป็น "Active"
+            this.minutesRemaining = ChronoUnit.MINUTES.between(now, endZoned);
+        } else {
             this.status = "Ended";
             this.minutesRemaining = 0;
-        } else {
-            this.status = "Active";
-            this.minutesRemaining = ChronoUnit.MINUTES.between(now, endZoned);
         }
     }
-
 
     // ✅ Getters
     public int getAuctionId() { return auctionId; }

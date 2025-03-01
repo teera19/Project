@@ -96,18 +96,12 @@ public class UserService {
     @Transactional
     public ResponseProduct addProductToShop(String shopTitle, String name, String description, double price,
                                             MultipartFile image, int categoryId, Map<String, String> details) throws IOException {
-        System.out.println("🔍 Checking categoryId before fetch: " + categoryId);
-
-        if (categoryId <= 0) {
-            throw new IllegalArgumentException("Invalid categoryId: " + categoryId);
-        }
-
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
         if (categoryOpt.isEmpty()) {
             throw new IllegalArgumentException("Category not found with ID: " + categoryId);
         }
-
         Category category = categoryOpt.get();
+
         MyShop shop = myShopRepository.findByTitle(shopTitle);
         if (shop == null) {
             throw new IllegalArgumentException("Shop not found with title: " + shopTitle);
@@ -121,15 +115,15 @@ public class UserService {
         product.setShop(shop);
         product.setCategory(category);
 
-        // ✅ บันทึกสินค้า (ยังไม่มีรูป)
+        // ✅ บันทึกสินค้า (ยังไม่มี imageUrl)
         Product savedProduct = productRepository.save(product);
         System.out.println("✅ Saved Product ID: " + savedProduct.getProductId());
 
-        // ✅ อัปโหลดรูปภาพขึ้น Cloudinary และบันทึก URL
+        // ✅ อัปโหลดภาพขึ้น Cloudinary
         if (image != null && !image.isEmpty()) {
             String imageUrl = cloudinaryService.uploadImage(image);
             savedProduct.setImageUrl(imageUrl);
-            productRepository.save(savedProduct);
+            productRepository.save(savedProduct);  // ✅ Save อีกรอบเพื่ออัปเดต `imageUrl`
         }
 
         return new ResponseProduct(
@@ -137,10 +131,11 @@ public class UserService {
                 savedProduct.getName(),
                 savedProduct.getDescription(),
                 savedProduct.getPrice(),
-                savedProduct.getImageUrl(),  // ✅ ใช้ URL จาก Cloudinary
+                savedProduct.getImageUrl(), // ✅ คืนค่า URL จาก Cloudinary
                 details
         );
     }
+
 
 
     private void addProductDetails(Product product, int categoryId, Map<String, String> details) {
@@ -244,27 +239,7 @@ public class UserService {
 
 
 
-    // ฟังก์ชันสำหรับบันทึกภาพในระบบไฟล์
-    private String saveImageToFile(MultipartFile image, int productId) throws IOException {
-        if (image.isEmpty()) {
-            throw new IOException(" No image uploaded");
-        }
-
-        //  ใช้ `/tmp/images/`
-        File uploadDir = new File("/tmp/images/");
-        if (!uploadDir.exists()) {
-            if (!uploadDir.mkdirs()) {
-                throw new IOException(" Failed to create directory: " + uploadDir.getAbsolutePath());
-            }
-        }
-
-        String fileName = productId + ".jpg";
-        File savedFile = new File(uploadDir, fileName);
-        image.transferTo(savedFile);
-
-        return "https://project-production-f4db.up.railway.app/images/" + fileName;
-    }
-
+    // ฟังก์ชันสำหรับบันทึกภาพในระบบไฟล
 
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();

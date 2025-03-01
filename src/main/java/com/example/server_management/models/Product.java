@@ -28,14 +28,11 @@ public class Product {
     private double price;
 
     @Lob
-    @Column(name = "image")
+    @Column(name = "image", columnDefinition = "BLOB") // ✅ เก็บภาพแบบ Blob (ถ้าใช้)
     private byte[] image;
 
-    @Transient
+    @Column(name = "image_url")  // ✅ เพิ่ม image_url เข้าไปในฐานข้อมูล
     private String imageUrl;
-
-    @Transient
-    private String categoryName;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
@@ -45,116 +42,29 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "myshop_id", nullable = false)
     private MyShop shop;
-    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JsonIgnore
-    private ClothingDetails clothingDetails;
 
-    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private ShoesDetails shoesDetails;
+    // ✅ Getter / Setter
+    public int getProductId() { return productId; }
+    public void setProductId(int productId) { this.productId = productId; }
 
-    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private PhoneDetails phoneDetails;
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public int getProductId() {
-        return productId;
-    }
+    public double getPrice() { return price; }
+    public void setPrice(double price) { this.price = price; }
 
-    public void setProductId(int productId) {
-        this.productId = productId;
-    }
+    public byte[] getImage() { return image; }
+    public void setImage(byte[] image) { this.image = image; }
 
-    public String getName() {
-        return name;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public Category getCategory() { return category; }
+    public void setCategory(Category category) { this.category = category; }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
-    public byte[] getImage() {
-        return image;
-    }
-
-    public void setImage(byte[] image) {
-        this.image = image;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public String getCategoryName() {
-        // ดึงชื่อหมวดหมู่จาก category
-        return category != null ? category.getName() : null;
-    }
-
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public MyShop getShop() {
-        return shop;
-    }
-
-    public void setShop(MyShop shop) {
-        this.shop = shop;
-    }
-    public ShoesDetails getShoesDetails() {
-        return shoesDetails;
-    }
-
-    public void setShoesDetails(ShoesDetails shoesDetails) {
-        this.shoesDetails = shoesDetails;
-    }
-
-    public PhoneDetails getPhoneDetails() {
-        return phoneDetails;
-    }
-
-    public void setPhoneDetails(PhoneDetails phoneDetails) {
-        this.phoneDetails = phoneDetails;
-    }
-
-    public ClothingDetails getClothingDetails() {
-        return clothingDetails;
-    }
-
-    public void setClothingDetails(ClothingDetails clothingDetails) {
-        this.clothingDetails = clothingDetails;
-    }
-
+    public MyShop getShop() { return shop; }
+    public void setShop(MyShop shop) { this.shop = shop; }
 }
-
-
-

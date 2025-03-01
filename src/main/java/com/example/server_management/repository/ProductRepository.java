@@ -29,6 +29,9 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     List<Product> findByCategory(Category category);
     List<Product> findByNameContainingIgnoreCase(String name);
     Optional<Product> findById(int productId);
+    @Query("SELECT m.user.userName FROM MyShop m WHERE m.id = (SELECT p.shop.id FROM Product p WHERE p.id = :productId)")
+    String findSellerByProductId(@Param("productId") int productId);
+
     @Query("""
     SELECT p FROM Product p
     LEFT JOIN FETCH p.shop s
@@ -37,6 +40,4 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%'))
     """)
     List<Product> searchProductsByName(@Param("query") String query);
-
-
 }

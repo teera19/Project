@@ -39,7 +39,7 @@ public class Myproduct {
 
             // ✅ กรณีไม่มีร้านค้า
             if (products == null) {
-                return ResponseEntity.ok(Map.of("message", "You do not own a shop."));
+                return ResponseEntity.ok(Map.of("message", "You don't have a shop."));
             }
 
             // ✅ กรณีมีร้านค้าแต่ไม่มีสินค้า

@@ -145,7 +145,6 @@ public class AuctionController {
 
         User user = optionalUser.get();
 
-        // ✅ ตรวจสอบว่า bidAmount มีค่าหรือไม่
         if (!bidRequest.containsKey("bidAmount")) {
             return ResponseEntity.badRequest().body(Map.of("message", "Bid amount is required."));
         }
@@ -162,32 +161,46 @@ public class AuctionController {
         }
 
         try {
-            // ✅ กำหนดเวลา `bidTime` เป็นเวลาปัจจุบันของ `Asia/Bangkok`
             ZonedDateTime bidTimeBangkok = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
-
-            // ✅ แปลงเป็น UTC ก่อนบันทึก
             ZonedDateTime bidTimeUTC = bidTimeBangkok.withZoneSameInstant(ZoneId.of("UTC"));
 
-            // ✅ ตรวจสอบว่าสินค้าที่ประมูลมีอยู่จริง
             Auction auction = auctionService.getAuctionById(auctionId);
             if (auction == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "Auction not found with ID: " + auctionId));
             }
 
-            // ✅ บันทึก Bid ลงในฐานข้อมูล
+            // ✅ ดึงราคาสูงสุดปัจจุบันจากการประมูลนี้
+            Bid highestBidObj = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
+            double highestBid = highestBidObj != null ? highestBidObj.getBidAmount() : auction.getStartingPrice();
+
+            // ✅ ตรวจสอบว่าราคาบิดต้อง >= startingPrice
+            if (bidAmount < auction.getStartingPrice()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Bid amount must be at least the starting price: " + auction.getStartingPrice()));
+            }
+
+            // ✅ ตรวจสอบว่าราคาบิดต้องมากกว่าราคาสูงสุดก่อนหน้า
+            if (bidAmount <= highestBid) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Bid amount must be higher than the current highest bid: " + highestBid));
+            }
+
+            // ✅ ตรวจสอบว่าราคาบิดต้องไม่เกิน `maxBidPrice`
+            if (bidAmount > auction.getMaxBidPrice()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Bid amount cannot exceed max bid price: " + auction.getMaxBidPrice()));
+            }
+
             Bid bid = new Bid();
             bid.setAuction(auction);
             bid.setUser(user);
             bid.setBidAmount(bidAmount);
-            bid.setBidTime(bidTimeUTC.toLocalDateTime()); // ✅ บันทึกเป็น UTC
+            bid.setBidTime(bidTimeUTC.toLocalDateTime());
 
             bidRepository.save(bid);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "message", "Bid placed successfully!",
-                    "bidTime", bidTimeBangkok.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")) // ✅ แสดงเวลาเป็น Bangkok Time ให้ Front-end
-            )); // ✅ ส่งเวลาเป็น Bangkok Time ให้ Front-end;
+                    "bidTime", bidTimeBangkok.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"))
+            ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "An error occurred while processing the bid.", "error", e.getMessage()));

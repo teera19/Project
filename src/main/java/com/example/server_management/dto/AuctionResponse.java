@@ -26,6 +26,7 @@ public class AuctionResponse {
     private String status;
     private long minutesRemaining;
     private long secondsRemaining;
+    private long millisecondsRemaining;
 
     // ✅ Constructor สำหรับแมปจาก Entity `Auction`
     public AuctionResponse(Auction auction, BidRepository bidRepository) {
@@ -75,7 +76,7 @@ public class AuctionResponse {
 
 
     private void setFormattedTimes(LocalDateTime startTime, LocalDateTime endTime) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
         // ✅ แปลงจาก UTC -> Bangkok
         ZonedDateTime startZoned = ZonedDateTime.of(startTime, ZoneId.of("UTC"))
@@ -98,20 +99,25 @@ public class AuctionResponse {
         if (now.isBefore(startZoned)) {
             this.status = "Not Started";
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, startZoned);
-            this.secondsRemaining = ChronoUnit.SECONDS.between(now, startZoned) % 60; // ✅ แสดงวินาที
+            this.secondsRemaining = ChronoUnit.SECONDS.between(now, startZoned) % 60;
+            this.millisecondsRemaining = ChronoUnit.MILLIS.between(now, startZoned) % 1000; // ✅ แสดงมิลลิวินาที
         } else if (now.isBefore(endZoned)) { // ✅ ถ้ายังไม่หมดเวลา
             this.status = "Active"; // ✅ ตอนนี้ต้องเป็น "Active"
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, endZoned);
-            this.secondsRemaining = ChronoUnit.SECONDS.between(now, endZoned) % 60; // ✅ แสดงวินาที
+            this.secondsRemaining = ChronoUnit.SECONDS.between(now, endZoned) % 60;
+            this.millisecondsRemaining = ChronoUnit.MILLIS.between(now, endZoned) % 1000; // ✅ แสดงมิลลิวินาที
         } else {
             this.status = "Ended";
             this.minutesRemaining = 0;
             this.secondsRemaining = 0;
+            this.millisecondsRemaining = 0;
         }
     }
 
+
     // ✅ เพิ่ม Getter
     public long getSecondsRemaining() { return secondsRemaining; }
+    public long getMillisecondsRemaining() { return millisecondsRemaining; }
 
 
     // ✅ Getters

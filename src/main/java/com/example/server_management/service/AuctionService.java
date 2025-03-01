@@ -98,31 +98,22 @@ public class AuctionService {
     @Transactional
     public void updateAuctionWinners() {
         List<Auction> ongoingAuctions = auctionRepository.findByStatus(AuctionStatus.ONGOING);
-        ZonedDateTime nowUTC = ZonedDateTime.now(ZoneId.of("UTC")); // ✅ ใช้ UTC ให้ตรงกับ DB
+        ZonedDateTime nowUTC = ZonedDateTime.now(ZoneId.of("UTC"));
 
         for (Auction auction : ongoingAuctions) {
             ZonedDateTime auctionEndTimeUTC = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"));
 
-            System.out.println("🔍 Checking auction ID: " + auction.getAuctionId());
-            System.out.println("   - Now (UTC): " + nowUTC);
-            System.out.println("   - Auction End Time (UTC): " + auctionEndTimeUTC);
-
-            if (nowUTC.isAfter(auctionEndTimeUTC)) { // ✅ เช็คว่าหมดเวลาแล้วจริงๆ
-                System.out.println("⏳ Auction " + auction.getAuctionId() + " should end!");
-
-                Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
-                if (highestBid != null) {
-                    auction.setWinner(highestBid.getUser()); // ✅ กำหนดผู้ชนะ
-                    auction.setStatus(AuctionStatus.ENDED); // ✅ อัปเดตสถานะ
+            if (nowUTC.isAfter(auctionEndTimeUTC)) { // ✅ ถ้าหมดเวลา
+                if (auction.getStatus() != AuctionStatus.ENDED) { // ✅ ป้องกันเซ็ตซ้ำ
+                    Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
+                    if (highestBid != null) {
+                        auction.setWinner(highestBid.getUser()); // ✅ กำหนดผู้ชนะ
+                        auctionRepository.save(auction);
+                        System.out.println("🏆 Auction " + auction.getAuctionId() + " ended. Winner: " + highestBid.getUser().getUserName() + " with bid: " + highestBid.getBidAmount());
+                    }
+                    auction.setStatus(AuctionStatus.ENDED); // ✅ เซ็ตให้ประมูลจบ
                     auctionRepository.save(auction);
-                    System.out.println("🏆 Auction " + auction.getAuctionId() + " ended. Winner: " + highestBid.getUser().getUserName());
-                } else {
-                    auction.setStatus(AuctionStatus.ENDED); // ✅ ถ้าไม่มีคนบิด ให้แค่ปิดประมูล
-                    auctionRepository.save(auction);
-                    System.out.println("❌ Auction " + auction.getAuctionId() + " ended with no winner.");
                 }
-            } else {
-                System.out.println("✅ Auction " + auction.getAuctionId() + " is still active.");
             }
         }
     }

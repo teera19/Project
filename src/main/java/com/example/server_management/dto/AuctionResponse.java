@@ -32,27 +32,28 @@ public class AuctionResponse {
         this.productName = auction.getProductName();
         this.description = auction.getDescription();
         this.imageUrl = auction.getImageUrl();
-        this.maxBidPrice = auction.getMaxBidPrice();
-        this.highestBidder = "N/A"; // ค่าเริ่มต้น
-        this.highestBid = auction.getStartingPrice();
+        this.maxBidPrice = auction.getMaxBidPrice(); // ✅ ราคาสูงสุดที่ตั้งไว้
 
         setFormattedTimes(auction.getStartTime(), auction.getEndTime());
 
-        // ✅ ดึงข้อมูลผู้ที่บิดราคาสูงสุด
+        // ✅ ดึงข้อมูลคนที่บิดราคาสูงสุด
         Bid highestBidObj = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
         if (highestBidObj != null) {
             this.highestBid = highestBidObj.getBidAmount();
             this.highestBidder = highestBidObj.getUser().getUserName();
+        } else {
+            this.highestBid = auction.getStartingPrice(); // ถ้าไม่มีคนบิด ใช้ราคาตั้งต้น
+            this.highestBidder = "No Bids";
         }
 
-        // ✅ ถ้าการประมูลมีผู้ชนะแล้ว ให้กำหนดข้อมูล
+        // ✅ ถ้าการประมูลสิ้นสุดแล้ว ให้ใช้ราคาของผู้ชนะจริงๆ
         if (auction.getStatus() == AuctionStatus.ENDED && auction.getWinner() != null) {
-            this.highestBidder = auction.getWinner().getUserName(); // ✅ ใช้ getUserName() ตรงๆ
-            this.highestBid = auction.getMaxBidPrice();
+            this.highestBidder = auction.getWinner().getUserName();
+            this.highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction).getBidAmount(); // ✅ ใช้ราคาสูงสุดของผู้ชนะจริงๆ
             this.status = "Ended";
         }
-
     }
+
     public AuctionResponse(Object[] data) {
         this.auctionId = ((Number) data[0]).intValue(); // auction_id
         this.productName = (String) data[1]; // product_name

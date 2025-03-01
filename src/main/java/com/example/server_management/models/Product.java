@@ -60,6 +60,41 @@ public class Product {
     private More more;
 
     // ✅ Getter / Setter
+    public ClothingDetails getClothingDetails() {
+        return clothingDetails;
+    }
+
+    // ✅ Getter สำหรับ ShoesDetails
+    public ShoesDetails getShoesDetails() {
+        return shoesDetails;
+    }
+
+    // ✅ Getter สำหรับ PhoneDetails
+    public PhoneDetails getPhoneDetails() {
+        return phoneDetails;
+    }
+
+    // ✅ Getter สำหรับ More
+    public More getMore() {
+        return more;
+    }
+
+    // ✅ Setter
+    public void setClothingDetails(ClothingDetails clothingDetails) {
+        this.clothingDetails = clothingDetails;
+    }
+
+    public void setShoesDetails(ShoesDetails shoesDetails) {
+        this.shoesDetails = shoesDetails;
+    }
+
+    public void setPhoneDetails(PhoneDetails phoneDetails) {
+        this.phoneDetails = phoneDetails;
+    }
+
+    public void setMore(More more) {
+        this.more = more;
+    }
     public int getProductId() { return productId; }
     public void setProductId(int productId) { this.productId = productId; }
 

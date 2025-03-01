@@ -37,18 +37,16 @@ public class Myproduct {
 
             List<Product> products = userService.getMyProducts(userName);
 
-            // ✅ กรณีไม่มีร้านค้า
             if (products == null) {
                 return ResponseEntity.ok(Map.of("message", "You don't have a shop."));
             }
 
-            // ✅ กรณีมีร้านค้าแต่ไม่มีสินค้า
             if (products.isEmpty()) {
                 return ResponseEntity.ok(Map.of("message", "Your shop does not have any products."));
             }
 
             List<ProductResponse> productResponses = products.stream()
-                    .map(ProductResponse::new)  // แปลง Product เป็น ProductResponse
+                    .map(ProductResponse::new)  // ✅ ใช้ ProductResponse ที่มี `imageUrl`
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(productResponses);

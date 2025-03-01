@@ -102,16 +102,12 @@ public class UserService {
             throw new IllegalArgumentException("Invalid categoryId: " + categoryId);
         }
 
-        // ✅ Debug ก่อนดึงข้อมูลจาก DB
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
         if (categoryOpt.isEmpty()) {
             throw new IllegalArgumentException("Category not found with ID: " + categoryId);
         }
 
         Category category = categoryOpt.get();
-        System.out.println("✅ Fetched category from DB: " + category.getName());
-
-        // ✅ ค้นหาร้านค้า
         MyShop shop = myShopRepository.findByTitle(shopTitle);
         if (shop == null) {
             throw new IllegalArgumentException("Shop not found with title: " + shopTitle);
@@ -125,11 +121,11 @@ public class UserService {
         product.setShop(shop);
         product.setCategory(category);
 
-        // ✅ บันทึกสินค้าในฐานข้อมูลก่อน เพื่อให้ได้ `productId`
+        // ✅ บันทึกสินค้า (ยังไม่มีรูป)
         Product savedProduct = productRepository.save(product);
         System.out.println("✅ Saved Product ID: " + savedProduct.getProductId());
 
-        // ✅ อัปโหลดภาพขึ้น Cloudinary
+        // ✅ อัปโหลดรูปภาพขึ้น Cloudinary และบันทึก URL
         if (image != null && !image.isEmpty()) {
             String imageUrl = cloudinaryService.uploadImage(image);
             savedProduct.setImageUrl(imageUrl);
@@ -141,10 +137,11 @@ public class UserService {
                 savedProduct.getName(),
                 savedProduct.getDescription(),
                 savedProduct.getPrice(),
-                savedProduct.getImageUrl(), // ✅ ใช้ URL จาก Cloudinary
+                savedProduct.getImageUrl(),  // ✅ ใช้ URL จาก Cloudinary
                 details
         );
     }
+
 
     private void addProductDetails(Product product, int categoryId, Map<String, String> details) {
         switch (categoryId) {
@@ -393,37 +390,35 @@ public class UserService {
 
 
 
+
+
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
-
     @Transactional
     public List<Product> getMyProducts(String userName) {
-        // ✅ ค้นหา User ตามชื่อ
         User user = userRepository.findByUserName(userName);
         if (user == null) {
             System.out.println("❌ User not found: " + userName);
-            return null; // ✅ ให้ Controller จัดการต่อ
+            return null;
         }
 
-        // ✅ ค้นหา MyShop ที่เชื่อมโยงกับ User
         MyShop shop = user.getMyShop();
         if (shop == null) {
             System.out.println("⚠️ No shop associated with user: " + userName);
-            return null; // ✅ คืนค่า null ให้ Controller เช็คและแสดง "You do not own a shop."
+            return null;
         }
 
-        // ✅ ค้นหา Products ที่เชื่อมโยงกับ MyShop
         List<Product> products = productRepository.findByShop(shop);
-
         if (products == null || products.isEmpty()) {
             System.out.println("⚠️ No products found for shop: " + shop.getTitle());
-            return new ArrayList<>(); // ✅ คืน ArrayList ว่าง ให้ Controller เช็คและแสดง "Your shop does not have any products."
+            return new ArrayList<>();
         }
 
         return products;
     }
+
 
     public List<String> findProductNamesByQuery(String query) {
         List<Product> products = productRepository.findByNameContainingIgnoreCase(query);

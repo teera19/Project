@@ -337,7 +337,35 @@ public class AuctionController {
         bidRepository.deleteAll(userBids);
         return ResponseEntity.ok(Map.of("message", "Your bid has been removed from the auction."));
     }
+    @GetMapping("/my-auctionwin")
+    public ResponseEntity<?> getMyWonAuctions(HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Please log in to view your won auctions."));
+        }
 
+        Optional<User> optionalUser = userRepository.findUserByUserName(userName);
+        if (!optionalUser.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found with username: " + userName));
+        }
 
+        User user = optionalUser.get();
+
+        // 🔍 ค้นหา Auction ที่ผู้ใช้เป็นผู้ชนะ
+        List<Auction> wonAuctions = auctionRepository.findByWinner(user);
+
+        if (wonAuctions.isEmpty()) {
+            return ResponseEntity.ok(Map.of("message", "You have not won any auctions."));
+        }
+
+        // ✅ ใช้ `AuctionResponse` และส่ง `bidRepository` ไปด้วย
+        List<AuctionResponse> responses = wonAuctions.stream()
+                .map(auction -> new AuctionResponse(auction, bidRepository))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responses);
+    }
 
 }

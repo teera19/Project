@@ -43,6 +43,22 @@ public class Product {
     @JoinColumn(name = "myshop_id", nullable = false)
     private MyShop shop;
 
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnore
+    private ClothingDetails clothingDetails;
+
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnore
+    private ShoesDetails shoesDetails;
+
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnore
+    private PhoneDetails phoneDetails;
+
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnore
+    private More more;
+
     // ✅ Getter / Setter
     public int getProductId() { return productId; }
     public void setProductId(int productId) { this.productId = productId; }

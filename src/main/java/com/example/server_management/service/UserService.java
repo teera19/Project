@@ -119,6 +119,9 @@ public class UserService {
         Product savedProduct = productRepository.save(product);
         System.out.println("✅ Saved Product ID: " + savedProduct.getProductId());
 
+        // ✅ เพิ่มข้อมูลรายละเอียดสินค้าตามหมวดหมู่
+        addProductDetails(savedProduct, categoryId, details);
+
         // ✅ อัปโหลดภาพขึ้น Cloudinary
         if (image != null && !image.isEmpty()) {
             String imageUrl = cloudinaryService.uploadImage(image);
@@ -136,39 +139,38 @@ public class UserService {
         );
     }
 
-
-
+    // ✅ ฟังก์ชันสำหรับบันทึกข้อมูลเฉพาะหมวดหมู่สินค้า
     private void addProductDetails(Product product, int categoryId, Map<String, String> details) {
         switch (categoryId) {
-            case 1: //  หมวดหมู่เสื้อผ้า
+            case 1: // ✅ หมวดหมู่เสื้อผ้า
                 ClothingDetails clothingDetails = new ClothingDetails();
                 clothingDetails.setProduct(product);
-                clothingDetails.setHasStain(parseStringOrDefault(details.get("has_stain"), "ไม่มี")); // ✅ ใช้ String "มี"/"ไม่มี"
+                clothingDetails.setHasStain(parseStringOrDefault(details.get("has_stain"), "ไม่มี"));
                 clothingDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
                 clothingDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
                 clothingDetailsRepository.save(clothingDetails);
                 break;
 
-            case 2: //  หมวดหมู่โทรศัพท์
+            case 2: // ✅ หมวดหมู่โทรศัพท์
                 PhoneDetails phoneDetails = new PhoneDetails();
                 phoneDetails.setProduct(product);
-                phoneDetails.setBasicFunctionalityStatus(parseStringOrDefault(details.get("basic_functionality_status"), "ไม่มี")); // ✅ ใช้ String
+                phoneDetails.setBasicFunctionalityStatus(parseStringOrDefault(details.get("basic_functionality_status"), "ไม่มี"));
                 phoneDetails.setBatteryStatus(details.getOrDefault("battery_status", "Unknown"));
                 phoneDetails.setNonFunctionalParts(details.getOrDefault("nonfunctional_parts", "None"));
                 phoneDetails.setScratchCount(parseIntOrDefault(details.get("scratch_count"), 0));
                 phoneDetailsRepository.save(phoneDetails);
                 break;
 
-            case 3: //  หมวดหมู่รองเท้า
+            case 3: // ✅ หมวดหมู่รองเท้า
                 ShoesDetails shoesDetails = new ShoesDetails();
                 shoesDetails.setProduct(product);
-                shoesDetails.setHasBrandLogo(parseStringOrDefault(details.get("hasbrand_logo"), "ไม่มี")); // ✅ ใช้ String
+                shoesDetails.setHasBrandLogo(parseStringOrDefault(details.get("hasbrand_logo"), "ไม่มี"));
                 shoesDetails.setTearLocation(details.getOrDefault("tear_location", "Unknown"));
                 shoesDetails.setRepairCount(parseIntOrDefault(details.get("repair_count"), 0));
                 shoesDetailsRepository.save(shoesDetails);
                 break;
 
-            case 4: //  หมวดหมู่ `More`
+            case 4: // ✅ หมวดหมู่ `More`
                 More more = new More();
                 more.setProduct(product);
                 more.setFlawedPoint(details.getOrDefault("flawed_point", "Unknown"));

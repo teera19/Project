@@ -48,7 +48,7 @@ public class AuctionController {
     public ResponseEntity<List<AuctionResponse>> getAllAuctions() {
         List<Auction> auctions = auctionService.getAllAuctions();
         List<AuctionResponse> responses = auctions.stream()
-                .map(AuctionResponse::new)
+                .map(auction -> new AuctionResponse(auction, bidRepository)) // ✅ ส่ง bidRepository ไปด้วย
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
     }
@@ -56,8 +56,12 @@ public class AuctionController {
     @GetMapping("/{auctionId}")
     public ResponseEntity<AuctionResponse> getAuctionById(@PathVariable int auctionId) {
         Auction auction = auctionService.getAuctionById(auctionId);
-        return ResponseEntity.ok(new AuctionResponse(auction));
+        if (auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        return ResponseEntity.ok(new AuctionResponse(auction, bidRepository)); // ✅ ใช้ bidRepository
     }
+
 
     @PostMapping("/add-auction")
     public ResponseEntity<?> addAuction(
@@ -233,8 +237,9 @@ public class AuctionController {
 
         // ✅ AuctionResponse จะแปลงเวลาเป็น Bangkok ให้อัตโนมัติ
         List<AuctionResponse> responses = auctionData.stream()
-                .map(AuctionResponse::new)
+                .map(data -> new AuctionResponse(data)) // ✅ ใช้ Lambda แทน Method Reference
                 .toList();
+
 
         return ResponseEntity.ok(responses);
     }

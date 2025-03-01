@@ -96,27 +96,22 @@ public class AuctionService {
     // ✅ ใช้ @Transactional เฉพาะใน updateAuctionStatus
     @Scheduled(fixedRate = 60000) // 60 วินาที
     @Transactional
-    public void updateAuctionStatus() {
+    public void updateAuctionWinners() {
         List<Auction> ongoingAuctions = auctionRepository.findByStatus(AuctionStatus.ONGOING);
-        ZonedDateTime nowUTC = ZonedDateTime.now(ZoneId.of("UTC")); // ✅ ใช้ UTC เปรียบเทียบกับ DB
-
-        System.out.println("🔄 Running scheduled auction update at: " + nowUTC);
-        System.out.println("🛒 Found " + ongoingAuctions.size() + " ongoing auctions");
+        ZonedDateTime nowUTC = ZonedDateTime.now(ZoneId.of("UTC"));
 
         for (Auction auction : ongoingAuctions) {
             ZonedDateTime auctionEndTime = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"));
 
-            System.out.println("🕒 Checking auction ID: " + auction.getAuctionId());
-            System.out.println("   - End Time (UTC): " + auctionEndTime);
-            System.out.println("   - Now (UTC): " + nowUTC);
-
-            if (nowUTC.isAfter(auctionEndTime)) {
-                System.out.println("✅ Auction " + auction.getAuctionId() + " has ended. Updating status...");
-                auction.setStatus(AuctionStatus.COMPLETED);
-                auctionRepository.saveAndFlush(auction); // ✅ บังคับ Hibernate ให้ commit
-                System.out.println("✅ Auction " + auction.getAuctionId() + " updated to COMPLETED");
+            if (nowUTC.isAfter(auctionEndTime)) { // ✅ เช็คว่าหมดเวลาแล้ว
+                Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
+                if (highestBid != null) {
+                    auction.setWinner(highestBid.getUser()); // ✅ กำหนดผู้ชนะ
+                    auction.setStatus(AuctionStatus.ENDED); // ✅ อัปเดตสถานะ
+                    auctionRepository.save(auction); // ✅ บันทึกลง DB
+                    System.out.println("🏆 Auction " + auction.getAuctionId() + " ended. Winner: " + highestBid.getUser().getUserName());
+                }
             }
         }
     }
-
 }

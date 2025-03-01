@@ -98,19 +98,18 @@ public class AuctionService {
     @Transactional
     public void updateAuctionWinners() {
         List<Auction> ongoingAuctions = auctionRepository.findByStatus(AuctionStatus.ONGOING);
-        ZonedDateTime nowUTC = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime nowBangkok = ZonedDateTime.now(ZoneId.of("Asia/Bangkok")); // ✅ ใช้เวลาที่ถูกต้อง
 
         for (Auction auction : ongoingAuctions) {
-            ZonedDateTime auctionEndTime = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("Asia/Bangkok"))
-                    .withZoneSameInstant(ZoneId.of("UTC")); // ✅ แปลงเป็น UTC
+            ZonedDateTime auctionEndTime = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"))
+                    .withZoneSameInstant(ZoneId.of("Asia/Bangkok")); // ✅ แปลงให้ตรงกับระบบ
 
-            // ✅ Debug ดูเวลาจริง
+            // ✅ Debug ดูค่าที่ใช้เทียบ
             System.out.println("🔍 Checking auction ID: " + auction.getAuctionId());
-            System.out.println("   - Now (UTC): " + nowUTC);
-            System.out.println("   - End Time (DB): " + auction.getEndTime());
-            System.out.println("   - Converted End Time (UTC): " + auctionEndTime);
+            System.out.println("   - Now (Bangkok): " + nowBangkok);
+            System.out.println("   - Auction End Time (Bangkok): " + auctionEndTime);
 
-            if (nowUTC.isAfter(auctionEndTime)) { // ✅ เช็คว่าหมดเวลาแล้วจริงๆ
+            if (nowBangkok.isAfter(auctionEndTime)) { // ✅ เช็คเวลาตาม Bangkok
                 Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
                 if (highestBid != null) {
                     auction.setWinner(highestBid.getUser()); // ✅ กำหนดผู้ชนะ
@@ -121,6 +120,7 @@ public class AuctionService {
             }
         }
     }
-
 }
+
+
 

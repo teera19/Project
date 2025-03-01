@@ -28,29 +28,27 @@ public class Myproduct {
         String userName = (String) session.getAttribute("user_name");
 
         if (userName == null) {
-            return new ResponseEntity<>(Map.of(
-                    "message", "User not logged in. Please log in first."
-            ), HttpStatus.FORBIDDEN);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Please log in to view your products."));
         }
 
         try {
             List<Product> products = userService.getMyProducts(userName);
+
+            // ✅ If no products, return a friendly message with `200 OK`
             if (products.isEmpty()) {
-                return new ResponseEntity<>(Map.of(
-                        "message", "Don't have any products"
-                ), HttpStatus.OK);
+                return ResponseEntity.ok(Map.of("message", "You have no products for sale."));
             }
 
             List<ProductResponse> productResponses = products.stream()
-                    .map(ProductResponse::new)  // แปลง Product เป็น ProductResponse
+                    .map(ProductResponse::new)  // Convert Product to ProductResponse
                     .collect(Collectors.toList());
 
-            return new ResponseEntity<>(productResponses, HttpStatus.OK);
+            return ResponseEntity.ok(productResponses);
         } catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(Map.of(
-                    "message", "Internal server error occurred."
-            ), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An internal server error occurred. Please try again later."));
         }
     }
 }

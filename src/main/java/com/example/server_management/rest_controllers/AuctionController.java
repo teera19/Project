@@ -53,6 +53,7 @@ public class AuctionController {
         return ResponseEntity.ok(responses);
     }
 
+
     @GetMapping("/{auctionId}")
     public ResponseEntity<AuctionResponse> getAuctionById(@PathVariable int auctionId) {
         Auction auction = auctionService.getAuctionById(auctionId);

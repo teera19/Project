@@ -4,8 +4,6 @@ import com.example.server_management.models.Auction;
 import com.example.server_management.models.AuctionStatus;
 import com.example.server_management.models.Bid;
 import com.example.server_management.repository.BidRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -17,9 +15,11 @@ public class AuctionResponse {
     private int auctionId;
     private String productName;
     private String description;
-    private String highestBidder;
+    private double startingPrice;  // ✅ เพิ่มราคาตั้งต้น
     private double highestBid;
     private double maxBidPrice;
+    private double finalBid; // ✅ เพิ่มราคาที่ปิดประมูล
+    private String highestBidder;
     private String startTime;
     private String endTime;
     private String imageUrl;
@@ -34,7 +34,8 @@ public class AuctionResponse {
         this.productName = auction.getProductName();
         this.description = auction.getDescription();
         this.imageUrl = auction.getImageUrl();
-        this.maxBidPrice = auction.getMaxBidPrice(); // ✅ ราคาสูงสุดที่ตั้งไว้
+        this.maxBidPrice = auction.getMaxBidPrice();
+        this.startingPrice = auction.getStartingPrice(); // ✅ ราคาเริ่มต้น
 
         setFormattedTimes(auction.getStartTime(), auction.getEndTime());
 
@@ -44,18 +45,18 @@ public class AuctionResponse {
             this.highestBid = highestBidObj.getBidAmount();
             this.highestBidder = highestBidObj.getUser().getUserName();
         } else {
-            this.highestBid = auction.getStartingPrice(); // ถ้าไม่มีคนบิด ใช้ราคาตั้งต้น
+            this.highestBid = this.startingPrice; // ✅ ถ้าไม่มีคนบิด ใช้ราคาตั้งต้น
             this.highestBidder = "No Bids";
         }
 
         // ✅ ถ้าการประมูลสิ้นสุดแล้ว ให้ใช้ราคาของผู้ชนะจริงๆ
         if (auction.getStatus() == AuctionStatus.ENDED && auction.getWinner() != null) {
+            this.finalBid = this.highestBid; // ✅ ราคาปิดประมูลเป็นราคาสูงสุดของผู้ชนะ
             this.highestBidder = auction.getWinner().getUserName();
-            this.highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction).getBidAmount(); // ✅ ใช้ราคาสูงสุดของผู้ชนะจริงๆ
-            this.status = "Ended";
+        } else {
+            this.finalBid = 0; // ✅ ถ้าการประมูลยังไม่จบ ราคาปิดเป็น 0
         }
     }
-
     public AuctionResponse(Object[] data) {
         this.auctionId = ((Number) data[0]).intValue(); // auction_id
         this.productName = (String) data[1]; // product_name
@@ -77,55 +78,36 @@ public class AuctionResponse {
 
     private void setFormattedTimes(LocalDateTime startTime, LocalDateTime endTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
-
-        // ✅ แปลงจาก UTC -> Bangkok
         ZonedDateTime startZoned = ZonedDateTime.of(startTime, ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
         ZonedDateTime endZoned = ZonedDateTime.of(endTime, ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"));
 
-        // ✅ แปลงเป็น String ที่เข้าใจง่าย
         this.startTime = startZoned.format(formatter);
         this.endTime = endZoned.format(formatter);
 
-        // ✅ ตรวจสอบสถานะ
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
-
-        System.out.println("🔍 Debug: Checking auction status");
-        System.out.println("   - Now (Bangkok): " + now);
-        System.out.println("   - Start Time (Bangkok): " + startZoned);
-        System.out.println("   - End Time (Bangkok): " + endZoned);
 
         if (now.isBefore(startZoned)) {
             this.status = "Not Started";
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, startZoned);
-            this.secondsRemaining = ChronoUnit.SECONDS.between(now, startZoned) % 60;
-            this.millisecondsRemaining = ChronoUnit.MILLIS.between(now, startZoned) % 1000; // ✅ แสดงมิลลิวินาที
-        } else if (now.isBefore(endZoned)) { // ✅ ถ้ายังไม่หมดเวลา
-            this.status = "Active"; // ✅ ตอนนี้ต้องเป็น "Active"
+        } else if (now.isBefore(endZoned)) {
+            this.status = "Active";
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, endZoned);
-            this.secondsRemaining = ChronoUnit.SECONDS.between(now, endZoned) % 60;
-            this.millisecondsRemaining = ChronoUnit.MILLIS.between(now, endZoned) % 1000; // ✅ แสดงมิลลิวินาที
         } else {
             this.status = "Ended";
             this.minutesRemaining = 0;
-            this.secondsRemaining = 0;
-            this.millisecondsRemaining = 0;
         }
     }
 
-
     // ✅ เพิ่ม Getter
-    public long getSecondsRemaining() { return secondsRemaining; }
-    public long getMillisecondsRemaining() { return millisecondsRemaining; }
-
-
-    // ✅ Getters
+    public double getStartingPrice() { return startingPrice; }
+    public double getHighestBid() { return highestBid; }
+    public double getFinalBid() { return finalBid; } // ✅ ราคาที่ปิดประมูล
     public int getAuctionId() { return auctionId; }
     public String getProductName() { return productName; }
     public String getDescription() { return description; }
     public String getHighestBidder() { return highestBidder; }
-    public double getHighestBid() { return highestBid; }
     public double getMaxBidPrice() { return maxBidPrice; }
     public String getStartTime() { return startTime; }
     public String getEndTime() { return endTime; }

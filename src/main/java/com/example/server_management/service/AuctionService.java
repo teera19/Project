@@ -104,14 +104,14 @@ public class AuctionService {
             ZonedDateTime auctionEndTimeUTC = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"));
 
             if (nowUTC.isAfter(auctionEndTimeUTC)) { // ✅ ถ้าหมดเวลา
-                if (auction.getStatus() != AuctionStatus.ENDED) { // ✅ ป้องกันเซ็ตซ้ำ
+                if (auction.getStatus() != AuctionStatus.COMPLETED) { // ✅ ป้องกันเซ็ตซ้ำ
                     Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
                     if (highestBid != null) {
                         auction.setWinner(highestBid.getUser()); // ✅ กำหนดผู้ชนะ
                         auctionRepository.save(auction);
                         System.out.println("🏆 Auction " + auction.getAuctionId() + " ended. Winner: " + highestBid.getUser().getUserName() + " with bid: " + highestBid.getBidAmount());
                     }
-                    auction.setStatus(AuctionStatus.ENDED); // ✅ เซ็ตให้ประมูลจบ
+                    auction.setStatus(AuctionStatus.COMPLETED); // ✅ เซ็ตให้ประมูลจบ
                     auctionRepository.save(auction);
                 }
             }

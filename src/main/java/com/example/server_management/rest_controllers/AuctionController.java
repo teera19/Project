@@ -288,7 +288,7 @@ public class AuctionController {
         }
 
         // ❌ เช็คว่า Auction จบแล้วหรือยัง?
-        if (auction.getStatus() != AuctionStatus.ENDED) {
+        if (auction.getStatus() != AuctionStatus.COMPLETED) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "You can only delete an auction that has ended."));
         }
@@ -322,7 +322,7 @@ public class AuctionController {
         Auction auction = optionalAuction.get();
 
         // ❌ ตรวจสอบว่า Auction จบแล้วหรือยัง?
-        if (auction.getStatus() != AuctionStatus.ENDED) {
+        if (auction.getStatus() != AuctionStatus.COMPLETED) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "You can only remove your bid after the auction has ended."));
         }

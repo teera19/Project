@@ -35,6 +35,8 @@ public class ChatRoom {
         this.user2 = user2;
         this.productId = productId;
     }
+    @Transient  // ไม่บันทึกลงฐานข้อมูล
+    private Message latestMessage;
 
     //  Getter & Setter
     public int getChatId() {
@@ -85,5 +87,12 @@ public class ChatRoom {
                 ", user2='" + user2 + '\'' +
                 ", productId=" + productId +
                 '}';
+    }
+    public Message getLatestMessage() {
+        return latestMessage;
+    }
+
+    public void setLatestMessage(Message latestMessage) {
+        this.latestMessage = latestMessage;
     }
 }

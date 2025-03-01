@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ChatService {
@@ -40,8 +41,16 @@ public class ChatService {
                 .orElseThrow(() -> new RuntimeException("ChatRoom not found"));
     }
     public List<ChatRoom> getChatsByUser(String userName) {
-        return chatRoomRepository.findByUser1OrUser2(userName, userName);
-    }
+        List<ChatRoom> chatRooms = chatRoomRepository.findByUser1OrUser2(userName, userName);
 
+        for (ChatRoom chatRoom : chatRooms) {
+            Optional<Message> latestMessageOpt = messageRepository.findTopByChatRoomOrderByCreatedAtDesc(chatRoom);
+
+            // ✅ ถ้ามีข้อความ ให้ตั้งค่า latestMessage
+            latestMessageOpt.ifPresent(chatRoom::setLatestMessage);
+        }
+
+        return chatRooms;
+    }
 
 }

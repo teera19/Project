@@ -84,18 +84,29 @@ public class Chat {
         return ResponseEntity.ok(message);
     }
     @GetMapping("/my-chats")
-    public ResponseEntity<?> getMyChats(HttpSession session) {
-        Object userNameObj = session.getAttribute("user_name");
-        if (userNameObj == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "You must log in first."));
-        }
-
-        String currentUser = userNameObj.toString();
-        System.out.println("Fetching chats for user: " + currentUser);
-
+    public ResponseEntity<List<Map<String, Object>>> getMyChats(@SessionAttribute("user_name") String currentUser) {
         List<ChatRoom> chatRooms = chatService.getChatsByUser(currentUser);
-        return ResponseEntity.ok(chatRooms);
+
+        List<Map<String, Object>> response = chatRooms.stream().map(chatRoom -> {
+            Map<String, Object> chatData = new HashMap<>();
+            chatData.put("chatId", chatRoom.getChatId());
+            chatData.put("user1", chatRoom.getUser1());
+            chatData.put("user2", chatRoom.getUser2());
+            chatData.put("productId", chatRoom.getProductId());
+
+            // ✅ ส่งข้อความล่าสุด (ถ้ามี)
+            if (chatRoom.getLatestMessage() != null) {
+                chatData.put("latestMessage", chatRoom.getLatestMessage().getMessage());
+                chatData.put("latestSender", chatRoom.getLatestMessage().getSender());
+                chatData.put("latestTime", chatRoom.getLatestMessage().getCreatedAt());
+            } else {
+                chatData.put("latestMessage", "ไม่มีข้อความ");
+            }
+
+            return chatData;
+        }).toList();
+
+        return ResponseEntity.ok(response);
     }
 
 

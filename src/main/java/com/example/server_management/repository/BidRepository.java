@@ -19,6 +19,7 @@ public interface BidRepository extends JpaRepository<Bid, Integer> {
     Bid findTopByAuctionOrderByBidAmountDesc(Auction auction);
     List<Bid> findByAuction(Auction auction);
     List<Bid> findByAuction_AuctionId(int auctionId);;
+    List<Bid> findByAuctionAndUser(Auction auction, User user);
     @Query(value = """
     SELECT DISTINCT a.auction_id, a.product_name, a.description, 
            COALESCE(b2.bid_amount, 0) as highest_bid, 

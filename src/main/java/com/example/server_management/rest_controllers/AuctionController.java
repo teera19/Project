@@ -264,5 +264,80 @@ public class AuctionController {
 
         return ResponseEntity.ok(responses);
     }
+    @DeleteMapping("/my-auctions/{auctionId}")
+    public ResponseEntity<?> deleteMyAuction(@PathVariable int auctionId, HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Please log in to delete your auction."));
+        }
+
+        // 🔍 ค้นหา Auction
+        Optional<Auction> optionalAuction = auctionRepository.findById(auctionId);
+        if (!optionalAuction.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Auction not found with ID: " + auctionId));
+        }
+
+        Auction auction = optionalAuction.get();
+
+        // ❌ เช็คว่าเป็นเจ้าของไหม?
+        if (!auction.getOwnerUserName().equals(userName)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not the owner of this auction."));
+        }
+
+        // ❌ เช็คว่า Auction จบแล้วหรือยัง?
+        if (auction.getStatus() != AuctionStatus.ENDED) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You can only delete an auction that has ended."));
+        }
+
+        // 🔥 ลบประมูล
+        auctionRepository.delete(auction);
+        return ResponseEntity.ok(Map.of("message", "Auction deleted successfully!"));
+    }
+    @DeleteMapping("/my-auction/{auctionId}")
+    public ResponseEntity<?> removeMyBid(@PathVariable int auctionId, HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Please log in to remove your bid."));
+        }
+
+        Optional<User> optionalUser = userRepository.findUserByUserName(userName);
+        if (!optionalUser.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found with username: " + userName));
+        }
+
+        User user = optionalUser.get();
+        Optional<Auction> optionalAuction = auctionRepository.findById(auctionId);
+
+        if (!optionalAuction.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Auction not found with ID: " + auctionId));
+        }
+
+        Auction auction = optionalAuction.get();
+
+        // ❌ ตรวจสอบว่า Auction จบแล้วหรือยัง?
+        if (auction.getStatus() != AuctionStatus.ENDED) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You can only remove your bid after the auction has ended."));
+        }
+
+        // ❌ ลบเฉพาะ Bid ของตัวเองเท่านั้น
+        List<Bid> userBids = bidRepository.findByAuctionAndUser(auction, user);
+        if (userBids.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "No bids found for this auction by you."));
+        }
+
+        bidRepository.deleteAll(userBids);
+        return ResponseEntity.ok(Map.of("message", "Your bid has been removed from the auction."));
+    }
+
+
 
 }

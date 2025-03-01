@@ -12,8 +12,8 @@ public class BidResponse {
     private String fullName;
     private String bidTime; // ✅ ใช้ String เพื่อรองรับรูปแบบเวลา
 
-    // ✅ ใช้ Formatter ที่รองรับ Milliseconds (`.SSS`)
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSXXX");
+    // ✅ ใช้ Formatter ที่รองรับ Milliseconds (`.SSS`) และ `+07:00`
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
     public BidResponse(Bid bid) {
         this.bidId = bid.getBidId();

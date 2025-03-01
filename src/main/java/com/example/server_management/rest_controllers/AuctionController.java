@@ -140,11 +140,16 @@ public class AuctionController {
 
         User user = optionalUser.get();
 
+        // ✅ ตรวจสอบว่า bidAmount มีค่าหรือไม่
+        if (!bidRequest.containsKey("bidAmount")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Bid amount is required."));
+        }
+
         double bidAmount;
         try {
             bidAmount = Double.parseDouble(bidRequest.get("bidAmount").toString());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid bid amount."));
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid bid amount format."));
         }
 
         if (bidAmount <= 0) {
@@ -152,27 +157,32 @@ public class AuctionController {
         }
 
         try {
-            // ✅ รับ `bidTime` พร้อม Milliseconds (`.SSS`)
-            String bidTimeStr = (String) bidRequest.get("bidTime");
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSS");
-
-            // ✅ แปลงจาก LocalDateTime (Bangkok Time)
-            LocalDateTime bidTimeLocal = LocalDateTime.parse(bidTimeStr, formatter);
-            ZonedDateTime bidTimeBangkok = bidTimeLocal.atZone(ZoneId.of("Asia/Bangkok"));
+            // ✅ กำหนดเวลา `bidTime` เป็นเวลาปัจจุบันของ `Asia/Bangkok`
+            ZonedDateTime bidTimeBangkok = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
 
             // ✅ แปลงเป็น UTC ก่อนบันทึก
             ZonedDateTime bidTimeUTC = bidTimeBangkok.withZoneSameInstant(ZoneId.of("UTC"));
 
+            // ✅ ตรวจสอบว่าสินค้าที่ประมูลมีอยู่จริง
+            Auction auction = auctionService.getAuctionById(auctionId);
+            if (auction == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Auction not found with ID: " + auctionId));
+            }
+
             // ✅ บันทึก Bid ลงในฐานข้อมูล
             Bid bid = new Bid();
-            bid.setAuction(auctionService.getAuctionById(auctionId));
+            bid.setAuction(auction);
             bid.setUser(user);
             bid.setBidAmount(bidAmount);
             bid.setBidTime(bidTimeUTC.toLocalDateTime()); // ✅ บันทึกเป็น UTC
 
             bidRepository.save(bid);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Bid placed successfully!"));
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "message", "Bid placed successfully!",
+                    "bidTime", bidTimeBangkok.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")) // ✅ แสดงเวลาเป็น Bangkok Time ให้ Front-end
+            )); // ✅ ส่งเวลาเป็น Bangkok Time ให้ Front-end;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "An error occurred while processing the bid.", "error", e.getMessage()));
@@ -199,6 +209,7 @@ public class AuctionController {
 
         return ResponseEntity.ok(bidResponses);
     }
+
 
     @GetMapping("/my-auction")
     public ResponseEntity<?> getMyBidAuctions(HttpSession session) {

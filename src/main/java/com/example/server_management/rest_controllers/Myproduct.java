@@ -29,27 +29,40 @@ public class Myproduct {
 
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Please log in to view your products."));
+                    .body(Map.of("message", "กรุณาเข้าสู่ระบบเพื่อดูสินค้าของคุณ"));
         }
 
         try {
+            System.out.println("🔍 ตรวจสอบผู้ใช้: " + userName); // ✅ ตรวจสอบข้อมูล session
+
             List<Product> products = userService.getMyProducts(userName);
 
-            // ✅ If no products, return a friendly message with `200 OK`
-            if (products.isEmpty()) {
-                return ResponseEntity.ok(Map.of("message", "You have no products for sale."));
+            // ✅ ถ้าไม่มีสินค้า ให้ส่งข้อความแจ้งเตือน
+            if (products == null || products.isEmpty()) {
+                System.out.println("⚠️ ไม่พบสินค้าสำหรับผู้ใช้: " + userName);
+                return ResponseEntity.ok(Map.of("message", "คุณไม่มีสินค้าที่กำลังจำหน่าย"));
             }
 
+            // ✅ แปลงข้อมูลเป็น DTO อย่างปลอดภัย
             List<ProductResponse> productResponses = products.stream()
-                    .map(ProductResponse::new)  // Convert Product to ProductResponse
+                    .map(product -> {
+                        try {
+                            return new ProductResponse(product);
+                        } catch (Exception ex) {
+                            System.err.println("❌ เกิดข้อผิดพลาดในการแปลงสินค้า ID: " + product.getProductId());
+                            ex.printStackTrace();
+                            return null; // ป้องกันไม่ให้ API ล่ม
+                        }
+                    })
+                    .filter(p -> p != null) // ลบค่าที่เป็น null ออกจากรายการ
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(productResponses);
         } catch (Exception e) {
+            System.err.println("❌ เกิดข้อผิดพลาดขณะดึงข้อมูลสินค้าสำหรับผู้ใช้: " + userName);
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "An internal server error occurred. Please try again later."));
+                    .body(Map.of("message", "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง"));
         }
     }
 }
-

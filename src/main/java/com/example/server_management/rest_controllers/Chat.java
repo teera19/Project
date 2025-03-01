@@ -6,6 +6,7 @@ import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
 import com.example.server_management.service.ChatService;
 import com.example.server_management.service.ProductService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -82,10 +83,20 @@ public class Chat {
         Message message = chatService.sendMessage(chatId, sender, request.getMessage());
         return ResponseEntity.ok(message);
     }
-    @GetMapping("/my-chats") //ปุ่มไอค่อนรูปข้อความ
-    public ResponseEntity<List<ChatRoom>> getMyChats(@SessionAttribute("user_name") String currentUser) {
+    @GetMapping("/my-chats")
+    public ResponseEntity<?> getMyChats(HttpSession session) {
+        Object userNameObj = session.getAttribute("user_name");
+        if (userNameObj == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You must log in first."));
+        }
+
+        String currentUser = userNameObj.toString();
+        System.out.println("Fetching chats for user: " + currentUser);
+
         List<ChatRoom> chatRooms = chatService.getChatsByUser(currentUser);
         return ResponseEntity.ok(chatRooms);
     }
+
 
 }

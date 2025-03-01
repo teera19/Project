@@ -94,8 +94,9 @@ public class AuctionResponse {
 
 
     private void setFormattedTimes(LocalDateTime startTime, LocalDateTime endTime) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
+        // ✅ แปลงจาก UTC เป็น Bangkok Time
         this.startTime = ZonedDateTime.of(startTime, ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"))
                 .format(formatter);
@@ -104,9 +105,10 @@ public class AuctionResponse {
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"))
                 .format(formatter);
 
+        // ✅ คำนวณว่าสินค้ากำลังอยู่ในช่วงประมูลหรือไม่
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
-        ZonedDateTime startZoned = ZonedDateTime.parse(this.startTime);
-        ZonedDateTime endZoned = ZonedDateTime.parse(this.endTime);
+        ZonedDateTime startZoned = ZonedDateTime.parse(this.startTime, formatter.withZone(ZoneId.of("Asia/Bangkok")));
+        ZonedDateTime endZoned = ZonedDateTime.parse(this.endTime, formatter.withZone(ZoneId.of("Asia/Bangkok")));
 
         if (now.isBefore(startZoned)) {
             this.status = "Not Started"; // 🔹 การประมูลยังไม่เริ่ม
@@ -119,6 +121,7 @@ public class AuctionResponse {
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, endZoned);
         }
     }
+
 
 
     // ✅ Getters

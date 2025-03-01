@@ -10,10 +10,10 @@ public class BidResponse {
     private double bidAmount;
     private String username;
     private String fullName;
-    private String bidTime; //  ใช้ String เพื่อรองรับรูปแบบเวลา
+    private String bidTime; // ✅ ใช้ String เพื่อรองรับรูปแบบเวลา
 
-    //  ใช้ Formatter ให้มีความละเอียดระดับเสี้ยววินาที (nanoseconds)
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX");
+    // ✅ ใช้ Formatter ที่รองรับ Milliseconds (`.SSS`)
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSXXX");
 
     public BidResponse(Bid bid) {
         this.bidId = bid.getBidId();
@@ -21,16 +21,16 @@ public class BidResponse {
         this.username = bid.getUser().getUserName();
         this.fullName = bid.getUser().getName() + " " + bid.getUser().getLastName();
 
-        //  แปลง `bidTime` จาก UTC → Asia/Bangkok และเพิ่ม millisecond
+        // ✅ แปลง `bidTime` จาก UTC → Asia/Bangkok
         this.bidTime = ZonedDateTime.of(bid.getBidTime(), ZoneId.of("UTC"))
                 .withZoneSameInstant(ZoneId.of("Asia/Bangkok"))
                 .format(formatter);
     }
 
-    //  Getters
+    // ✅ Getters
     public int getBidId() { return bidId; }
     public double getBidAmount() { return bidAmount; }
     public String getUsername() { return username; }
     public String getFullName() { return fullName; }
-    public String getBidTime() { return bidTime; } //  คืนค่า bidTime พร้อม milliseconds/nanoseconds
+    public String getBidTime() { return bidTime; } // ✅ คืนค่า bidTime ที่เป็น Bangkok Time พร้อม Milliseconds
 }

@@ -77,17 +77,22 @@ public class AuctionController {
         }
 
         try {
-            // ✅ ใช้ DateTimeFormatter ที่รองรับโซนเวลา (XXX รองรับ +07:00)
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+            // ✅ รับค่าเป็นรูปแบบที่ไม่มีโซนเวลา เช่น "2025-03-01T10:00:00"
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-            // ✅ รับค่าเป็น Bangkok Time และแปลงเป็น UTC ก่อนบันทึก
-            ZonedDateTime startTime = ZonedDateTime.parse(startTimeStr, formatter)
-                    .withZoneSameInstant(ZoneId.of("UTC")); // แปลงเป็น UTC
+            // ✅ แปลงจาก LocalDateTime (Bangkok Time) ไปเป็น ZonedDateTime
+            LocalDateTime startTimeLocal = LocalDateTime.parse(startTimeStr, formatter);
+            LocalDateTime endTimeLocal = LocalDateTime.parse(endTimeStr, formatter);
 
-            ZonedDateTime endTime = ZonedDateTime.parse(endTimeStr, formatter)
-                    .withZoneSameInstant(ZoneId.of("UTC"));
+            // ✅ กำหนดโซนเป็น "Asia/Bangkok"
+            ZonedDateTime startTimeBangkok = startTimeLocal.atZone(ZoneId.of("Asia/Bangkok"));
+            ZonedDateTime endTimeBangkok = endTimeLocal.atZone(ZoneId.of("Asia/Bangkok"));
 
-            if (endTime.isBefore(startTime)) {
+            // ✅ แปลงเป็น UTC ก่อนบันทึก
+            ZonedDateTime startTimeUTC = startTimeBangkok.withZoneSameInstant(ZoneId.of("UTC"));
+            ZonedDateTime endTimeUTC = endTimeBangkok.withZoneSameInstant(ZoneId.of("UTC"));
+
+            if (endTimeUTC.isBefore(startTimeUTC)) {
                 return ResponseEntity.badRequest().body(Map.of("message", "End time must be after start time."));
             }
 
@@ -96,8 +101,8 @@ public class AuctionController {
             auction.setDescription(description);
             auction.setStartingPrice(startingPrice);
             auction.setMaxBidPrice(maxBidPrice);
-            auction.setStartTime(startTime.toLocalDateTime()); // ✅ บันทึกเป็น UTC
-            auction.setEndTime(endTime.toLocalDateTime());
+            auction.setStartTime(startTimeUTC.toLocalDateTime()); // ✅ บันทึกเป็น UTC
+            auction.setEndTime(endTimeUTC.toLocalDateTime());
             auction.setStatus(AuctionStatus.ONGOING);
             auction.setOwnerUserName(userName);
 
@@ -114,6 +119,7 @@ public class AuctionController {
                     .body(Map.of("message", "An error occurred while adding the auction.", "error", e.getMessage()));
         }
     }
+
 
 
     @PostMapping("/{auctionId}/bids")
@@ -146,34 +152,49 @@ public class AuctionController {
         }
 
         try {
-            Bid bid = auctionService.addBid(auctionId, user, bidAmount);
+            // ✅ รับ `bidTime` พร้อม Milliseconds (`.SSS`)
+            String bidTimeStr = (String) bidRequest.get("bidTime");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSS");
+
+            // ✅ แปลงจาก LocalDateTime (Bangkok Time)
+            LocalDateTime bidTimeLocal = LocalDateTime.parse(bidTimeStr, formatter);
+            ZonedDateTime bidTimeBangkok = bidTimeLocal.atZone(ZoneId.of("Asia/Bangkok"));
+
+            // ✅ แปลงเป็น UTC ก่อนบันทึก
+            ZonedDateTime bidTimeUTC = bidTimeBangkok.withZoneSameInstant(ZoneId.of("UTC"));
+
+            // ✅ บันทึก Bid ลงในฐานข้อมูล
+            Bid bid = new Bid();
+            bid.setAuction(auctionService.getAuctionById(auctionId));
+            bid.setUser(user);
+            bid.setBidAmount(bidAmount);
+            bid.setBidTime(bidTimeUTC.toLocalDateTime()); // ✅ บันทึกเป็น UTC
+
+            bidRepository.save(bid);
+
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Bid placed successfully!"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "An error occurred while processing the bid."));
+                    .body(Map.of("message", "An error occurred while processing the bid.", "error", e.getMessage()));
         }
     }
 
     @GetMapping("/{auctionId}/bids")
     public ResponseEntity<?> getBidsForAuction(@PathVariable int auctionId) {
-        // ตรวจสอบว่าสินค้าประมูลมีอยู่หรือไม่
         Auction auction = auctionService.getAuctionById(auctionId);
         if (auction == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Auction not found with ID: " + auctionId));
         }
 
-        // ดึงรายการประมูลทั้งหมดของสินค้านี้
         List<Bid> bids = bidRepository.findByAuction(auction);
         if (bids.isEmpty()) {
             return ResponseEntity.ok(Map.of("message", "No bids found for this auction."));
         }
 
-        // แปลงข้อมูล `Bid` เป็น `BidResponse` เพื่อส่งกลับ
+        // ✅ แปลง `BidResponse` ให้แสดงเวลาเป็น Bangkok Time พร้อม Milliseconds
         List<BidResponse> bidResponses = bids.stream()
-                .map(BidResponse::new)
+                .map(BidResponse::new) // 🔥 แปลงเวลา UTC → Bangkok
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(bidResponses);
@@ -199,6 +220,7 @@ public class AuctionController {
         List<Object[]> auctionData = bidRepository.findAllParticipatedAuctions(user.getUserId());
         System.out.println("✅ Total Auctions Retrieved: " + auctionData.size());
 
+        // ✅ AuctionResponse จะแปลงเวลาเป็น Bangkok ให้อัตโนมัติ
         List<AuctionResponse> responses = auctionData.stream()
                 .map(AuctionResponse::new)
                 .toList();
@@ -219,12 +241,12 @@ public class AuctionController {
             return ResponseEntity.ok(Map.of("message", "You have not listed any auctions."));
         }
 
+        // ✅ ใช้ AuctionResponse ที่แปลงเวลาจาก UTC → Bangkok ให้แล้ว
         List<AuctionResponse> responses = myAuctions.stream()
-                .map(auction -> new AuctionResponse(auction, bidRepository)) // ✅ ต้องส่ง bidRepository เข้าไป
+                .map(auction -> new AuctionResponse(auction, bidRepository))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(responses);
     }
-
 
 }

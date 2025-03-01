@@ -29,40 +29,34 @@ public class Myproduct {
 
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "กรุณาเข้าสู่ระบบเพื่อดูสินค้าของคุณ"));
+                    .body(Map.of("message", "Please log in to view your products."));
         }
 
         try {
-            System.out.println("🔍 ตรวจสอบผู้ใช้: " + userName); // ✅ ตรวจสอบข้อมูล session
+            System.out.println("🔍 Checking user: " + userName);
 
             List<Product> products = userService.getMyProducts(userName);
 
-            // ✅ ถ้าไม่มีสินค้า ให้ส่งข้อความแจ้งเตือน
-            if (products == null || products.isEmpty()) {
-                System.out.println("⚠️ ไม่พบสินค้าสำหรับผู้ใช้: " + userName);
-                return ResponseEntity.ok(Map.of("message", "คุณไม่มีสินค้าที่กำลังจำหน่าย"));
+            // ✅ กรณีไม่มีร้านค้า
+            if (products == null) {
+                return ResponseEntity.ok(Map.of("message", "You do not own a shop."));
             }
 
-            // ✅ แปลงข้อมูลเป็น DTO อย่างปลอดภัย
+            // ✅ กรณีมีร้านค้าแต่ไม่มีสินค้า
+            if (products.isEmpty()) {
+                return ResponseEntity.ok(Map.of("message", "Your shop does not have any products."));
+            }
+
             List<ProductResponse> productResponses = products.stream()
-                    .map(product -> {
-                        try {
-                            return new ProductResponse(product);
-                        } catch (Exception ex) {
-                            System.err.println("❌ เกิดข้อผิดพลาดในการแปลงสินค้า ID: " + product.getProductId());
-                            ex.printStackTrace();
-                            return null; // ป้องกันไม่ให้ API ล่ม
-                        }
-                    })
-                    .filter(p -> p != null) // ลบค่าที่เป็น null ออกจากรายการ
+                    .map(ProductResponse::new)  // แปลง Product เป็น ProductResponse
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(productResponses);
         } catch (Exception e) {
-            System.err.println("❌ เกิดข้อผิดพลาดขณะดึงข้อมูลสินค้าสำหรับผู้ใช้: " + userName);
+            System.err.println("❌ Internal Server Error: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง"));
+                    .body(Map.of("message", "An internal server error occurred. Please try again later."));
         }
     }
 }

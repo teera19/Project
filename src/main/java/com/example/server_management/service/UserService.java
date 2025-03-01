@@ -14,10 +14,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -40,6 +37,8 @@ public class UserService {
     private ShoesDetailsRepository shoesDetailsRepository;
     @Autowired
     private MoreRepository moreRepository;
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     public User registerServiceMethod(User user) {
         System.out.println("Registering user: " + user.getUserName() + ", Email: " + user.getEmail());
@@ -97,28 +96,28 @@ public class UserService {
     @Transactional
     public ResponseProduct addProductToShop(String shopTitle, String name, String description, double price,
                                             MultipartFile image, int categoryId, Map<String, String> details) throws IOException {
-        System.out.println(" Checking categoryId before fetch: " + categoryId);
+        System.out.println("🔍 Checking categoryId before fetch: " + categoryId);
 
         if (categoryId <= 0) {
             throw new IllegalArgumentException("Invalid categoryId: " + categoryId);
         }
 
-        //  Debug ก่อนดึงข้อมูลจาก DB
+        // ✅ Debug ก่อนดึงข้อมูลจาก DB
         Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
         if (categoryOpt.isEmpty()) {
             throw new IllegalArgumentException("Category not found with ID: " + categoryId);
         }
 
         Category category = categoryOpt.get();
-        System.out.println(" Fetched category from DB: " + category.getName());
+        System.out.println("✅ Fetched category from DB: " + category.getName());
 
-        //  ค้นหาร้านค้า
+        // ✅ ค้นหาร้านค้า
         MyShop shop = myShopRepository.findByTitle(shopTitle);
         if (shop == null) {
             throw new IllegalArgumentException("Shop not found with title: " + shopTitle);
         }
 
-        //  สร้างสินค้าใหม่
+        // ✅ สร้างสินค้าใหม่
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
@@ -126,24 +125,24 @@ public class UserService {
         product.setShop(shop);
         product.setCategory(category);
 
-        //  บันทึกสินค้าในฐานข้อมูลก่อน เพื่อให้ได้ `productId`
+        // ✅ บันทึกสินค้าในฐานข้อมูลก่อน เพื่อให้ได้ `productId`
         Product savedProduct = productRepository.save(product);
-        System.out.println(" Saved Product ID: " + savedProduct.getProductId());
+        System.out.println("✅ Saved Product ID: " + savedProduct.getProductId());
 
-        //  บันทึกภาพและอัปเดต `imageUrl`
-        String imageUrl = saveImageToFile(image, savedProduct.getProductId());
-        savedProduct.setImageUrl(imageUrl);
-
-        //  บันทึกสินค้าอีกรอบ พร้อม `imageUrl`
-        productRepository.save(savedProduct);
+        // ✅ อัปโหลดภาพขึ้น Cloudinary
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadImage(image);
+            savedProduct.setImageUrl(imageUrl);
+            productRepository.save(savedProduct);
+        }
 
         return new ResponseProduct(
                 savedProduct.getProductId(),
                 savedProduct.getName(),
                 savedProduct.getDescription(),
                 savedProduct.getPrice(),
-                imageUrl, //  URL รูปที่ถูกต้อง
-                details // รายละเอียดสินค้า
+                savedProduct.getImageUrl(), // ✅ ใช้ URL จาก Cloudinary
+                details
         );
     }
 
@@ -401,22 +400,31 @@ public class UserService {
 
     @Transactional
     public List<Product> getMyProducts(String userName) {
-        // ค้นหา User ตามชื่อ
+        // ✅ ค้นหา User ตามชื่อ
         User user = userRepository.findByUserName(userName);
         if (user == null) {
-            throw new IllegalArgumentException("User not found with username: " + userName);
+            System.out.println("❌ User not found: " + userName);
+            return null; // ✅ ให้ Controller จัดการต่อ
         }
 
-        // ค้นหา MyShop ที่เชื่อมโยงกับ User
+        // ✅ ค้นหา MyShop ที่เชื่อมโยงกับ User
         MyShop shop = user.getMyShop();
         if (shop == null) {
-            throw new IllegalArgumentException("No shop associated with this user.");
+            System.out.println("⚠️ No shop associated with user: " + userName);
+            return null; // ✅ คืนค่า null ให้ Controller เช็คและแสดง "You do not own a shop."
         }
 
-        // ค้นหา Products ที่เชื่อมโยงกับ MyShop
+        // ✅ ค้นหา Products ที่เชื่อมโยงกับ MyShop
         List<Product> products = productRepository.findByShop(shop);
+
+        if (products == null || products.isEmpty()) {
+            System.out.println("⚠️ No products found for shop: " + shop.getTitle());
+            return new ArrayList<>(); // ✅ คืน ArrayList ว่าง ให้ Controller เช็คและแสดง "Your shop does not have any products."
+        }
+
         return products;
     }
+
     public List<String> findProductNamesByQuery(String query) {
         List<Product> products = productRepository.findByNameContainingIgnoreCase(query);
         return products.stream()

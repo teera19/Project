@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -23,6 +24,8 @@ public class Chat {
     private ChatService chatService;
     @Autowired
     private ProductService productService;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @PostMapping("/start") //ปุ่มเริ่มแชทในราลเอียดสินค้า
     public ResponseEntity<Map<String, Object>> startChat(
@@ -48,32 +51,13 @@ public class Chat {
     }
 
 
-    @GetMapping("/{chatId}/history") //ประวัติแชท
-    public ResponseEntity<?> getChatHistory(
-            @SessionAttribute("user_name") String currentUser, //  ดึง user จาก session
-            @PathVariable int chatId
-    ) {
-        // ดึงห้องแชทจากฐานข้อมูล
-        ChatRoom chatRoom = chatService.getChatRoomById(chatId);
-
-        //  ตรวจสอบว่าผู้ใช้ที่ขอเป็น `user1` หรือ `user2` หรือไม่
-        if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้ ");
-        }
-
-        //  ถ้าผ่านการตรวจสอบ ดึงประวัติแชท
-        List<Message> messages = chatService.getChatHistory(chatId);
-        return ResponseEntity.ok(messages);
-    }
-
-
-    @PostMapping("/{chatId}/send") //ส่งข้อความ
+    @PostMapping("/{chatId}/send")
     public ResponseEntity<Message> sendMessage(
-            @SessionAttribute("user_name") String sender, // ดึง sender จาก Session
+            @SessionAttribute("user_name") String sender,
             @PathVariable int chatId,
-            @RequestBody MessageRequest request //  รับเฉพาะ message จาก Body
+            @RequestBody MessageRequest request
     ) {
-        //  ตรวจสอบว่า sender มีสิทธิ์ส่งข้อความในห้องแชทนี้หรือไม่
+        // ตรวจสอบสิทธิ์ในการส่งข้อความ
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
         if (!chatRoom.getUser1().equals(sender) && !chatRoom.getUser2().equals(sender)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
@@ -81,7 +65,34 @@ public class Chat {
 
         // ส่งข้อความ
         Message message = chatService.sendMessage(chatId, sender, request.getMessage());
+
+        // เมื่อส่งข้อความแล้ว, แจ้งเตือนผู้ใช้คนอื่นในห้องแชทนี้
+        if (chatRoom.getUser1().equals(sender)) {
+            // ส่งการแจ้งเตือนไปยังผู้ใช้ที่เป็น User2
+            messagingTemplate.convertAndSendToUser(chatRoom.getUser2(), "/topic/messages", message);
+        } else {
+            // ส่งการแจ้งเตือนไปยังผู้ใช้ที่เป็น User1
+            messagingTemplate.convertAndSendToUser(chatRoom.getUser1(), "/topic/messages", message);
+        }
+
         return ResponseEntity.ok(message);
+    }
+
+    // ตัวอย่างการดึงประวัติแชท
+    @GetMapping("/{chatId}/history")
+    public ResponseEntity<?> getChatHistory(
+            @SessionAttribute("user_name") String currentUser,
+            @PathVariable int chatId
+    ) {
+        ChatRoom chatRoom = chatService.getChatRoomById(chatId);
+
+        // ตรวจสอบสิทธิ์การเข้าถึง
+        if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้");
+        }
+
+        List<Message> messages = chatService.getChatHistory(chatId);
+        return ResponseEntity.ok(messages);
     }
     @GetMapping("/my-chats")
     public ResponseEntity<List<Map<String, Object>>> getMyChats(@SessionAttribute("user_name") String currentUser) {

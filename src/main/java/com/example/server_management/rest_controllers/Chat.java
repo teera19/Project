@@ -1,5 +1,6 @@
 package com.example.server_management.rest_controllers;
 
+import com.example.server_management.component.ChatStatusTracker;
 import com.example.server_management.dto.ChatRequest;
 import com.example.server_management.dto.MessageRequest;
 import com.example.server_management.models.ChatRoom;
@@ -26,6 +27,9 @@ public class Chat {
     private ProductService productService;
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+    @Autowired
+    private ChatStatusTracker chatStatusTracker;
+
 
     @PostMapping("/start") //ปุ่มเริ่มแชทในราลเอียดสินค้า
     public ResponseEntity<Map<String, Object>> startChat(
@@ -55,8 +59,7 @@ public class Chat {
     public ResponseEntity<Message> sendMessage(
             @SessionAttribute("user_name") String sender,
             @PathVariable int chatId,
-            @RequestBody MessageRequest request
-    ) {
+            @RequestBody MessageRequest request) {
         // ตรวจสอบสิทธิ์ในการส่งข้อความ
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
         if (!chatRoom.getUser1().equals(sender) && !chatRoom.getUser2().equals(sender)) {
@@ -66,13 +69,15 @@ public class Chat {
         // ส่งข้อความ
         Message message = chatService.sendMessage(chatId, sender, request.getMessage());
 
-        // เมื่อส่งข้อความแล้ว, แจ้งเตือนผู้ใช้คนอื่นในห้องแชทนี้
-        if (chatRoom.getUser1().equals(sender)) {
-            // ส่งการแจ้งเตือนไปยังผู้ใช้ที่เป็น User2
-            messagingTemplate.convertAndSendToUser(chatRoom.getUser2(), "/topic/messages", message);
-        } else {
-            // ส่งการแจ้งเตือนไปยังผู้ใช้ที่เป็น User1
-            messagingTemplate.convertAndSendToUser(chatRoom.getUser1(), "/topic/messages", message);
+        // ค้นหาผู้รับข้อความ (อีกฝ่ายในแชท)
+        String receiver = chatRoom.getOtherUser(sender);
+
+        // บันทึกข้อความลงฐานข้อมูล (หากต้องการ)
+        chatService.sendMessage(chatId, sender, request.getMessage());
+
+        // ถ้าผู้รับไม่ได้ดูห้องแชทนี้อยู่ → ให้แจ้งเตือนผ่าน WebSocket
+        if (!chatStatusTracker.isUserInChat(receiver, chatId)) {
+            messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", message);
         }
 
         return ResponseEntity.ok(message);

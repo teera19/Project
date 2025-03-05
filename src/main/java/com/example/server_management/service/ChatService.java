@@ -29,13 +29,15 @@ public class ChatService {
     }
 
     public Message sendMessage(int chatId, String sender, String message) {
-        ChatRoom chatRoom = chatRoomRepository.findById(chatId).orElseThrow(() -> new RuntimeException("Chat not found"));
+        ChatRoom chatRoom = chatRoomRepository.findById(chatId)
+                .orElseThrow(() -> new RuntimeException("Chat not found"));
         Message newMessage = new Message();
         newMessage.setChatRoom(chatRoom);
         newMessage.setSender(sender);
         newMessage.setMessage(message);
         return messageRepository.save(newMessage);
     }
+
     public ChatRoom getChatRoomById(int chatId) {
         return chatRoomRepository.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("ChatRoom not found"));

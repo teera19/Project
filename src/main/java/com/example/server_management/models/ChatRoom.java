@@ -91,6 +91,15 @@ public class ChatRoom {
     public Message getLatestMessage() {
         return latestMessage;
     }
+    public String getOtherUser(String sender) {
+        if (sender.equals(user1)) {
+            return user2;
+        } else if (sender.equals(user2)) {
+            return user1;
+        }
+        return null;
+    }
+
 
     public void setLatestMessage(Message latestMessage) {
         this.latestMessage = latestMessage;

@@ -115,12 +115,13 @@ public class UserService {
         product.setShop(shop);
         product.setCategory(category);
 
+        // ✅ ตรวจสอบ defectDetails และบันทึกลงตารางสินค้าโดยตรง
+        String defectDetails = details.getOrDefault("defectDetails", "ไม่มีข้อมูลตำหนิ");
+        product.setDefectDetails(defectDetails);
+
         // ✅ บันทึกสินค้า (ยังไม่มี imageUrl)
         Product savedProduct = productRepository.save(product);
         System.out.println("✅ Saved Product ID: " + savedProduct.getProductId());
-
-        // ✅ เพิ่มข้อมูลรายละเอียดสินค้าตามหมวดหมู่
-        addProductDetails(savedProduct, categoryId, details);
 
         // ✅ อัปโหลดภาพขึ้น Cloudinary
         if (image != null && !image.isEmpty()) {
@@ -134,10 +135,14 @@ public class UserService {
                 savedProduct.getName(),
                 savedProduct.getDescription(),
                 savedProduct.getPrice(),
-                savedProduct.getImageUrl(), // ✅ คืนค่า URL จาก Cloudinary
-                details
+                savedProduct.getImageUrl(),
+                category.getName(),
+                shop.getTitle(),
+                shop.getUser().getUserName(),
+                defectDetails
         );
     }
+
 
     // ✅ ฟังก์ชันสำหรับบันทึกข้อมูลเฉพาะหมวดหมู่สินค้า
     private void addProductDetails(Product product, int categoryId, Map<String, String> details) {

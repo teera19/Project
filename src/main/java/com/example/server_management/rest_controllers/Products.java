@@ -8,12 +8,11 @@ import com.example.server_management.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.Map;
 
 @RestController
@@ -26,24 +25,34 @@ public class Products {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    // ✅ ดึงสินค้าตามหมวดหมู่
     @GetMapping("/by-category/{categoryName}")
     public ResponseEntity<?> getProductsByCategory(@PathVariable String categoryName) {
-        //  ค้นหา Category ตามชื่อ
         Category category = categoryRepository.findByName(categoryName);
         if (category == null) {
-            return new ResponseEntity<>("Category not found: " + categoryName, HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Category not found: " + categoryName));
         }
 
-        //  ค้นหาสินค้าทั้งหมดที่อยู่ใน Category นี้
         List<Product> products = productRepository.findByCategory(category);
-        return new ResponseEntity<>(products, HttpStatus.OK);
+        List<ProductResponse> productResponses = products.stream()
+                .map(product -> new ProductResponse(product))  // ✅ ใช้ Lambda สร้าง ProductResponse
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(productResponses);
     }
+
+    // ✅ ดึงสินค้าตาม ID
     @GetMapping("/{productId}")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable int productId) {
-        return productRepository.findById(productId)
-                .map(product -> ResponseEntity.ok(new ProductResponse(product))) // ✅ ถ้าพบสินค้า แสดง `ProductResponse`
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null)); // ✅ ถ้าไม่พบสินค้า คืน `null`
+    public ResponseEntity<?> getProductById(@PathVariable int productId) {
+        Optional<Product> productOpt = productRepository.findById(productId);
+
+        if (productOpt.isPresent()) {
+            ProductResponse productResponse = new ProductResponse(productOpt.get());
+            return ResponseEntity.ok(productResponse); // ✅ คืนค่า ProductResponse
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "ไม่มีสินค้า", "productId", productId));
+        }
     }
-
 }
-

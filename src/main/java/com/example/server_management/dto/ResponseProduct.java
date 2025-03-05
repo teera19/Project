@@ -1,68 +1,39 @@
 package com.example.server_management.dto;
 
 public class ResponseProduct {
-    private int id; // เปลี่ยนจาก Long เป็น int
+    private int id;
     private String name;
     private String description;
     private double price;
-    private Object details;
     private String imageUrl;
-    // Constructor
-    public ResponseProduct(int id, String name, String description, double price, String imageUrl, Object details) {
+    private String categoryName;
+    private String shopTitle;
+    private String ownerUserName;
+    private String defectDetails;  // ✅ เพิ่ม defectDetails
+
+    // ✅ Constructor สำหรับเก็บข้อมูล
+    public ResponseProduct(int id, String name, String description, double price,
+                           String imageUrl, String categoryName, String shopTitle,
+                           String ownerUserName, String defectDetails) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.price = price;
         this.imageUrl = imageUrl;
-        this.details = details;
+        this.categoryName = categoryName;
+        this.shopTitle = shopTitle;
+        this.ownerUserName = ownerUserName;
+        this.defectDetails = defectDetails;  // ✅ กำหนดค่า defectDetails
     }
 
-    // Getters และ Setters
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
-    public Object getDetails() {
-        return details;
-    }
-
-    public void setDetails(Object details) {
-        this.details = details;
-    }
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
+    // ✅ Getter และ Setter
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public double getPrice() { return price; }
+    public String getImageUrl() { return imageUrl; }
+    public String getCategoryName() { return categoryName; }
+    public String getShopTitle() { return shopTitle; }
+    public String getOwnerUserName() { return ownerUserName; }
+    public String getDefectDetails() { return defectDetails; }
 }
-

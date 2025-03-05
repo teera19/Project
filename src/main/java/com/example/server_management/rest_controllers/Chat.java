@@ -123,5 +123,19 @@ public class Chat {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/active")
+    public ResponseEntity<Void> setActiveChat(@SessionAttribute("user_name") String username,
+                                              @RequestBody Map<String, Integer> request) {
+        int chatId = request.get("chatId");  // รับ chatId จาก request body
+        chatStatusTracker.setActiveChat(username, chatId);  // บันทึกสถานะ active ของผู้ใช้
+        return ResponseEntity.ok().build();  // ส่ง HTTP 200 OK
+    }
+
+    // สำหรับเคลียร์สถานะ inactive เมื่อผู้ใช้ออกจากห้องแชท
+    @PostMapping("/inactive")
+    public ResponseEntity<Void> clearActiveChat(@SessionAttribute("user_name") String username) {
+        chatStatusTracker.clearActiveChat(username);  // เคลียร์สถานะ active ของผู้ใช้
+        return ResponseEntity.ok().build();  // ส่ง HTTP 200 OK
+    }
 
 }

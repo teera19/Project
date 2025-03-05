@@ -72,9 +72,6 @@ public class Chat {
         // ค้นหาผู้รับข้อความ (อีกฝ่ายในแชท)
         String receiver = chatRoom.getOtherUser(sender);
 
-        // บันทึกข้อความลงฐานข้อมูล (หากต้องการ)
-        chatService.sendMessage(chatId, sender, request.getMessage());
-
         // ถ้าผู้รับไม่ได้ดูห้องแชทนี้อยู่ → ให้แจ้งเตือนผ่าน WebSocket
         if (!chatStatusTracker.isUserInChat(receiver, chatId)) {
             messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", message);
@@ -82,6 +79,7 @@ public class Chat {
 
         return ResponseEntity.ok(message);
     }
+
 
     // ตัวอย่างการดึงประวัติแชท
     @GetMapping("/{chatId}/history")

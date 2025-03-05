@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,6 +44,8 @@ public class AuctionController {
     CloudinaryService cloudinaryService;
     @Autowired
     private AuctionRepository auctionRepository;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @GetMapping
     public ResponseEntity<List<AuctionResponse>> getAllAuctions() {
@@ -170,14 +173,10 @@ public class AuctionController {
                         .body(Map.of("message", "Auction not found with ID: " + auctionId));
             }
 
-            // ✅ ดึงราคาสูงสุดปัจจุบันจากการประมูลนี้
+            // ✅ ค้นหาผู้ที่บิดสูงสุดก่อนหน้านี้
             Bid highestBidObj = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
             double highestBid = highestBidObj != null ? highestBidObj.getBidAmount() : auction.getStartingPrice();
-
-            // ✅ ตรวจสอบว่าราคาบิดต้อง >= startingPrice
-            if (bidAmount < auction.getStartingPrice()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Bid amount must be at least the starting price: " + auction.getStartingPrice()));
-            }
+            String previousBidder = highestBidObj != null ? highestBidObj.getUser().getUserName() : null;
 
             // ✅ ตรวจสอบว่าราคาบิดต้องมากกว่าราคาสูงสุดก่อนหน้า
             if (bidAmount <= highestBid) {
@@ -197,6 +196,12 @@ public class AuctionController {
 
             bidRepository.save(bid);
 
+            // ✅ แจ้งเตือนผู้ที่ถูกบิดแซงผ่าน WebSocket
+            if (previousBidder != null && !previousBidder.equals(userName)) {
+                messagingTemplate.convertAndSendToUser(previousBidder, "/topic/notifications",
+                        Map.of("message", "คุณถูกบิดแซงในประมูลสินค้า " + auction.getProductName() + " ด้วยราคา " + bidAmount));
+            }
+
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "message", "Bid placed successfully!",
                     "bidTime", bidTimeBangkok.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"))
@@ -206,6 +211,7 @@ public class AuctionController {
                     .body(Map.of("message", "An error occurred while processing the bid.", "error", e.getMessage()));
         }
     }
+
 
     @GetMapping("/{auctionId}/bids")
     public ResponseEntity<?> getBidsForAuction(@PathVariable int auctionId) {

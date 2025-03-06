@@ -177,7 +177,7 @@ public class AuctionController {
         messagingTemplate.convertAndSend("/topic/auction",
                 Map.of("message", "📢 มีคนบิดใหม่ในประมูล " + auction.getProductName() + " ด้วยราคา " + bidAmount));
 
-        // ✅ แจ้งเตือนผู้ที่ถูกแซง
+        // ✅ แจ้งเตือนผู้ที่ถูกแซง (เฉพาะเมื่อ previousBidder != userName)
         if (previousBidder != null && !previousBidder.equals(userName)) {
             messagingTemplate.convertAndSendToUser(previousBidder, "/queue/notifications",
                     Map.of("message", "⚠️ คุณถูกบิดแซงในประมูล " + auction.getProductName() + " ด้วยราคา " + bidAmount));
@@ -188,6 +188,7 @@ public class AuctionController {
                 "bidTime", ZonedDateTime.now(ZoneId.of("Asia/Bangkok")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"))
         ));
     }
+
 
     @GetMapping("/{auctionId}/bids")
     public ResponseEntity<?> getBidsForAuction(@PathVariable int auctionId) {

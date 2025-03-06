@@ -147,71 +147,47 @@ public class AuctionController {
         }
 
         User user = optionalUser.get();
+        double bidAmount = Double.parseDouble(bidRequest.get("bidAmount").toString());
 
-        if (!bidRequest.containsKey("bidAmount")) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Bid amount is required."));
+        Auction auction = auctionService.getAuctionById(auctionId);
+        if (auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Auction not found with ID: " + auctionId));
         }
 
-        double bidAmount;
-        try {
-            bidAmount = Double.parseDouble(bidRequest.get("bidAmount").toString());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid bid amount format."));
+        // ✅ ค้นหาผู้ที่บิดสูงสุดก่อนหน้านี้
+        Bid highestBidObj = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
+        double highestBid = highestBidObj != null ? highestBidObj.getBidAmount() : auction.getStartingPrice();
+        String previousBidder = highestBidObj != null ? highestBidObj.getUser().getUserName() : null;
+
+        // ✅ ตรวจสอบว่าราคาบิดต้องมากกว่าราคาสูงสุดก่อนหน้า
+        if (bidAmount <= highestBid) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Bid amount must be higher than the current highest bid: " + highestBid));
         }
 
-        if (bidAmount <= 0) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Bid amount must be greater than zero."));
+        // ✅ บันทึก Bid ใหม่
+        Bid bid = new Bid();
+        bid.setAuction(auction);
+        bid.setUser(user);
+        bid.setBidAmount(bidAmount);
+        bid.setBidTime(ZonedDateTime.now(ZoneId.of("UTC")).toLocalDateTime());
+        bidRepository.save(bid);
+
+        // ✅ แจ้งเตือนทุกคนที่ติดตาม Auction นี้
+        messagingTemplate.convertAndSend("/topic/auction",
+                Map.of("message", "📢 มีคนบิดใหม่ในประมูล " + auction.getProductName() + " ด้วยราคา " + bidAmount));
+
+        // ✅ แจ้งเตือนผู้ที่ถูกแซง
+        if (previousBidder != null && !previousBidder.equals(userName)) {
+            messagingTemplate.convertAndSendToUser(previousBidder, "/queue/notifications",
+                    Map.of("message", "⚠️ คุณถูกบิดแซงในประมูล " + auction.getProductName() + " ด้วยราคา " + bidAmount));
         }
 
-        try {
-            ZonedDateTime bidTimeBangkok = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
-            ZonedDateTime bidTimeUTC = bidTimeBangkok.withZoneSameInstant(ZoneId.of("UTC"));
-
-            Auction auction = auctionService.getAuctionById(auctionId);
-            if (auction == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "Auction not found with ID: " + auctionId));
-            }
-
-            // ✅ ค้นหาผู้ที่บิดสูงสุดก่อนหน้านี้
-            Bid highestBidObj = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
-            double highestBid = highestBidObj != null ? highestBidObj.getBidAmount() : auction.getStartingPrice();
-            String previousBidder = highestBidObj != null ? highestBidObj.getUser().getUserName() : null;
-
-            // ✅ ตรวจสอบว่าราคาบิดต้องมากกว่าราคาสูงสุดก่อนหน้า
-            if (bidAmount <= highestBid) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Bid amount must be higher than the current highest bid: " + highestBid));
-            }
-
-            // ✅ ตรวจสอบว่าราคาบิดต้องไม่เกิน `maxBidPrice`
-            if (bidAmount > auction.getMaxBidPrice()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Bid amount cannot exceed max bid price: " + auction.getMaxBidPrice()));
-            }
-
-            Bid bid = new Bid();
-            bid.setAuction(auction);
-            bid.setUser(user);
-            bid.setBidAmount(bidAmount);
-            bid.setBidTime(bidTimeUTC.toLocalDateTime());
-
-            bidRepository.save(bid);
-
-            // ✅ แจ้งเตือนผู้ที่ถูกบิดแซงผ่าน WebSocket
-            if (previousBidder != null && !previousBidder.equals(userName)) {
-                messagingTemplate.convertAndSendToUser(previousBidder, "/topic/notifications",
-                        Map.of("message", "คุณถูกบิดแซงในประมูลสินค้า " + auction.getProductName() + " ด้วยราคา " + bidAmount));
-            }
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "message", "Bid placed successfully!",
-                    "bidTime", bidTimeBangkok.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"))
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "An error occurred while processing the bid.", "error", e.getMessage()));
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "message", "Bid placed successfully!",
+                "bidTime", ZonedDateTime.now(ZoneId.of("Asia/Bangkok")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"))
+        ));
     }
-
 
     @GetMapping("/{auctionId}/bids")
     public ResponseEntity<?> getBidsForAuction(@PathVariable int auctionId) {

@@ -11,8 +11,17 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/topic/", "/queue/"); // ✅ เปิดใช้งาน Broker สำหรับแจ้งเตือน
+        registry.setApplicationDestinationPrefixes("/app"); // ✅ ใช้ "/app" เป็น Prefix สำหรับ Client ส่งข้อความ
+    }
+
+    @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/chat")
-                .setAllowedOrigins("*"); // ✅ อนุญาตทุกโดเมน
+                .setAllowedOrigins("*");
+
+        registry.addEndpoint("/auction")
+                .setAllowedOrigins("*");
     }
 }

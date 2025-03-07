@@ -5,6 +5,7 @@ import com.example.server_management.dto.ChatRequest;
 import com.example.server_management.dto.MessageRequest;
 import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
+import com.example.server_management.repository.MessageRepository;
 import com.example.server_management.service.ChatService;
 import com.example.server_management.service.ProductService;
 import jakarta.servlet.http.HttpSession;
@@ -29,6 +30,8 @@ public class Chat {
     private SimpMessagingTemplate messagingTemplate;
     @Autowired
     private ChatStatusTracker chatStatusTracker;
+    @Autowired
+    private MessageRepository messageRepository;
 
 
     @PostMapping("/start") //ปุ่มเริ่มแชทในราลเอียดสินค้า
@@ -60,33 +63,35 @@ public class Chat {
             @SessionAttribute("user_name") String sender,
             @PathVariable int chatId,
             @RequestBody MessageRequest request) {
-        // ตรวจสอบสิทธิ์ในการส่งข้อความ
+
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
         if (!chatRoom.getUser1().equals(sender) && !chatRoom.getUser2().equals(sender)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
-        // ส่งข้อความ
         Message message = chatService.sendMessage(chatId, sender, request.getMessage());
 
-        // ค้นหาผู้รับข้อความ (อีกฝ่ายในแชท)
+        // ✅ ค้นหาผู้รับ
         String receiver = chatRoom.getOtherUser(sender);
 
-        // ถ้าผู้รับไม่ได้ดูห้องแชทนี้อยู่ → ให้แจ้งเตือนผ่าน WebSocket
+        // ✅ ถ้าผู้รับไม่ได้ดูแชทนี้อยู่ → แจ้งเตือนผ่าน WebSocket
         if (!chatStatusTracker.isUserInChat(receiver, chatId)) {
-            messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", message);
+            messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", Map.of(
+                    "chatId", chatId,
+                    "message", message.getMessage(),
+                    "sender", sender
+            ));
         }
 
         return ResponseEntity.ok(message);
     }
 
 
+
+
     // ตัวอย่างการดึงประวัติแชท
     @GetMapping("/{chatId}/history")
-    public ResponseEntity<?> getChatHistory(
-            @SessionAttribute("user_name") String currentUser,
-            @PathVariable int chatId
-    ) {
+    public ResponseEntity<?> getChatHistory(@SessionAttribute("user_name") String currentUser, @PathVariable int chatId) {
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
 
         // ตรวจสอบสิทธิ์การเข้าถึง
@@ -95,8 +100,19 @@ public class Chat {
         }
 
         List<Message> messages = chatService.getChatHistory(chatId);
+
+        // ✅ อัปเดตสถานะข้อความเป็นอ่านแล้ว
+        messages.forEach(message -> {
+            if (!message.getSender().equals(currentUser)) {
+                message.setRead(true);
+            }
+        });
+        messageRepository.saveAll(messages); // ✅ บันทึกสถานะ isRead
+
         return ResponseEntity.ok(messages);
     }
+
+
     @GetMapping("/my-chats")
     public ResponseEntity<List<Map<String, Object>>> getMyChats(@SessionAttribute("user_name") String currentUser) {
         List<ChatRoom> chatRooms = chatService.getChatsByUser(currentUser);

@@ -23,4 +23,7 @@ public class ChatStatusTracker {
     public boolean isUserInChat(String username, int chatId) {
         return activeChats.getOrDefault(username, -1) == chatId;
     }
+    public Integer getActiveChat(String username) {
+        return activeChats.get(username);
+    }
 }

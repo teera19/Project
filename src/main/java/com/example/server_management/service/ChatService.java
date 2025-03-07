@@ -1,5 +1,6 @@
 package com.example.server_management.service;
 
+import com.example.server_management.component.ChatStatusTracker;
 import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
 import com.example.server_management.repository.ChatRoomRepository;
@@ -18,11 +19,13 @@ public class ChatService {
     @Autowired
     private MessageRepository messageRepository;
 
+    @Autowired
+    private ChatStatusTracker chatStatusTracker; // ✅ แก้ไขให้ถูกต้อง
+
     public ChatRoom getOrCreateChatRoom(String user1, String user2, int productId) {
         return chatRoomRepository.findByUser1AndUser2AndProductId(user1, user2, productId)
                 .orElseGet(() -> chatRoomRepository.save(new ChatRoom(user1, user2, productId)));
     }
-
 
     public List<Message> getChatHistory(int chatId) {
         return messageRepository.findByChatRoom(chatRoomRepository.findById(chatId).orElse(null));
@@ -35,6 +38,7 @@ public class ChatService {
         newMessage.setChatRoom(chatRoom);
         newMessage.setSender(sender);
         newMessage.setMessage(message);
+        newMessage.setRead(false); // ✅ ตั้งค่าเริ่มต้นเป็นยังไม่ได้อ่าน
         return messageRepository.save(newMessage);
     }
 
@@ -42,6 +46,7 @@ public class ChatService {
         return chatRoomRepository.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("ChatRoom not found"));
     }
+
     public List<ChatRoom> getChatsByUser(String userName) {
         List<ChatRoom> chatRooms = chatRoomRepository.findByUser1OrUser2(userName, userName);
 
@@ -54,16 +59,19 @@ public class ChatService {
 
         return chatRooms;
     }
+
     public int getUnreadMessageCount(String userName) {
         List<ChatRoom> chatRooms = chatRoomRepository.findByUser1OrUser2(userName, userName);
 
         int unreadCount = 0;
-        for (ChatRoom chatRoom : chatRooms) {
-            unreadCount += messageRepository.countByChatRoomAndSenderNotAndIsReadFalse(chatRoom, userName);
-        }
+        Integer activeChatId = chatStatusTracker.getActiveChat(userName); // ✅ ดึงห้องแชทที่เปิดอยู่
 
+        for (ChatRoom chatRoom : chatRooms) {
+            if (activeChatId != null && chatRoom.getChatId() == activeChatId) {
+                continue; // ✅ ข้ามแชทที่ผู้ใช้กำลังดูอยู่
+            }
+            unreadCount += messageRepository.countUnreadMessages(chatRoom, userName);
+        }
         return unreadCount;
     }
-
-
 }

@@ -74,6 +74,10 @@ public class Chat {
         // ✅ ค้นหาผู้รับ
         String receiver = chatRoom.getOtherUser(sender);
 
+        // ✅ บันทึกว่าข้อความนี้ยังไม่ได้อ่าน
+        message.setRead(false);
+        messageRepository.save(message);
+
         // ✅ ถ้าผู้รับไม่ได้ดูแชทนี้อยู่ → แจ้งเตือนผ่าน WebSocket
         if (!chatStatusTracker.isUserInChat(receiver, chatId)) {
             messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", Map.of(
@@ -82,6 +86,12 @@ public class Chat {
                     "sender", sender
             ));
         }
+
+        // ✅ แจ้งให้ Frontend อัปเดตตัวเลขแจ้งเตือน
+        int unreadMessages = chatService.getUnreadMessageCount(receiver);
+        messagingTemplate.convertAndSendToUser(receiver, "/topic/unread-messages", Map.of(
+                "unreadMessages", unreadMessages
+        ));
 
         return ResponseEntity.ok(message);
     }

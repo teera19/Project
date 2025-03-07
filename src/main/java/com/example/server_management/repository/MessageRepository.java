@@ -12,4 +12,5 @@ import java.util.Optional;
 public interface MessageRepository extends JpaRepository<Message, Integer> {
     List<Message> findByChatRoom(ChatRoom chatRoom);
     Optional<Message> findTopByChatRoomOrderByCreatedAtDesc(ChatRoom chatRoom);
+    int countByChatRoomAndSenderNotAndIsReadFalse(ChatRoom chatRoom, String sender);
 }

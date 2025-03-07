@@ -103,5 +103,10 @@ public class CartService {
         cart.getItems().clear();
         cartRepository.save(cart);
     }
+    public int getCartItemCount(String userName) {
+        Cart cart = getCartByUser(userName);
+        return cart.getItems().stream().mapToInt(CartItem::getQuantity).sum();
+    }
+
 }
 

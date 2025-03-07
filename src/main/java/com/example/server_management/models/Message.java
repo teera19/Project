@@ -23,43 +23,25 @@ public class Message {
     @Column(name = "created_at")
     private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
 
-    public int getMessageId() {
-        return messageId;
-    }
+    @Column(name = "is_read", nullable = false) // ✅ เพิ่มสถานะการอ่าน
+    private boolean isRead = false;
 
-    public void setMessageId(int messageId) {
-        this.messageId = messageId;
-    }
+    // ✅ GETTER & SETTER
+    public boolean isRead() { return isRead; }
+    public void setRead(boolean read) { isRead = read; }
 
-    public ChatRoom getChatRoom() {
-        return chatRoom;
-    }
+    public int getMessageId() { return messageId; }
+    public void setMessageId(int messageId) { this.messageId = messageId; }
 
-    public void setChatRoom(ChatRoom chatRoom) {
-        this.chatRoom = chatRoom;
-    }
+    public ChatRoom getChatRoom() { return chatRoom; }
+    public void setChatRoom(ChatRoom chatRoom) { this.chatRoom = chatRoom; }
 
-    public String getSender() {
-        return sender;
-    }
+    public String getSender() { return sender; }
+    public void setSender(String sender) { this.sender = sender; }
 
-    public void setSender(String sender) {
-        this.sender = sender;
-    }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
 
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public Timestamp getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
+    public Timestamp getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
 }

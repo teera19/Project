@@ -54,5 +54,16 @@ public class ChatService {
 
         return chatRooms;
     }
+    public int getUnreadMessageCount(String userName) {
+        List<ChatRoom> chatRooms = chatRoomRepository.findByUser1OrUser2(userName, userName);
+
+        int unreadCount = 0;
+        for (ChatRoom chatRoom : chatRooms) {
+            unreadCount += messageRepository.countByChatRoomAndSenderNotAndIsReadFalse(chatRoom, userName);
+        }
+
+        return unreadCount;
+    }
+
 
 }

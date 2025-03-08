@@ -364,5 +364,48 @@ public class AuctionController {
 
         return ResponseEntity.ok(responses);
     }
+    @PostMapping("/{auctionId}/end")
+    public ResponseEntity<?> endAuction(@PathVariable int auctionId) {
+        // ค้นหาการประมูลจาก ID
+        Auction auction = auctionService.getAuctionById(auctionId);
+        if (auction == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Auction not found with ID: " + auctionId));
+        }
+
+        // ตรวจสอบว่าเวลาประมูลหมดหรือยัง
+        ZonedDateTime currentTime = ZonedDateTime.now(ZoneId.of("UTC"));
+        if (auction.getEndTime().isAfter(currentTime.toLocalDateTime())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Auction is not finished yet."));
+        }
+
+        // ค้นหาผู้ที่เสนอราคาสูงสุด
+        Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
+        if (highestBid == null) {
+            auction.setStatus(AuctionStatus.COMPLETED);
+            auctionRepository.save(auction);
+            return ResponseEntity.ok(Map.of("message", "No bids placed, auction ended without winner."));
+        }
+
+        // ✅ ตั้งค่าผู้ชนะการประมูล
+        User winner = highestBid.getUser();
+        auction.setWinner(winner);
+        auction.setStatus(AuctionStatus.COMPLETED);
+        auctionRepository.save(auction);
+
+        // ✅ แจ้งเตือนผู้ชนะให้รับสินค้า
+        messagingTemplate.convertAndSendToUser(winner.getUserName(), "/queue/notifications",
+                Map.of("message", "🎉 Congratulations! You won the auction for " + auction.getProductName() +
+                        " with a bid of " + highestBid.getBidAmount()));
+
+        // ✅ แจ้งเตือนเจ้าของสินค้า
+        messagingTemplate.convertAndSendToUser(auction.getOwnerUserName(), "/queue/notifications",
+                Map.of("message", "✅ Your auction for " + auction.getProductName() + " has ended. " +
+                        "Winner: " + winner.getUserName() + " with bid " + highestBid.getBidAmount()));
+
+        return ResponseEntity.ok(Map.of("message", "Auction ended. Winner: " + winner.getUserName()));
+    }
+
 
 }

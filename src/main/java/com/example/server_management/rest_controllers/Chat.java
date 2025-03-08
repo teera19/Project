@@ -82,12 +82,11 @@ public class Chat {
         message.setRead(false);
         messageRepository.save(message);
 
-        // ✅ ถ้าผู้รับไม่ได้ดูแชทนี้อยู่ → แจ้งเตือนผ่าน WebSocket พร้อมข้อมูลชื่อจริง
+        // ✅ ถ้าผู้รับไม่ได้ดูแชทนี้อยู่ → แจ้งเตือนผ่าน WebSocket โดยไม่ส่งข้อความเต็มซ้ำ
         if (!chatStatusTracker.isUserInChat(receiverUserName, chatId)) {
             messagingTemplate.convertAndSendToUser(receiverUserName, "/topic/messages", Map.of(
                     "chatId", chatId,
-                    "message", message.getMessage(),
-                    "sender", senderInfo.get("name") // ✅ ส่งชื่อจริงแทน userName
+                    "notification", "New message from " + senderInfo.get("name") // ✅ แจ้งเตือนแทนส่งข้อความซ้ำ
             ));
         }
 
@@ -99,11 +98,6 @@ public class Chat {
 
         return ResponseEntity.ok(message);
     }
-
-
-
-
-
     // ตัวอย่างการดึงประวัติแชท
     @GetMapping("/{chatId}/history")
     public ResponseEntity<?> getChatHistory(@SessionAttribute("user_name") String currentUser, @PathVariable int chatId) {

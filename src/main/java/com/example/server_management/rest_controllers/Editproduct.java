@@ -17,7 +17,7 @@ import java.util.Map;
 public class Editproduct {
 
     @Autowired
-    private UserService userService;
+    private UserService userService; // ✅ Inject UserService
 
     @PostMapping("/edit-product/{product_id}")
     public ResponseEntity<?> editProduct(
@@ -25,13 +25,13 @@ public class Editproduct {
             @RequestParam("name") String name,
             @RequestParam("description") String description,
             @RequestParam("price") double price,
-            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "image", required = false) MultipartFile image, // ✅ รูปเป็น `optional`
             @RequestParam("category_name") String categoryName,
-            @RequestParam("defectDetails") String defectDetails,  // ✅ รองรับ defectDetails
+            @RequestParam(value = "defectDetails", defaultValue = "ไม่มีข้อมูลตำหนิ") String defectDetails,  // ✅ ป้องกัน `null`
             @RequestParam Map<String, String> details,
             HttpSession session) throws IOException {
 
-        // 🛑 ตรวจสอบการล็อกอิน
+        // ✅ ตรวจสอบการล็อกอิน
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -58,13 +58,13 @@ public class Editproduct {
             product.setName(name);
             product.setDescription(description);
             product.setPrice(price);
-            product.setDefectDetails(defectDetails);  // ✅ อัปเดต defectDetails
+            product.setDefectDetails(defectDetails);  // ✅ ป้องกัน `null`
 
-            // ✅ อัปเดตข้อมูลหมวดหมู่ใน `details` โดยตรง
+            // ✅ อัปเดตข้อมูลหมวดหมู่
             details.put("category", category.getName());
             details.put("shopTitle", product.getShop().getTitle());
 
-            // ✅ อัปเดตรูปภาพสินค้า
+            // ✅ ถ้ามีรูปภาพ → อัปเดต
             if (image != null && !image.isEmpty()) {
                 userService.updateProductImage(product, image.getBytes());
             }
@@ -72,8 +72,10 @@ public class Editproduct {
             // ✅ บันทึกสินค้า
             userService.saveProduct(product);
 
-            // ✅ คืนค่า `ProductResponse` ที่มี `defectDetails`
-            return ResponseEntity.ok(new ProductResponse(product));
+            return ResponseEntity.ok(Map.of(
+                    "message", "Product updated successfully",
+                    "product", new ProductResponse(product) // ✅ คืนค่า JSON `ProductResponse`
+            ));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

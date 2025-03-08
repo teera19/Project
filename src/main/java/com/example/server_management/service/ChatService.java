@@ -3,12 +3,15 @@ package com.example.server_management.service;
 import com.example.server_management.component.ChatStatusTracker;
 import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
+import com.example.server_management.models.User;
 import com.example.server_management.repository.ChatRoomRepository;
 import com.example.server_management.repository.MessageRepository;
+import com.example.server_management.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -21,6 +24,8 @@ public class ChatService {
 
     @Autowired
     private ChatStatusTracker chatStatusTracker; // ✅ แก้ไขให้ถูกต้อง
+    @Autowired
+    private UserRepository userRepository;
 
     public ChatRoom getOrCreateChatRoom(String user1, String user2, int productId) {
         return chatRoomRepository.findByUser1AndUser2AndProductId(user1, user2, productId)
@@ -73,5 +78,21 @@ public class ChatService {
             unreadCount += messageRepository.countUnreadMessages(chatRoom, userName);
         }
         return unreadCount;
+    }
+    public Map<String, Object> getSenderInfo(String senderUserName) {
+        Optional<User> userOpt = userRepository.findUserByUserName(senderUserName);
+
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            return Map.of(
+                    "userName", user.getUserName(),
+                    "name", user.getName() + " " + user.getLastName()  // ✅ ใช้ชื่อเต็ม
+            );
+        } else {
+            return Map.of(
+                    "userName", senderUserName,  // ✅ ถ้าไม่เจอ ให้ใช้ username
+                    "name", "Unknown"
+            );
+        }
     }
 }

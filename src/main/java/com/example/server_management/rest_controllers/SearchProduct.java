@@ -39,5 +39,25 @@ public class SearchProduct {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    @GetMapping("/search-bycategory")
+    public ResponseEntity<List<ProductResponse>> searchProductsByCategory(@RequestParam("category") String categoryName) {
+        try {
+            List<Product> products = userService.getProductsByCategory(categoryName);
+            if (products.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
+            // ✅ แปลงจาก `Product` เป็น `ProductResponse`
+            List<ProductResponse> productResponses = products.stream()
+                    .map(ProductResponse::new)
+                    .collect(Collectors.toList());
+
+            return new ResponseEntity<>(productResponses, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }
 

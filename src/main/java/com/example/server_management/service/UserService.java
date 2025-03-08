@@ -438,6 +438,14 @@ public class UserService {
 
         productRepository.save(product);  //  บันทึกข้อมูลในฐานข้อมูล
     }
+    public List<Product> getProductsByCategory(String categoryName) {
+        Category category = categoryRepository.findByName(categoryName);
+        if (category == null) {
+            return List.of();  // ✅ ถ้าไม่เจอหมวดหมู่ ให้คืนค่าเป็นลิสต์ว่าง
+        }
+        return productRepository.findByCategory(category);
+    }
+
 
 
 }

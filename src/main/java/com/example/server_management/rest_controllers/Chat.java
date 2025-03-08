@@ -60,44 +60,45 @@ public class Chat {
 
     @PostMapping("/{chatId}/send")
     public ResponseEntity<Message> sendMessage(
-            @SessionAttribute("user_name") String senderUserName,
+            @SessionAttribute("user_name") String sender,
             @PathVariable int chatId,
             @RequestBody MessageRequest request) {
 
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
-        if (!chatRoom.getUser1().equals(senderUserName) && !chatRoom.getUser2().equals(senderUserName)) {
+        if (!chatRoom.getUser1().equals(sender) && !chatRoom.getUser2().equals(sender)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
-        // ✅ ส่งข้อความไปยังฐานข้อมูล
-        Message message = chatService.sendMessage(chatId, senderUserName, request.getMessage());
-
-        // ✅ ดึงข้อมูลของผู้ส่ง (ชื่อจริง + username)
-        Map<String, Object> senderInfo = chatService.getSenderInfo(senderUserName);
+        Message message = chatService.sendMessage(chatId, sender, request.getMessage());
 
         // ✅ ค้นหาผู้รับ
-        String receiverUserName = chatRoom.getOtherUser(senderUserName);
+        String receiver = chatRoom.getOtherUser(sender);
 
         // ✅ บันทึกว่าข้อความนี้ยังไม่ได้อ่าน
         message.setRead(false);
         messageRepository.save(message);
 
-        // ✅ ถ้าผู้รับไม่ได้ดูแชทนี้อยู่ → แจ้งเตือนผ่าน WebSocket โดยไม่ส่งข้อความเต็มซ้ำ
-        if (!chatStatusTracker.isUserInChat(receiverUserName, chatId)) {
-            messagingTemplate.convertAndSendToUser(receiverUserName, "/topic/messages", Map.of(
+        // ✅ ถ้าผู้รับไม่ได้ดูแชทนี้อยู่ → แจ้งเตือนผ่าน WebSocket
+        if (!chatStatusTracker.isUserInChat(receiver, chatId)) {
+            messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", Map.of(
                     "chatId", chatId,
-                    "notification", "New message from " + senderInfo.get("name") // ✅ แจ้งเตือนแทนส่งข้อความซ้ำ
+                    "message", message.getMessage(),
+                    "sender", sender
             ));
         }
 
         // ✅ แจ้งให้ Frontend อัปเดตตัวเลขแจ้งเตือน
-        int unreadMessages = chatService.getUnreadMessageCount(receiverUserName);
-        messagingTemplate.convertAndSendToUser(receiverUserName, "/topic/unread-messages", Map.of(
+        int unreadMessages = chatService.getUnreadMessageCount(receiver);
+        messagingTemplate.convertAndSendToUser(receiver, "/topic/unread-messages", Map.of(
                 "unreadMessages", unreadMessages
         ));
 
         return ResponseEntity.ok(message);
     }
+
+
+
+
     // ตัวอย่างการดึงประวัติแชท
     @GetMapping("/{chatId}/history")
     public ResponseEntity<?> getChatHistory(@SessionAttribute("user_name") String currentUser, @PathVariable int chatId) {

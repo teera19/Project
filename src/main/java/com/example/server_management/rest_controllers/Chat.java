@@ -2,7 +2,6 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.component.ChatStatusTracker;
 import com.example.server_management.dto.ChatRequest;
-import com.example.server_management.dto.MessageDTO;
 import com.example.server_management.dto.MessageRequest;
 import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
@@ -21,7 +20,6 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/chat")
@@ -113,25 +111,28 @@ public class Chat {
     // ตัวอย่างการดึงประวัติแชท
     @GetMapping("/{chatId}/history")
     public ResponseEntity<?> getChatHistory(@SessionAttribute("user_name") String currentUser, @PathVariable int chatId) {
-        try {
-            ChatRoom chatRoom = chatService.getChatRoomById(chatId);
-            if (chatRoom == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ChatRoom not found");
-            }
-            if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้");
-            }
+        ChatRoom chatRoom = chatService.getChatRoomById(chatId);
 
-            List<Message> messages = chatService.getChatHistory(chatId);
-            List<MessageDTO> messageDTOs = messages.stream().map(MessageDTO::new).toList();
-
-            return ResponseEntity.ok(messageDTOs);
-        } catch (Exception e) {
-            e.printStackTrace(); // ✅ แสดง Error Stack Trace ใน Log
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("เกิดข้อผิดพลาดในเซิร์ฟเวอร์");
+        if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้");
         }
-    }
 
+        List<Message> messages = chatService.getChatHistory(chatId);
+
+        // ✅ บังคับให้มี sender เสมอ
+        messages.forEach(message -> {
+            if (message.getSender() == null || message.getSender().isEmpty()) {
+                message.setSender("Unknown");  // ✅ ป้องกัน sender เป็น null
+            }
+            if (!message.getSender().equals(currentUser)) {
+                message.setRead(true);
+            }
+        });
+
+        messageRepository.saveAll(messages);
+
+        return ResponseEntity.ok(messages);
+    }
 
     @GetMapping("/my-chats")
     public ResponseEntity<List<Map<String, Object>>> getMyChats(@SessionAttribute("user_name") String currentUser) {

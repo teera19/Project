@@ -70,7 +70,7 @@ public class Chat {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
-        // ✅ สร้างข้อความใหม่ พร้อมกำหนด sender (ป้องกัน sender หาย)
+        // ✅ สร้างข้อความใหม่
         Message message = new Message();
         message.setChatRoom(chatRoom);
         message.setSender(sender);  // ✅ บังคับให้มี sender เสมอ
@@ -84,12 +84,13 @@ public class Chat {
         // ✅ หาผู้รับของข้อความ
         String receiver = chatRoom.getOtherUser(sender);
 
-        // ✅ ส่ง WebSocket แจ้งเตือนให้ผู้รับ (บังคับให้ `sender` และ `message` อยู่ใน JSON)
-        Map<String, Object> socketPayload = Map.of(
-                "chatId", chatId,
-                "message", message.getMessage(),
-                "sender", sender  // ✅ บังคับให้มี sender เสมอ
-        );
+        // ✅ บังคับให้ WebSocket ส่ง JSON เสมอ
+        Map<String, Object> socketPayload = new HashMap<>();
+        socketPayload.put("chatId", chatId);
+        socketPayload.put("messageId", message.getMessageId());
+        socketPayload.put("message", message.getMessage());
+        socketPayload.put("sender", sender);
+        socketPayload.put("timestamp", message.getCreatedAt());
 
         messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", socketPayload);
 

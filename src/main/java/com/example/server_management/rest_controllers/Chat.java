@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,25 +70,30 @@ public class Chat {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
-        Message message = chatService.sendMessage(chatId, sender, request.getMessage());
-
-        // ✅ ค้นหาผู้รับ
-        String receiver = chatRoom.getOtherUser(sender);
-
-        // ✅ บันทึกว่าข้อความนี้ยังไม่ได้อ่าน
+        // ✅ สร้างข้อความใหม่ พร้อมกำหนด sender (ป้องกัน sender หาย)
+        Message message = new Message();
+        message.setChatRoom(chatRoom);
+        message.setSender(sender);  // ✅ บังคับให้มี sender เสมอ
+        message.setMessage(request.getMessage());
+        message.setCreatedAt(new Timestamp(System.currentTimeMillis()));
         message.setRead(false);
+
+        // ✅ บันทึกลง Database
         messageRepository.save(message);
 
-        // ✅ ถ้าผู้รับไม่ได้ดูแชทนี้อยู่ → แจ้งเตือนผ่าน WebSocket
-        if (!chatStatusTracker.isUserInChat(receiver, chatId)) {
-            messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", Map.of(
-                    "chatId", chatId,
-                    "message", message.getMessage(),
-                    "sender", sender
-            ));
-        }
+        // ✅ หาผู้รับของข้อความ
+        String receiver = chatRoom.getOtherUser(sender);
 
-        // ✅ แจ้งให้ Frontend อัปเดตตัวเลขแจ้งเตือน
+        // ✅ ส่ง WebSocket แจ้งเตือนให้ผู้รับ (บังคับให้ `sender` และ `message` อยู่ใน JSON)
+        Map<String, Object> socketPayload = Map.of(
+                "chatId", chatId,
+                "message", message.getMessage(),
+                "sender", sender  // ✅ บังคับให้มี sender เสมอ
+        );
+
+        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", socketPayload);
+
+        // ✅ อัปเดตตัวเลขแจ้งเตือนของผู้รับ
         int unreadMessages = chatService.getUnreadMessageCount(receiver);
         messagingTemplate.convertAndSendToUser(receiver, "/topic/unread-messages", Map.of(
                 "unreadMessages", unreadMessages
@@ -104,20 +110,23 @@ public class Chat {
     public ResponseEntity<?> getChatHistory(@SessionAttribute("user_name") String currentUser, @PathVariable int chatId) {
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
 
-        // ตรวจสอบสิทธิ์การเข้าถึง
         if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้");
         }
 
         List<Message> messages = chatService.getChatHistory(chatId);
 
-        // ✅ อัปเดตสถานะข้อความเป็นอ่านแล้ว
+        // ✅ บังคับให้มี sender เสมอ
         messages.forEach(message -> {
+            if (message.getSender() == null || message.getSender().isEmpty()) {
+                message.setSender("Unknown");  // ✅ ป้องกัน sender เป็น null
+            }
             if (!message.getSender().equals(currentUser)) {
                 message.setRead(true);
             }
         });
-        messageRepository.saveAll(messages); // ✅ บันทึกสถานะ isRead
+
+        messageRepository.saveAll(messages);
 
         return ResponseEntity.ok(messages);
     }

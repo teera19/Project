@@ -112,22 +112,26 @@ public class Chat {
 
     // ตัวอย่างการดึงประวัติแชท
     @GetMapping("/{chatId}/history")
-    public ResponseEntity<List<MessageDTO>> getChatHistory(
-            @SessionAttribute("user_name") String currentUser,
-            @PathVariable int chatId) {
+    public ResponseEntity<?> getChatHistory(@SessionAttribute("user_name") String currentUser, @PathVariable int chatId) {
+        try {
+            ChatRoom chatRoom = chatService.getChatRoomById(chatId);
+            if (chatRoom == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ChatRoom not found");
+            }
+            if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้");
+            }
 
-        ChatRoom chatRoom = chatService.getChatRoomById(chatId);
-        if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+            List<Message> messages = chatService.getChatHistory(chatId);
+            List<MessageDTO> messageDTOs = messages.stream().map(MessageDTO::new).toList();
+
+            return ResponseEntity.ok(messageDTOs);
+        } catch (Exception e) {
+            e.printStackTrace(); // ✅ แสดง Error Stack Trace ใน Log
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("เกิดข้อผิดพลาดในเซิร์ฟเวอร์");
         }
-
-        List<Message> messages = chatService.getChatHistory(chatId);
-
-        // ✅ แปลงเป็น DTO
-        List<MessageDTO> messageDTOs = messages.stream().map(MessageDTO::new).collect(Collectors.toList());
-
-        return ResponseEntity.ok(messageDTOs);
     }
+
 
     @GetMapping("/my-chats")
     public ResponseEntity<List<Map<String, Object>>> getMyChats(@SessionAttribute("user_name") String currentUser) {

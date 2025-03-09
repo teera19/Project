@@ -2,7 +2,6 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.component.ChatStatusTracker;
 import com.example.server_management.dto.ChatRequest;
-import com.example.server_management.dto.MessageDTO;
 import com.example.server_management.dto.MessageRequest;
 import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
@@ -21,7 +20,6 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/chat")
@@ -101,9 +99,6 @@ public class Chat {
 
         messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", jsonPayload);
 
-
-        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", socketPayload);
-
         // ✅ อัปเดตตัวเลขแจ้งเตือนของผู้รับ
         int unreadMessages = chatService.getUnreadMessageCount(receiver);
         messagingTemplate.convertAndSendToUser(receiver, "/topic/unread-messages", Map.of(
@@ -113,33 +108,31 @@ public class Chat {
         return ResponseEntity.ok(message);
     }
 
-
-
-
     // ตัวอย่างการดึงประวัติแชท
     @GetMapping("/{chatId}/history")
-    public ResponseEntity<List<MessageDTO>> getChatHistory(
-            @SessionAttribute("user_name") String currentUser,
-            @PathVariable int chatId) {
-
+    public ResponseEntity<?> getChatHistory(@SessionAttribute("user_name") String currentUser, @PathVariable int chatId) {
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
+
         if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้");
         }
 
         List<Message> messages = chatService.getChatHistory(chatId);
 
-        // ✅ Debug เช็คค่า messages ก่อนแปลงเป็น DTO
-        System.out.println("📩 messages จาก Database: " + messages);
+        // ✅ บังคับให้มี sender เสมอ
+        messages.forEach(message -> {
+            if (message.getSender() == null || message.getSender().isEmpty()) {
+                message.setSender("Unknown");  // ✅ ป้องกัน sender เป็น null
+            }
+            if (!message.getSender().equals(currentUser)) {
+                message.setRead(true);
+            }
+        });
 
-        // ✅ แปลงเป็น DTO อย่างถูกต้อง
-        List<MessageDTO> messageDTOs = messages.stream().map(MessageDTO::new).collect(Collectors.toList());
+        messageRepository.saveAll(messages);
 
-        return ResponseEntity.ok(messageDTOs);
+        return ResponseEntity.ok(messages);
     }
-
-
-
 
     @GetMapping("/my-chats")
     public ResponseEntity<List<Map<String, Object>>> getMyChats(@SessionAttribute("user_name") String currentUser) {

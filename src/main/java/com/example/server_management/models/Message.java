@@ -1,5 +1,6 @@
 package com.example.server_management.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.sql.Timestamp;
 
@@ -12,6 +13,7 @@ public class Message {
 
     @ManyToOne
     @JoinColumn(name = "chat_id", nullable = false)
+    @JsonIgnore
     private ChatRoom chatRoom;
 
     @Column(name = "sender", nullable = false)

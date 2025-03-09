@@ -122,17 +122,12 @@ public class Chat {
 
         List<Message> messages = chatService.getChatHistory(chatId);
 
-        // ✅ บังคับให้มี sender เสมอ
-        messages.forEach(message -> {
-            if (message.getSender() == null || message.getSender().isEmpty()) {
-                message.setSender("Unknown");  // ✅ ป้องกัน sender เป็น null
-            }
-            if (!message.getSender().equals(currentUser)) {
-                message.setRead(true);
-            }
-        });
-
-        messageRepository.saveAll(messages);
+        // ✅ ตรวจสอบ sender โดยไม่บันทึกกลับ DB
+//        messages.forEach(message -> {
+//            if (message.getSender() == null || message.getSender().isEmpty()) {
+//                message.setSender("Unknown");  // ✅ ป้องกัน sender เป็น null
+//            }
+//        });
 
         return ResponseEntity.ok(messages);
     }

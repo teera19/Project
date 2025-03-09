@@ -105,7 +105,8 @@ public class Chat {
         System.out.println("📩 WebSocket ส่ง JSON: " + jsonPayload);
         System.out.println("📩 JSON Payload Type: " + jsonPayload.getClass().getSimpleName());
 
-        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", jsonPayload);
+        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", socketPayload);
+
 
         // ✅ อัปเดตตัวเลขแจ้งเตือนของผู้รับ
         int unreadMessages = chatService.getUnreadMessageCount(receiver);

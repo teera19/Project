@@ -103,6 +103,7 @@ public class Chat {
 
         // ✅ พิมพ์ค่า JSON ใน log
         System.out.println("📩 WebSocket ส่ง JSON: " + jsonPayload);
+        System.out.println("📩 JSON Payload Type: " + jsonPayload.getClass().getSimpleName());
 
         messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", jsonPayload);
 

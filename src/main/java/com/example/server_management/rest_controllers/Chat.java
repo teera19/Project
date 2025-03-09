@@ -2,6 +2,7 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.component.ChatStatusTracker;
 import com.example.server_management.dto.ChatRequest;
+import com.example.server_management.dto.MessageDTO;
 import com.example.server_management.dto.MessageRequest;
 import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
@@ -116,27 +117,23 @@ public class Chat {
 
     // ตัวอย่างการดึงประวัติแชท
     @GetMapping("/{chatId}/history")
-    public ResponseEntity<?> getChatHistory(@SessionAttribute("user_name") String currentUser, @PathVariable int chatId) {
-        ChatRoom chatRoom = chatService.getChatRoomById(chatId);
+    public ResponseEntity<List<MessageDTO>> getChatHistory(
+            @SessionAttribute("user_name") String currentUser,
+            @PathVariable int chatId) {
 
+        ChatRoom chatRoom = chatService.getChatRoomById(chatId);
         if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("คุณไม่มีสิทธิ์ดูแชทนี้");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
         List<Message> messages = chatService.getChatHistory(chatId);
 
-        // ✅ บังคับให้มี sender เสมอ
-        messages.forEach(message -> {
-            if (message.getSender() == null || message.getSender().isEmpty()) {
-                message.setSender("Unknown");
-            }
-        });
+        // ✅ ใช้ DTO แทนการส่ง Entity ตรงๆ
+        List<MessageDTO> messageDTOs = messages.stream().map(MessageDTO::new).toList();
 
-        // ✅ Debug JSON ก่อนส่ง
-        System.out.println("📩 JSON ที่ส่งจาก history API: " + new Gson().toJson(messages));
-
-        return ResponseEntity.ok(messages);
+        return ResponseEntity.ok(messageDTOs);
     }
+
 
 
 

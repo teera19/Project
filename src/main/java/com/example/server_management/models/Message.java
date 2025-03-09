@@ -14,7 +14,7 @@ public class Message {
     @JoinColumn(name = "chat_id", nullable = false)
     private ChatRoom chatRoom;
 
-    @Column(name = "sender")
+    @Column(name = "sender", nullable = false)
     private String sender;
 
     @Column(name = "message")

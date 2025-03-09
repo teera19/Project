@@ -93,14 +93,13 @@ public class Chat {
         socketPayload.put("sender", sender != null ? sender : "Unknown"); // ✅ ป้องกัน sender เป็น null
         socketPayload.put("timestamp", message.getCreatedAt());
 
-// ✅ แปลงเป็น JSON ก่อนส่ง
+        // ✅ แปลงเป็น JSON ก่อนส่ง
         String jsonPayload = new Gson().toJson(socketPayload);
+
+        // ✅ พิมพ์ค่า JSON ใน log
         System.out.println("📩 WebSocket ส่ง JSON: " + jsonPayload);
 
         messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", jsonPayload);
-
-
-        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", socketPayload);
 
         // ✅ อัปเดตตัวเลขแจ้งเตือนของผู้รับ
         int unreadMessages = chatService.getUnreadMessageCount(receiver);

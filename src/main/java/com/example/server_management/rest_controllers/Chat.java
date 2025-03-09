@@ -99,6 +99,9 @@ public class Chat {
 
         messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", jsonPayload);
 
+
+        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", socketPayload);
+
         // ✅ อัปเดตตัวเลขแจ้งเตือนของผู้รับ
         int unreadMessages = chatService.getUnreadMessageCount(receiver);
         messagingTemplate.convertAndSendToUser(receiver, "/topic/unread-messages", Map.of(

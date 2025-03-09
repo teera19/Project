@@ -21,6 +21,7 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/chat")
@@ -128,8 +129,11 @@ public class Chat {
 
         List<Message> messages = chatService.getChatHistory(chatId);
 
-        // ✅ ใช้ DTO แทนการส่ง Entity ตรงๆ
-        List<MessageDTO> messageDTOs = messages.stream().map(MessageDTO::new).toList();
+        // ✅ Debug เช็คค่า messages ก่อนแปลงเป็น DTO
+        System.out.println("📩 messages จาก Database: " + messages);
+
+        // ✅ แปลงเป็น DTO อย่างถูกต้อง
+        List<MessageDTO> messageDTOs = messages.stream().map(MessageDTO::new).collect(Collectors.toList());
 
         return ResponseEntity.ok(messageDTOs);
     }

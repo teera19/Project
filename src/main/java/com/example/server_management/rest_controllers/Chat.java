@@ -8,6 +8,7 @@ import com.example.server_management.models.Message;
 import com.example.server_management.repository.MessageRepository;
 import com.example.server_management.service.ChatService;
 import com.example.server_management.service.ProductService;
+import com.google.gson.Gson;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -85,11 +86,19 @@ public class Chat {
         String receiver = chatRoom.getOtherUser(sender);
 
         // ✅ บังคับให้ WebSocket ส่ง JSON เสมอ
-        Map<String, Object> socketPayload = Map.of(
-                "chatId", chatId,
-                "message", message.getMessage(),
-                "sender", sender != null ? sender : "Unknown"  // ✅ ป้องกัน sender เป็น null
-        );
+        Map<String, Object> socketPayload = new HashMap<>();
+        socketPayload.put("chatId", chatId);
+        socketPayload.put("messageId", message.getMessageId());
+        socketPayload.put("message", message.getMessage());
+        socketPayload.put("sender", sender != null ? sender : "Unknown"); // ✅ ป้องกัน sender เป็น null
+        socketPayload.put("timestamp", message.getCreatedAt());
+
+// ✅ แปลงเป็น JSON ก่อนส่ง
+        String jsonPayload = new Gson().toJson(socketPayload);
+        System.out.println("📩 WebSocket ส่ง JSON: " + jsonPayload);
+
+        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", jsonPayload);
+
 
         messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", socketPayload);
 
@@ -119,17 +128,16 @@ public class Chat {
         // ✅ บังคับให้มี sender เสมอ
         messages.forEach(message -> {
             if (message.getSender() == null || message.getSender().isEmpty()) {
-                message.setSender("Unknown");  // ✅ ป้องกัน sender เป็น null
-            }
-            if (!message.getSender().equals(currentUser)) {
-                message.setRead(true);
+                message.setSender("Unknown");
             }
         });
 
-        messageRepository.saveAll(messages);
+        // ✅ Debug JSON ก่อนส่ง
+        System.out.println("📩 JSON ที่ส่งจาก history API: " + new Gson().toJson(messages));
 
         return ResponseEntity.ok(messages);
     }
+
 
 
     @GetMapping("/my-chats")

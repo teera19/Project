@@ -99,7 +99,7 @@ public class Chat {
         );
 
 // ✅ ส่งตรงไปยัง WebSocket (Spring แปลงเป็น JSON อัตโนมัติ)
-        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages/" + chatId, payload);
+        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", payload);
 
         // ✅ อัปเดตตัวเลขแจ้งเตือนของผู้รับ
         int unreadMessages = chatService.getUnreadMessageCount(receiver);

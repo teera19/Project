@@ -2,6 +2,7 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.component.ChatStatusTracker;
 import com.example.server_management.dto.ChatRequest;
+import com.example.server_management.dto.MessagePayload;
 import com.example.server_management.dto.MessageRequest;
 import com.example.server_management.models.ChatRoom;
 import com.example.server_management.models.Message;
@@ -88,24 +89,17 @@ public class Chat {
         String receiver = chatRoom.getOtherUser(sender);
 
         // ✅ บังคับให้ WebSocket ส่ง JSON เสมอ
-        Map<String, Object> socketPayload = new HashMap<>();
-        socketPayload.put("chatId", chatId);
-        socketPayload.put("messageId", message.getMessageId());
-        socketPayload.put("message", message.getMessage());
-        socketPayload.put("sender", sender != null ? sender : "Unknown"); // ✅ ป้องกัน sender เป็น null
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-                .withZone(ZoneId.of("UTC"));
+        // ✅ สร้าง Object แทน Map<String, Object>
+        MessagePayload payload = new MessagePayload(
+                chatId,
+                message.getMessageId(),
+                sender != null ? sender : "Unknown",
+                message.getMessage(),
+                message.getCreatedAt().toInstant()
+        );
 
-        socketPayload.put("timestamp", formatter.format(message.getCreatedAt().toInstant()));
-
-        // ✅ แปลงเป็น JSON ก่อนส่ง
-        String jsonPayload = new Gson().toJson(socketPayload);
-
-        // ✅ พิมพ์ค่า JSON ใน log
-        System.out.println("📩 WebSocket ส่ง JSON: " + jsonPayload);
-        System.out.println("📩 JSON Payload Type: " + jsonPayload.getClass().getSimpleName());
-
-        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", jsonPayload);
+// ✅ ส่งตรงไปยัง WebSocket (Spring แปลงเป็น JSON อัตโนมัติ)
+        messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", payload);
 
         // ✅ อัปเดตตัวเลขแจ้งเตือนของผู้รับ
         int unreadMessages = chatService.getUnreadMessageCount(receiver);

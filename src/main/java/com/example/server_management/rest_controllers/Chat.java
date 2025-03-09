@@ -17,6 +17,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +93,10 @@ public class Chat {
         socketPayload.put("messageId", message.getMessageId());
         socketPayload.put("message", message.getMessage());
         socketPayload.put("sender", sender != null ? sender : "Unknown"); // ✅ ป้องกัน sender เป็น null
-        socketPayload.put("timestamp", message.getCreatedAt());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+                .withZone(ZoneId.of("UTC"));
+
+        socketPayload.put("timestamp", formatter.format(message.getCreatedAt().toInstant()));
 
         // ✅ แปลงเป็น JSON ก่อนส่ง
         String jsonPayload = new Gson().toJson(socketPayload);

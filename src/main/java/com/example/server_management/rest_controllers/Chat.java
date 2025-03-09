@@ -85,12 +85,11 @@ public class Chat {
         String receiver = chatRoom.getOtherUser(sender);
 
         // ✅ บังคับให้ WebSocket ส่ง JSON เสมอ
-        Map<String, Object> socketPayload = new HashMap<>();
-        socketPayload.put("chatId", chatId);
-        socketPayload.put("messageId", message.getMessageId());
-        socketPayload.put("message", message.getMessage());
-        socketPayload.put("sender", sender);
-        socketPayload.put("timestamp", message.getCreatedAt());
+        Map<String, Object> socketPayload = Map.of(
+                "chatId", chatId,
+                "message", message.getMessage(),
+                "sender", sender != null ? sender : "Unknown"  // ✅ ป้องกัน sender เป็น null
+        );
 
         messagingTemplate.convertAndSendToUser(receiver, "/topic/messages", socketPayload);
 

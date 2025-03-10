@@ -2,6 +2,7 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.models.CartItem;
 import com.example.server_management.models.Order;
+import com.example.server_management.repository.MyshopRepository;
 import com.example.server_management.repository.OrderRepository;
 import com.example.server_management.service.CartService;
 import com.example.server_management.service.CloudinaryService;
@@ -25,6 +26,8 @@ public class CartCon {
     private CartService cartService;
     @Autowired
     private OrderRepository orderRepository;
+    @Autowired
+    private MyshopRepository myshopRepository;
 
     @Autowired
     private CloudinaryService cloudinaryService;
@@ -136,20 +139,18 @@ public class CartCon {
 
         String userName = (String) session.getAttribute("user_name");
 
-        // ✅ ตรวจสอบว่าเข้าสู่ระบบหรือไม่
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
         }
 
-        // ✅ ตรวจสอบว่าไฟล์ slip ถูกส่งมาหรือไม่
         if (slip == null || slip.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "No slip file uploaded"));
         }
 
-        // ✅ ดึงข้อมูล Order และ ร้านค้า
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
         MyShop myShop = order.getMyShop();
 
         if (!order.getUser().getUserName().equals(userName)) {
@@ -157,7 +158,7 @@ public class CartCon {
                     .body(Map.of("message", "You are not authorized to upload slip for this order"));
         }
 
-        // ✅ ตรวจสอบสลิปกับ API SlipOk
+        // ✅ เรียก API ตรวจสอบ Slip
         Map<String, Object> slipData = slipOkService.validateSlip(slip);
         System.out.println("Slip Data Response: " + slipData);
 
@@ -165,26 +166,26 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
         }
 
-        // ✅ ดึงข้อมูลภายใน data
-        Map<String, Object> data = (Map<String, Object>) slipData.get("data");
+        Map<String, Object> receiver = (Map<String, Object>) slipData.get("data.receiver");
+        String recipientName = receiver.get("displayName").toString().trim();
+        String recipientPromptPayId = ((Map<String, Object>) receiver.get("proxy")).get("value").toString();
 
-        // ตรวจสอบ amount
-        Double slipAmount = data.get("amount") != null ? Double.parseDouble(data.get("amount").toString()) : null;
-        if (slipAmount == null || slipAmount != order.getTotalPrice()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Slip amount does not match the order amount"));
+        // ✅ ถ้า MyShop ยังไม่มี PromptPayId ให้บันทึกอัตโนมัติ
+        if (myShop.getPromptPayId() == null || myShop.getPromptPayId().isEmpty()) {
+            myShop.setPromptPayId(recipientPromptPayId);
+            myshopRepository.save(myShop);
         }
 
-        // ตรวจสอบชื่อผู้รับ
-        Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
-        String recipientName = receiver != null && receiver.get("displayName") != null
-                ? receiver.get("displayName").toString()
-                : "";
-
+        // ✅ ตรวจสอบชื่อและ PromptPayId
         if (!recipientName.equalsIgnoreCase(myShop.getTitle())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
 
-        // ✅ อัปโหลดสลิปไปที่ Cloudinary
+        if (!recipientPromptPayId.equals(myShop.getPromptPayId())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "PromptPay ID does not match"));
+        }
+
+        // ✅ อัปโหลดสลิปไป Cloudinary
         String slipUrl = cloudinaryService.uploadImage(slip);
         order.setSlipUrl(slipUrl);
         orderRepository.save(order);

@@ -23,7 +23,7 @@ public class SlipOkService {
     public Map<String, Object> validateSlip(MultipartFile slip) {
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + apiKey);
+            headers.set("x-authorization", apiKey);
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();

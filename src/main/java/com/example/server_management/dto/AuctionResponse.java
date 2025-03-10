@@ -27,6 +27,7 @@ public class AuctionResponse {
     private long minutesRemaining;
     private long secondsRemaining;
     private long millisecondsRemaining;
+    private String ownerUserName;
 
     // ✅ Constructor สำหรับแมปจาก Entity `Auction`
     public AuctionResponse(Auction auction, BidRepository bidRepository) {
@@ -35,7 +36,8 @@ public class AuctionResponse {
         this.description = auction.getDescription();
         this.imageUrl = auction.getImageUrl();
         this.maxBidPrice = auction.getMaxBidPrice();
-        this.startingPrice = auction.getStartingPrice(); // ✅ ราคาเริ่มต้น
+        this.startingPrice = auction.getStartingPrice();
+        this.ownerUserName = auction.getOwnerUserName();// ✅ ราคาเริ่มต้น
 
         setFormattedTimes(auction.getStartTime(), auction.getEndTime());
 
@@ -114,4 +116,11 @@ public class AuctionResponse {
     public String getImageUrl() { return imageUrl; }
     public String getStatus() { return status; }
     public long getMinutesRemaining() { return minutesRemaining; }
+    public String getOwnerUserName() {
+        return ownerUserName;
+    }
+
+    public void setOwnerUserName(String ownerUserName) {
+        this.ownerUserName = ownerUserName;
+    }
 }

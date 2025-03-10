@@ -122,20 +122,15 @@ public class CartService {
                 .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
                 .sum();
 
-        // ✅ สร้าง Order
         Order order = new Order(user, totalPrice, new Timestamp(System.currentTimeMillis()));
-        orderRepository.save(order);
 
-        // ✅ สร้าง OrderItem และเชื่อมกับ Order
-        for (CartItem cartItem : cartItems) {
-            OrderItem orderItem = new OrderItem(order, cartItem.getProduct(), cartItem.getQuantity());
-            orderItemRepository.save(orderItem);
+        // ✅ ดึง QR Code จากร้านค้า
+        MyShop shop = cartItems.get(0).getProduct().getShop();
+        if (shop != null) {
+            order.setSlipUrl(shop.getQrCodeUrl()); // บันทึก URL ของ QR Code
         }
 
-        // ✅ ล้างตะกร้า
-        cartItemRepository.deleteAll(cartItems);
-
-        return order;
+        return orderRepository.save(order);
     }
 
 }

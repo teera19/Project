@@ -102,33 +102,53 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
-    @PostMapping(value = "/upload-slip/{orderId}", consumes = {"multipart/form-data"})
-    public ResponseEntity<?> uploadPaymentSlip(@PathVariable int orderId,
-                                               @RequestParam("slip") MultipartFile slipImage) {
-
-        if (slipImage.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Slip image is required."));
+    @GetMapping("/checkout/payment-info/{orderId}")
+    public ResponseEntity<?> getPaymentInfo(@PathVariable int orderId, HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not logged in"));
         }
 
-        // ✅ ค้นหา Order จาก orderId
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-        try {
-            // ✅ อัปโหลดรูปสลิปขึ้น Cloudinary
-            String slipUrl = cloudinaryService.uploadImage(slipImage);
-
-            // ✅ บันทึก URL ของสลิปใน Order
-            order.setSlipUrl(slipUrl);
-            order.setStatus("PAID"); // อัปเดตสถานะเป็นจ่ายเงินแล้ว
-            orderRepository.save(order);
-
-            return ResponseEntity.ok(Map.of("message", "Slip uploaded successfully", "slipUrl", slipUrl));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Failed to upload slip", "error", e.getMessage()));
+        if (!order.getUser().getUserName().equals(userName)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not authorized to view this payment info"));
         }
+
+        return ResponseEntity.ok(Map.of(
+                "orderId", order.getOrderId(),
+                "totalPrice", order.getTotalPrice(),
+                "qrCodeUrl", order.getSlipUrl()
+        ));
     }
+    @PostMapping("/checkout/upload-slip/{orderId}")
+    public ResponseEntity<?> uploadSlip(@PathVariable int orderId,
+                                        @RequestParam("slip") MultipartFile slip,
+                                        HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not logged in"));
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        if (!order.getUser().getUserName().equals(userName)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not authorized to upload slip for this order"));
+        }
+
+        // ✅ อัปโหลดรูปสลิปไปที่ Cloudinary
+        String slipUrl = cloudinaryService.uploadImage(slip);
+        order.setSlipUrl(slipUrl);
+        orderRepository.save(order);
+
+        return ResponseEntity.ok(Map.of("message", "Slip uploaded successfully", "slipUrl", slipUrl));
+    }
+
 
 }

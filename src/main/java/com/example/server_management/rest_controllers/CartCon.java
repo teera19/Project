@@ -195,8 +195,9 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Bank account name is missing in slip data"));
         }
 
-        // ตรวจสอบให้ตรงกับชื่อบัญชีธนาคารในฐานข้อมูล
-        if (!recipientBankAccountName.equalsIgnoreCase(shopBankAccountName)) {
+        // ใช้แค่ 8-10 ตัวแรกในการเปรียบเทียบชื่อ
+        if (!recipientBankAccountName.substring(0, Math.min(10, recipientBankAccountName.length()))
+                .equalsIgnoreCase(shopBankAccountName.substring(0, Math.min(10, shopBankAccountName.length())))) {
             return ResponseEntity.badRequest().body(Map.of("message", "Bank account name does not match"));
         }
 

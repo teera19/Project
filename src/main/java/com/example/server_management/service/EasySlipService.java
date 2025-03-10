@@ -30,7 +30,7 @@ public class EasySlipService {
 
             // ✅ สร้าง Body
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("slip", convertMultipartFileToResource(slip));
+            body.add("files", convertMultipartFileToResource(slip));
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 

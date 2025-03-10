@@ -187,8 +187,10 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
         }
 
-        // เปรียบเทียบแค่ชื่อผู้รับในสลิปกับชื่อในฐานข้อมูล
-        if (!recipientName.equalsIgnoreCase(shopBankAccountName)) {
+        // เปรียบเทียบแค่ 5-10 ตัวแรกของชื่อ
+        int compareLength = Math.min(10, recipientName.length()); // กำหนดให้เปรียบเทียบ 5-10 ตัวแรก
+        if (!recipientName.substring(0, compareLength)
+                .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
 

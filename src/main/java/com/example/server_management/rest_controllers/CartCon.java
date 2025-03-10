@@ -169,8 +169,8 @@ public class CartCon {
         }
 
         // ✅ ตรวจสอบยอดเงินและชื่อผู้รับ
-        double slipAmount = Double.parseDouble(slipData.get("amount").toString());
-        String recipientName = slipData.get("recipient_name").toString();
+        double slipAmount = Double.parseDouble(slipData.get("data.amount").toString());
+        String recipientName = slipData.get("data.receiverName").toString(); // ต้องตรวจสอบ key ให้ถูกต้อง
 
         if (slipAmount != order.getTotalPrice()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Slip amount does not match the order amount"));

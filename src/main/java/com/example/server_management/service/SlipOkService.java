@@ -23,7 +23,7 @@ public class SlipOkService {
     public Map<String, Object> validateSlip(MultipartFile slip) {
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("x-authorization", apiKey);
+            headers.set("x-authorization", apiKey); // ✅ ใช้ x-authorization ตาม API
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -43,11 +43,19 @@ public class SlipOkService {
             RestTemplate restTemplate = new RestTemplate();
 
             ResponseEntity<Map> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class);
-            return response.getBody();
+
+            // ✅ ตรวจสอบว่า API Response กลับมาสำเร็จหรือไม่
+            Map<String, Object> responseBody = response.getBody();
+            if (responseBody != null && Boolean.TRUE.equals(responseBody.get("success"))) {
+                return responseBody;
+            } else {
+                return Map.of("error", "Slip verification failed");
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
             return Map.of("error", "Slip validation failed");
         }
     }
+
 }

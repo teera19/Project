@@ -175,20 +175,20 @@ public class CartCon {
         Map<String, Object> data = (Map<String, Object>) slipData.get("data");
         Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
 
-        // ดึงชื่อธนาคารจากสลิป
-        String recipientBankName = (String) receiver.get("bank");  // แปลงเป็น String ก่อน
-        if (recipientBankName == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Bank name is missing in slip data"));
+        // ดึงชื่อบัญชีจากสลิป (bank_account_name)
+        String recipientBankAccountName = (String) receiver.get("bank_account_name");
+        if (recipientBankAccountName == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Bank account name is missing in slip data"));
         }
 
-        // ตรวจสอบชื่อธนาคาร
-        if (!recipientBankName.equalsIgnoreCase(myShop.getBankName())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Bank name does not match"));
+        // ตรวจสอบชื่อบัญชีธนาคาร
+        if (!recipientBankAccountName.equalsIgnoreCase(myShop.getBankAccountName())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Bank account name does not match"));
         }
 
         // ดึงเลขบัญชีธนาคารจากสลิป
-        Map<String, Object> proxy = (Map<String, Object>) receiver.get("proxy"); // ควรแปลง proxy เป็น Map ด้วย
-        String recipientBankAccount = (String) proxy.get("value");  // แปลงเป็น String ก่อน
+        Map<String, Object> proxy = (Map<String, Object>) receiver.get("proxy");
+        String recipientBankAccount = (String) proxy.get("value");
 
         if (recipientBankAccount == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Bank account number is missing in slip data"));

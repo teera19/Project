@@ -8,9 +8,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -34,6 +32,29 @@ public class OrderController {
         User user = userRepository.findByUserName(userName);
         List<Order> orders = orderRepository.findByUserAndStatus(user, "PENDING"); // ✅ ดึงเฉพาะ Order ที่ยังไม่ยืนยัน
         return ResponseEntity.ok(orders);
+    }
+    @PatchMapping("/confirm-received/{orderId}")
+    public ResponseEntity<?> confirmOrderReceived(HttpSession session, @PathVariable int orderId) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not logged in"));
+        }
+
+        User user = userRepository.findByUserName(userName);
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        if (!order.getUser().equals(user)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not authorized to update this order"));
+        }
+
+        // ✅ อัปเดตสถานะคำสั่งซื้อเป็น "DELIVERED"
+        order.setStatus("DELIVERED");
+        orderRepository.save(order);
+
+        return ResponseEntity.ok(Map.of("message", "Order marked as received", "orderId", orderId));
     }
 
 }

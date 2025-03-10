@@ -163,7 +163,7 @@ public class CartCon {
                     .body(Map.of("message", "You are not authorized to upload slip for this order"));
         }
 
-        // ✅ เรียก API ตรวจสอบ Slip
+        // เรียก API เพื่อตรวจสอบสลิป
         Map<String, Object> slipData = slipOkService.validateSlip(slip);
         System.out.println("Slip Data Response: " + slipData);
 
@@ -171,23 +171,34 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
         }
 
-        // แก้ไข: กำหนดตัวแปร data จาก slipData
         // ดึงข้อมูลจากสลิป
         Map<String, Object> data = (Map<String, Object>) slipData.get("data");
         Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
 
-// ดึงชื่อบัญชีธนาคารจากสลิป
-        String recipientBankAccountName = (String) receiver.get("bank_account_name");  // ดึง bank_account_name จากสลิป
+        // ดึงชื่อผู้รับจากสลิป
+        String recipientName = receiver.get("displayName") != null
+                ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
+                : null;
+
+        String shopBankAccountName = myShop.getBankAccountName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
+
+        if (recipientName == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
+        }
+
+        // ตรวจสอบชื่อบัญชีธนาคารจากสลิป
+        String recipientBankAccountName = receiver.get("bank_account_name") != null
+                ? receiver.get("bank_account_name").toString().trim()
+                : null;
 
         if (recipientBankAccountName == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Bank account name is missing in slip data"));
         }
 
-// ตรวจสอบชื่อบัญชีธนาคาร
-        if (!recipientBankAccountName.equalsIgnoreCase(myShop.getBankAccountName())) {
+        // ตรวจสอบให้ตรงกับชื่อบัญชีธนาคารในฐานข้อมูล
+        if (!recipientBankAccountName.equalsIgnoreCase(shopBankAccountName)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Bank account name does not match"));
         }
-
 
         // ดึงเลขบัญชีธนาคารจากสลิป
         Map<String, Object> proxy = (Map<String, Object>) receiver.get("proxy");
@@ -199,22 +210,6 @@ public class CartCon {
 
         if (!recipientBankAccount.equals(myShop.getBankAccountNumber())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Bank account number does not match"));
-        }
-
-        // ดึงชื่อผู้รับจากสลิป
-        String recipientName = receiver.get("displayName") != null
-                ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
-                : null;
-
-        String shopTitle = myShop.getTitle().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
-
-        if (recipientName == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
-        }
-
-        // ตรวจสอบชื่อให้ตรง
-        if (!recipientName.equalsIgnoreCase(shopTitle)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
 
         // ✅ อัปโหลดสลิปไป Cloudinary

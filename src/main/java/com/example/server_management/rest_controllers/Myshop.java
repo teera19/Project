@@ -18,15 +18,17 @@ public class Myshop {
     public ResponseEntity<String> createShop(@RequestParam("user_name") String userName,
                                              @RequestParam("title") String title,
                                              @RequestParam("detail") String detail,
-                                             @RequestParam("qr_code") MultipartFile qrCodeImage) {
+                                             @RequestParam("qr_code") MultipartFile qrCodeImage,
+                                             @RequestParam("bank_account_number") String bankAccountNumber,
+                                             @RequestParam("bank_account_name") String bankAccountName,
+                                             @RequestParam("bank_name") String bankName) { // เพิ่มฟิลด์ชื่อธนาคาร
 
-        // ✅ ตรวจสอบฟิลด์ที่จำเป็น
         if (userName.isEmpty() || title.isEmpty() || detail.isEmpty() || qrCodeImage.isEmpty()) {
             return new ResponseEntity<>("Please complete all fields and upload QR Code", HttpStatus.BAD_REQUEST);
         }
 
         try {
-            userService.createShopForUser(userName, title, detail, qrCodeImage);
+            userService.createShopForUser(userName, title, detail, qrCodeImage, bankAccountNumber, bankAccountName, bankName);
             return new ResponseEntity<>("Shop Created Successfully with QR Code", HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Failed to create shop: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);

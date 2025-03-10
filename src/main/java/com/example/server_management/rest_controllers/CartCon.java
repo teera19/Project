@@ -125,12 +125,17 @@ public class CartCon {
                     .body(Map.of("message", "You are not authorized to view this payment info"));
         }
 
+        MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
         return ResponseEntity.ok(Map.of(
                 "orderId", order.getOrderId(),
                 "totalPrice", order.getTotalPrice(),
-                "qrCodeUrl", order.getSlipUrl()
+                "qrCodeUrl", order.getSlipUrl(),
+                "bankAccountNumber", myShop.getBankAccountNumber(),
+                "bankName", myShop.getBankName(),
+                "bankAccountName", myShop.getBankAccountName()
         ));
     }
+
 
     @PostMapping("/checkout/upload-slip/{orderId}")
     public ResponseEntity<?> uploadSlip(@PathVariable int orderId,
@@ -166,10 +171,34 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
         }
 
+        // แก้ไข: กำหนดตัวแปร data จาก slipData
         Map<String, Object> data = (Map<String, Object>) slipData.get("data");
         Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
 
-        // ✅ ดึงชื่อผู้รับจากสลิป
+        // ดึงชื่อธนาคารจากสลิป
+        String recipientBankName = (String) receiver.get("bank");  // แปลงเป็น String ก่อน
+        if (recipientBankName == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Bank name is missing in slip data"));
+        }
+
+        // ตรวจสอบชื่อธนาคาร
+        if (!recipientBankName.equalsIgnoreCase(myShop.getBankName())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Bank name does not match"));
+        }
+
+        // ดึงเลขบัญชีธนาคารจากสลิป
+        Map<String, Object> proxy = (Map<String, Object>) receiver.get("proxy"); // ควรแปลง proxy เป็น Map ด้วย
+        String recipientBankAccount = (String) proxy.get("value");  // แปลงเป็น String ก่อน
+
+        if (recipientBankAccount == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Bank account number is missing in slip data"));
+        }
+
+        if (!recipientBankAccount.equals(myShop.getBankAccountNumber())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Bank account number does not match"));
+        }
+
+        // ดึงชื่อผู้รับจากสลิป
         String recipientName = receiver.get("displayName") != null
                 ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
                 : null;
@@ -180,7 +209,7 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
         }
 
-        // ✅ ตรวจสอบชื่อให้ตรง
+        // ตรวจสอบชื่อให้ตรง
         if (!recipientName.equalsIgnoreCase(shopTitle)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }

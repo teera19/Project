@@ -21,8 +21,18 @@ public class MyShop {
 
     @Column(name = "detail")
     private String detail;
+
     @Column(name = "qr_code_url")
     private String qrCodeUrl;
+
+    @Column(name = "bank_account_number")
+    private String bankAccountNumber; // เลขบัญชีธนาคาร
+
+    @Column(name = "bank_account_name")
+    private String bankAccountName; // ชื่อบัญชีธนาคาร
+
+    @Column(name = "bank_name")
+    private String bankName; // ชื่อธนาคาร
 
     @OneToOne
     @JoinColumn(name = "user_id")
@@ -30,6 +40,31 @@ public class MyShop {
     private User user;
 
     // Getter และ Setter
+    public String getBankAccountNumber() {
+        return bankAccountNumber;
+    }
+
+    public void setBankAccountNumber(String bankAccountNumber) {
+        this.bankAccountNumber = bankAccountNumber;
+    }
+
+    public String getBankAccountName() {
+        return bankAccountName;
+    }
+
+    public void setBankAccountName(String bankAccountName) {
+        this.bankAccountName = bankAccountName;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public void setBankName(String bankName) {
+        this.bankName = bankName;
+    }
+
+    // ส่วนอื่นๆ
     public int getMyShopId() {
         return myShopId;
     }
@@ -70,4 +105,3 @@ public class MyShop {
         this.qrCodeUrl = qrCodeUrl;
     }
 }
-

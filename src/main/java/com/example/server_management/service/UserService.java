@@ -55,7 +55,7 @@ public class UserService {
     }
 
     public void createShopForUser(String userName, String title, String detail, MultipartFile qrCodeImage,
-                                  String bankAccountNumber, String bankAccountName, String bankName) {
+                                  String bankAccountNumber, String displayName, String bankName) {
         User user = userRepository.findByUserName(userName);
         if (user == null) {
             throw new IllegalArgumentException("User not found");
@@ -66,7 +66,7 @@ public class UserService {
         myShop.setDetail(detail);
         myShop.setUser(user);
         myShop.setBankAccountNumber(bankAccountNumber);
-        myShop.setBankAccountName(bankAccountName);
+        myShop.setDisplayName(displayName);
         myShop.setBankName(bankName); // ตั้งชื่อธนาคาร
 
         String qrCodeUrl = cloudinaryService.uploadImage(qrCodeImage);

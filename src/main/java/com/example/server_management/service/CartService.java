@@ -108,37 +108,33 @@ public class CartService {
         Cart cart = getCartByUser(userName);
         return cart.getItems().stream().mapToInt(CartItem::getQuantity).sum();
     }
+
+
     @Transactional
     public Order checkout(String userName) {
         User user = userRepository.findByUserName(userName);
-        if (user == null) {
-            throw new IllegalArgumentException("User not found");
-        }
+        if (user == null) throw new IllegalArgumentException("User not found");
 
-        // ✅ ดึงสินค้าทั้งหมดจากตะกร้าของผู้ใช้ (แก้ไขปัญหา Optional)
         List<CartItem> cartItems = cartItemRepository.findByCartUser(user);
+        if (cartItems.isEmpty()) throw new IllegalArgumentException("Cart is empty");
 
-        if (cartItems.isEmpty()) {
-            throw new IllegalArgumentException("Cart is empty");
-        }
-
-        // ✅ คำนวณราคาทั้งหมด
         double totalPrice = cartItems.stream()
                 .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
                 .sum();
 
-        // ✅ สร้างคำสั่งซื้อใหม่
+        // ✅ สร้าง Order
         Order order = new Order(user, totalPrice, new Timestamp(System.currentTimeMillis()));
-        order = orderRepository.save(order);
+        orderRepository.save(order);
 
-        // ✅ ย้ายสินค้าจากตะกร้าไปยัง OrderItem
+        // ✅ สร้าง OrderItem และเชื่อมกับ Order
         for (CartItem cartItem : cartItems) {
             OrderItem orderItem = new OrderItem(order, cartItem.getProduct(), cartItem.getQuantity());
             orderItemRepository.save(orderItem);
         }
 
-        // ✅ ลบสินค้าทั้งหมดออกจากตะกร้า (แก้ไข Optional)
+        // ✅ ล้างตะกร้า
         cartItemRepository.deleteAll(cartItems);
+
         return order;
     }
 

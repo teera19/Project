@@ -54,21 +54,21 @@ public class UserService {
         return userRepository.findByUserName(user_name);
     }
 
-    public MyShop createShopForUser(String userName, String title, String detail) {
+    public MyShop createShopForUser(String userName, String title, String detail, MultipartFile qrCodeImage) {
         User user = userRepository.findByUserName(userName);
-        if (user != null) {
-            MyShop myShop = new MyShop();
-            myShop.setTitle(title);
-            myShop.setDetail(detail);
-            myShop.setUser(user);
-
-            // บันทึก MyShop ผ่าน User และเชื่อมโยงกัน
-            user.setMyShop(myShop);
-            userRepository.save(user);
-
-            return myShop; // คืนค่า MyShop ที่สร้างใหม่
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
         }
-        return null; // หาก User ไม่พบ
+
+        String qrCodeUrl = cloudinaryService.uploadImage(qrCodeImage);
+
+        MyShop myShop = new MyShop();
+        myShop.setTitle(title);
+        myShop.setDetail(detail);
+        myShop.setQrCodeUrl(qrCodeUrl);
+        myShop.setUser(user);
+
+        return myShopRepository.save(myShop);
     }
 
 

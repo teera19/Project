@@ -21,6 +21,8 @@ public class MyShop {
 
     @Column(name = "detail")
     private String detail;
+    @Column(name = "qr_code_url")
+    private String qrCodeUrl;
 
     @OneToOne
     @JoinColumn(name = "user_id")
@@ -59,5 +61,7 @@ public class MyShop {
     public void setUser(User user) {
         this.user = user;
     }
+    public String getQrCodeUrl() { return qrCodeUrl; }
+    public void setQrCodeUrl(String qrCodeUrl) { this.qrCodeUrl = qrCodeUrl; }
 }
 

@@ -14,20 +14,23 @@ public class Order {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;  // ผู้ซื้อ
+    private User user;
 
     @Column(nullable = false)
-    private double totalPrice; // ราคารวมทั้งหมด
+    private double totalPrice;
 
     @Column(nullable = false)
-    private Timestamp orderDate; // วันที่สั่งซื้อ
+    private Timestamp orderDate;
 
     @Column(nullable = false)
     private String status = "PENDING";
+
+    @Column
+    private String slipUrl;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItems;
 
-    // ✅ Constructor
     public Order() {}
 
     public Order(User user, double totalPrice, Timestamp orderDate) {
@@ -36,18 +39,14 @@ public class Order {
         this.orderDate = orderDate;
     }
 
-    // ✅ Getter & Setter
+    // Getter & Setter
     public int getOrderId() { return orderId; }
     public User getUser() { return user; }
     public double getTotalPrice() { return totalPrice; }
     public Timestamp getOrderDate() { return orderDate; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public String getSlipUrl() { return slipUrl; }
+    public void setSlipUrl(String slipUrl) { this.slipUrl = slipUrl; }
     public List<OrderItem> getOrderItems() { return orderItems; }
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
 }
-

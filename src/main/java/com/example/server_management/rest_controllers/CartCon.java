@@ -5,6 +5,7 @@ import com.example.server_management.models.Order;
 import com.example.server_management.repository.OrderRepository;
 import com.example.server_management.service.CartService;
 import com.example.server_management.service.CloudinaryService;
+import com.example.server_management.service.EasySlipService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,8 @@ public class CartCon {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+    @Autowired
+    EasySlipService easySlipService;
 
     @PostMapping("/addtocart/{product_id}")
 
@@ -142,13 +145,32 @@ public class CartCon {
                     .body(Map.of("message", "You are not authorized to upload slip for this order"));
         }
 
-        // ✅ อัปโหลดรูปสลิปไปที่ Cloudinary
+        // ✅ อัปโหลดสลิปไปยัง Cloudinary
         String slipUrl = cloudinaryService.uploadImage(slip);
         order.setSlipUrl(slipUrl);
+
+        // ✅ ตรวจสอบสลิปกับ EasySlip API
+        Map<String, Object> slipData = easySlipService.validateSlip(slip);
+        if (slipData == null || !Boolean.TRUE.equals(slipData.get("is_valid"))) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed", "slipUrl", slipUrl));
+        }
+
+        // ✅ ดึงข้อมูลจาก EasySlip API
+        double slipAmount = Double.parseDouble(slipData.get("amount").toString());
+        String recipientName = slipData.get("recipient_name").toString();
+
+        // ✅ ตรวจสอบยอดเงินและชื่อปลายทาง
+        if (slipAmount != order.getTotalPrice()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Slip amount does not match the order amount"));
+        }
+
+        if (!recipientName.equalsIgnoreCase("ชื่อบัญชีที่ถูกต้อง")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
+        }
+
+        // ✅ บันทึกข้อมูลหากตรวจสอบผ่าน
         orderRepository.save(order);
-
-        return ResponseEntity.ok(Map.of("message", "Slip uploaded successfully", "slipUrl", slipUrl));
+        return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
     }
-
 
 }

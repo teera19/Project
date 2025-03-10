@@ -172,19 +172,22 @@ public class CartCon {
         }
 
         // แก้ไข: กำหนดตัวแปร data จาก slipData
+        // ดึงข้อมูลจากสลิป
         Map<String, Object> data = (Map<String, Object>) slipData.get("data");
         Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
 
-        // ดึงชื่อบัญชีจากสลิป (bank_account_name)
-        String recipientBankAccountName = (String) receiver.get("bank_account_name");
+// ดึงชื่อบัญชีธนาคารจากสลิป
+        String recipientBankAccountName = (String) receiver.get("bank_account_name");  // ดึง bank_account_name จากสลิป
+
         if (recipientBankAccountName == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Bank account name is missing in slip data"));
         }
 
-        // ตรวจสอบชื่อบัญชีธนาคาร
+// ตรวจสอบชื่อบัญชีธนาคาร
         if (!recipientBankAccountName.equalsIgnoreCase(myShop.getBankAccountName())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Bank account name does not match"));
         }
+
 
         // ดึงเลขบัญชีธนาคารจากสลิป
         Map<String, Object> proxy = (Map<String, Object>) receiver.get("proxy");

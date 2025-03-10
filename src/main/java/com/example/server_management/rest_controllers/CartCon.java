@@ -136,6 +136,7 @@ public class CartCon {
 
         String userName = (String) session.getAttribute("user_name");
 
+        // ✅ ตรวจสอบว่าเข้าสู่ระบบหรือไม่
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
@@ -149,7 +150,42 @@ public class CartCon {
         System.out.println("Slip File Name: " + slip.getOriginalFilename());
         System.out.println("Slip File Size: " + slip.getSize());
 
-        // ดำเนินการต่อ...
-        return ResponseEntity.ok(Map.of("message", "Slip received successfully"));
+        // ✅ ดึงข้อมูล Order และ ร้านค้า
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        MyShop myShop = order.getMyShop();
+
+        if (!order.getUser().getUserName().equals(userName)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not authorized to upload slip for this order"));
+        }
+
+        // ✅ ตรวจสอบสลิปกับ API SlipOk
+        Map<String, Object> slipData = slipOkService.validateSlip(slip);
+        System.out.println("Slip Data Response: " + slipData);
+
+        if (slipData == null || slipData.containsKey("error")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
+        }
+
+        // ✅ ตรวจสอบยอดเงินและชื่อผู้รับ
+        double slipAmount = Double.parseDouble(slipData.get("amount").toString());
+        String recipientName = slipData.get("recipient_name").toString();
+
+        if (slipAmount != order.getTotalPrice()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Slip amount does not match the order amount"));
+        }
+
+        if (!recipientName.equalsIgnoreCase(myShop.getTitle())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
+        }
+
+        // ✅ อัปโหลดสลิปไปที่ Cloudinary
+        String slipUrl = cloudinaryService.uploadImage(slip);
+        order.setSlipUrl(slipUrl);
+        orderRepository.save(order);
+
+        return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
     }
+
 }

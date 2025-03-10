@@ -155,11 +155,10 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed", "slipUrl", slipUrl));
         }
 
-        // ✅ ดึงข้อมูลจาก EasySlip API
+        // ✅ ตรวจสอบยอดเงินและชื่อปลายทาง
         double slipAmount = Double.parseDouble(slipData.get("amount").toString());
         String recipientName = slipData.get("recipient_name").toString();
 
-        // ✅ ตรวจสอบยอดเงินและชื่อปลายทาง
         if (slipAmount != order.getTotalPrice()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Slip amount does not match the order amount"));
         }

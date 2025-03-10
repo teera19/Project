@@ -1,6 +1,8 @@
 package com.example.server_management.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -21,31 +23,33 @@ public class EasySlipService {
 
     public Map<String, Object> validateSlip(MultipartFile slip) {
         try {
-            RestTemplate restTemplate = new RestTemplate();
-
-            // สร้าง Headers
+            // ✅ สร้าง Header
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
             headers.set("Authorization", apiKey);
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-            // สร้าง Body สำหรับส่งข้อมูล
+            // ✅ สร้าง Body
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("files", slip.getResource());
+            body.add("slip", convertMultipartFileToResource(slip));
 
-            // สร้าง Request Entity
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // เรียกใช้งาน EasySlip API
-            ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl, requestEntity, Map.class);
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<Map> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class);
 
-            if (response.getStatusCode() == HttpStatus.OK) {
-                return response.getBody();
-            }
-
-            return null;
+            return response.getBody();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private Resource convertMultipartFileToResource(MultipartFile file) throws Exception {
+        return new ByteArrayResource(file.getBytes()) {
+            @Override
+            public String getFilename() {
+                return file.getOriginalFilename();
+            }
+        };
     }
 }

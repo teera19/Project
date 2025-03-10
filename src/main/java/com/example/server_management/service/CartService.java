@@ -90,8 +90,6 @@ public class CartService {
     }
 
 
-
-
     public void removeFromCart(String userName, int productId) {
         Cart cart = getCartByUser(userName);
 
@@ -104,6 +102,7 @@ public class CartService {
         cart.getItems().clear();
         cartRepository.save(cart);
     }
+
     public int getCartItemCount(String userName) {
         Cart cart = getCartByUser(userName);
         return cart.getItems().stream().mapToInt(CartItem::getQuantity).sum();
@@ -122,16 +121,18 @@ public class CartService {
                 .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
                 .sum();
 
-        Order order = new Order(user, totalPrice, new Timestamp(System.currentTimeMillis()));
-
         // ✅ ดึง QR Code จากร้านค้า
         MyShop shop = cartItems.get(0).getProduct().getShop();
-        if (shop != null) {
-            order.setSlipUrl(shop.getQrCodeUrl()); // บันทึก URL ของ QR Code
+        if (shop == null) {
+            throw new IllegalArgumentException("Shop not found");
         }
+
+        // ✅ สร้าง Order พร้อมกับ MyShop
+        Order order = new Order(user, shop, totalPrice, new Timestamp(System.currentTimeMillis()));
+
+        // ✅ บันทึก QR Code ลงใน slipUrl
+        order.setSlipUrl(shop.getQrCodeUrl());
 
         return orderRepository.save(order);
     }
-
 }
-

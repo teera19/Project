@@ -12,7 +12,6 @@ public class OrderItem {
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
-    @JsonIgnore
     private Order order;
 
     @ManyToOne
@@ -22,16 +21,18 @@ public class OrderItem {
     @Column(nullable = false)
     private int quantity;
 
-    public OrderItem() {}
-
-    public OrderItem(Order order, Product product, int quantity) {
-        this.order = order;
-        this.product = product;
-        this.quantity = quantity;
-    }
-
+    // ✅ Getter & Setter
     public int getOrderItemId() { return orderItemId; }
+
     public Order getOrder() { return order; }
+
+    public void setOrder(Order order) { this.order = order; }
+
     public Product getProduct() { return product; }
+
+    public void setProduct(Product product) { this.product = product; }
+
     public int getQuantity() { return quantity; }
+
+    public void setQuantity(int quantity) { this.quantity = quantity; }
 }

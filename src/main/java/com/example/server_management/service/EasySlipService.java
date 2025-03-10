@@ -28,7 +28,17 @@ public class EasySlipService {
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("files", convertMultipartFileToResource(slip)); // ✅ ส่งไฟล์โดยตรง
+            body.add("files", new ByteArrayResource(slip.getBytes()) {
+                @Override
+                public String getFilename() {
+                    return slip.getOriginalFilename();
+                }
+
+                @Override
+                public long contentLength() {
+                    return slip.getSize();
+                }
+            });
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
@@ -40,14 +50,5 @@ public class EasySlipService {
             e.printStackTrace();
             return null;
         }
-    }
-
-    private Resource convertMultipartFileToResource(MultipartFile file) throws Exception {
-        return new ByteArrayResource(file.getBytes()) {
-            @Override
-            public String getFilename() {
-                return file.getOriginalFilename();
-            }
-        };
     }
 }

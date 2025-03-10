@@ -163,7 +163,7 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
 
-        // ✅ ถ้าผ่านการตรวจสอบแล้ว อัปโหลดไปยัง Cloudinary
+        // ✅ ถ้าผ่านแล้วค่อยอัปโหลดไป Cloudinary
         String slipUrl = cloudinaryService.uploadImage(slip);
         order.setSlipUrl(slipUrl);
         orderRepository.save(order);

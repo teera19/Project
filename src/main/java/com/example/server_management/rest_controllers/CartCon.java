@@ -132,7 +132,7 @@ public class CartCon {
                 "qrCodeUrl", order.getSlipUrl(),
                 "bankAccountNumber", myShop.getBankAccountNumber(),
                 "bankName", myShop.getBankName(),
-                "bankAccountName", myShop.getBankAccountName()
+                "bankAccountName", myShop.getDisplayName()
         ));
     }
 
@@ -180,25 +180,16 @@ public class CartCon {
                 ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
                 : null;
 
-        String shopBankAccountName = myShop.getBankAccountName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
+        String shopBankAccountName = myShop.getDisplayName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
 
         if (recipientName == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
         }
 
-        // ตรวจสอบชื่อบัญชีธนาคารจากสลิป
-        String recipientBankAccountName = receiver.get("bank_account_name") != null
-                ? receiver.get("bank_account_name").toString().trim()
-                : null;
-
-        if (recipientBankAccountName == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Bank account name is missing in slip data"));
-        }
-
         // ใช้แค่ 5-10 ตัวแรกในการเปรียบเทียบชื่อ
-        if (!recipientBankAccountName.substring(0, Math.min(10, recipientBankAccountName.length()))
+        if (!recipientName.substring(0, Math.min(10, recipientName.length()))
                 .equalsIgnoreCase(shopBankAccountName.substring(0, Math.min(10, shopBankAccountName.length())))) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Bank account name does not match"));
+            return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
 
         // ดึงเลขบัญชีธนาคารจากสลิป
@@ -220,5 +211,6 @@ public class CartCon {
 
         return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
     }
+
 
 }

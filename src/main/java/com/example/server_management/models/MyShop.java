@@ -28,8 +28,8 @@ public class MyShop {
     @Column(name = "bank_account_number")
     private String bankAccountNumber; // เลขบัญชีธนาคาร
 
-    @Column(name = "bank_account_name")
-    private String bankAccountName; // ชื่อบัญชีธนาคาร
+    @Column(name = "display_name") // เปลี่ยนจาก bank_account_name เป็น display_name
+    private String displayName; // ชื่อบัญชีธนาคาร (หรือชื่อผู้รับ)
 
     @Column(name = "bank_name")
     private String bankName; // ชื่อธนาคาร
@@ -48,12 +48,12 @@ public class MyShop {
         this.bankAccountNumber = bankAccountNumber;
     }
 
-    public String getBankAccountName() {
-        return bankAccountName;
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public void setBankAccountName(String bankAccountName) {
-        this.bankAccountName = bankAccountName;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public String getBankName() {

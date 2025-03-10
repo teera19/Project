@@ -139,20 +139,24 @@ public class CartCon {
 
         String userName = (String) session.getAttribute("user_name");
 
+        // ✅ ตรวจสอบว่าเข้าสู่ระบบหรือไม่
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
         }
 
+        // ✅ ตรวจสอบว่าไฟล์ slip ถูกส่งมาหรือไม่
         if (slip == null || slip.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "No slip file uploaded"));
         }
 
+        // ✅ ดึงข้อมูลออเดอร์
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
         MyShop myShop = order.getMyShop();
 
+        // ✅ ตรวจสอบว่าเป็นเจ้าของออเดอร์หรือไม่
         if (!order.getUser().getUserName().equals(userName)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "You are not authorized to upload slip for this order"));
@@ -166,9 +170,25 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
         }
 
-        Map<String, Object> receiver = (Map<String, Object>) slipData.get("data.receiver");
-        String recipientName = receiver.get("displayName").toString().trim();
-        String recipientPromptPayId = ((Map<String, Object>) receiver.get("proxy")).get("value").toString();
+        // ✅ ตรวจสอบค่าที่ได้รับจาก SlipOK API
+        Map<String, Object> data = (Map<String, Object>) slipData.get("data");
+        if (data == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Slip data is missing"));
+        }
+
+        Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
+        if (receiver == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Receiver information is missing in slip data"));
+        }
+
+        String recipientName = receiver.get("displayName") != null ? receiver.get("displayName").toString().trim() : null;
+        Map<String, Object> proxy = (Map<String, Object>) receiver.get("proxy");
+        String recipientPromptPayId = proxy != null && proxy.get("value") != null ? proxy.get("value").toString() : null;
+
+        // ✅ เช็คค่าที่ได้มา
+        if (recipientName == null || recipientPromptPayId == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Recipient details are incomplete in slip data"));
+        }
 
         // ✅ ถ้า MyShop ยังไม่มี PromptPayId ให้บันทึกอัตโนมัติ
         if (myShop.getPromptPayId() == null || myShop.getPromptPayId().isEmpty()) {

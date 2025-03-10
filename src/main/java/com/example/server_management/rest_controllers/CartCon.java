@@ -2,12 +2,15 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.models.CartItem;
 import com.example.server_management.models.Order;
+import com.example.server_management.repository.OrderRepository;
 import com.example.server_management.service.CartService;
+import com.example.server_management.service.CloudinaryService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +20,11 @@ import java.util.Map;
 public class CartCon {
     @Autowired
     private CartService cartService;
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     @PostMapping("/addtocart/{product_id}")
 
@@ -92,6 +100,34 @@ public class CartCon {
             return ResponseEntity.ok(Map.of("message", "Checkout successful", "orderId", order.getOrderId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+    @PostMapping(value = "/upload-slip/{orderId}", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> uploadPaymentSlip(@PathVariable int orderId,
+                                               @RequestParam("slip") MultipartFile slipImage) {
+
+        if (slipImage.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Slip image is required."));
+        }
+
+        // ✅ ค้นหา Order จาก orderId
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        try {
+            // ✅ อัปโหลดรูปสลิปขึ้น Cloudinary
+            String slipUrl = cloudinaryService.uploadImage(slipImage);
+
+            // ✅ บันทึก URL ของสลิปใน Order
+            order.setSlipUrl(slipUrl);
+            order.setStatus("PAID"); // อัปเดตสถานะเป็นจ่ายเงินแล้ว
+            orderRepository.save(order);
+
+            return ResponseEntity.ok(Map.of("message", "Slip uploaded successfully", "slipUrl", slipUrl));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Failed to upload slip", "error", e.getMessage()));
         }
     }
 

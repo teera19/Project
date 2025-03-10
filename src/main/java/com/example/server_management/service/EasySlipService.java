@@ -24,11 +24,11 @@ public class EasySlipService {
     public Map<String, Object> validateSlip(MultipartFile slip) {
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", apiKey);
+            headers.set("Authorization", "Bearer " + apiKey); // ✅ เพิ่ม Bearer
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("files", convertMultipartFileToResource(slip)); // เปลี่ยน key เป็น "files"
+            body.add("files", convertMultipartFileToResource(slip)); // ✅ ใช้ "files"
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 

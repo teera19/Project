@@ -134,74 +134,62 @@ public class CartCon {
                                         @RequestParam("slip") MultipartFile slip,
                                         HttpSession session) {
 
-        try {
-            String userName = (String) session.getAttribute("user_name");
+        String userName = (String) session.getAttribute("user_name");
 
-            // ✅ ตรวจสอบว่าเข้าสู่ระบบหรือไม่
-            if (userName == null) {
-                System.out.println("User not logged in");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "User not logged in"));
-            }
-
-            // ✅ ตรวจสอบว่าไฟล์ slip ถูกส่งมาหรือไม่
-            if (slip == null || slip.isEmpty()) {
-                System.out.println("No slip file uploaded");
-                return ResponseEntity.badRequest().body(Map.of("message", "No slip file uploaded"));
-            }
-
-            System.out.println("Slip File Name: " + slip.getOriginalFilename());
-            System.out.println("Slip File Size: " + slip.getSize());
-
-            // ✅ ดึงข้อมูล Order และ ร้านค้า
-            Order order = orderRepository.findById(orderId)
-                    .orElseThrow(() -> {
-                        System.out.println("Order not found with ID: " + orderId);
-                        return new IllegalArgumentException("Order not found");
-                    });
-
-            MyShop myShop = order.getMyShop();
-            if (myShop == null) {
-                System.out.println("MyShop not found for the order");
-                return ResponseEntity.badRequest().body(Map.of("message", "Shop not found for this order"));
-            }
-
-            // ✅ ตรวจสอบสลิปกับ API SlipOk
-            Map<String, Object> slipData = slipOkService.validateSlip(slip);
-            System.out.println("Slip Data Response: " + slipData);
-
-            if (slipData == null || slipData.containsKey("error")) {
-                System.out.println("Slip verification failed");
-                return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
-            }
-
-            // ✅ ตรวจสอบยอดเงินและชื่อผู้รับ
-            double slipAmount = Double.parseDouble(slipData.get("data.amount").toString());
-            String recipientName = slipData.get("data.receiverName").toString();
-
-            System.out.println("Slip Amount: " + slipAmount);
-            System.out.println("Recipient Name: " + recipientName);
-
-            if (slipAmount != order.getTotalPrice()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Slip amount does not match the order amount"));
-            }
-
-            if (!recipientName.equalsIgnoreCase(myShop.getTitle())) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
-            }
-
-            // ✅ อัปโหลดสลิปไปที่ Cloudinary
-            String slipUrl = cloudinaryService.uploadImage(slip);
-            order.setSlipUrl(slipUrl);
-            orderRepository.save(order);
-
-            return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
+        // ✅ ตรวจสอบว่าเข้าสู่ระบบหรือไม่
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not logged in"));
         }
+
+        // ✅ ตรวจสอบว่าไฟล์ slip ถูกส่งมาหรือไม่
+        if (slip == null || slip.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "No slip file uploaded"));
+        }
+
+        // ✅ ดึงข้อมูล Order และ ร้านค้า
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        MyShop myShop = order.getMyShop();
+
+        if (!order.getUser().getUserName().equals(userName)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not authorized to upload slip for this order"));
+        }
+
+        // ✅ ตรวจสอบสลิปกับ API SlipOk
+        Map<String, Object> slipData = slipOkService.validateSlip(slip);
+        System.out.println("Slip Data Response: " + slipData);
+
+        if (slipData == null || slipData.containsKey("error")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
+        }
+
+        // ✅ ดึงข้อมูลภายใน data
+        Map<String, Object> data = (Map<String, Object>) slipData.get("data");
+
+        // ตรวจสอบ amount
+        Double slipAmount = data.get("amount") != null ? Double.parseDouble(data.get("amount").toString()) : null;
+        if (slipAmount == null || slipAmount != order.getTotalPrice()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Slip amount does not match the order amount"));
+        }
+
+        // ตรวจสอบชื่อผู้รับ
+        Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
+        String recipientName = receiver != null && receiver.get("displayName") != null
+                ? receiver.get("displayName").toString()
+                : "";
+
+        if (!recipientName.equalsIgnoreCase(myShop.getTitle())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
+        }
+
+        // ✅ อัปโหลดสลิปไปที่ Cloudinary
+        String slipUrl = cloudinaryService.uploadImage(slip);
+        order.setSlipUrl(slipUrl);
+        orderRepository.save(order);
+
+        return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
     }
 
 }

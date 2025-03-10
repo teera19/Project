@@ -139,24 +139,20 @@ public class CartCon {
 
         String userName = (String) session.getAttribute("user_name");
 
-        // ✅ ตรวจสอบว่าเข้าสู่ระบบหรือไม่
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
         }
 
-        // ✅ ตรวจสอบว่าไฟล์ slip ถูกส่งมาหรือไม่
         if (slip == null || slip.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "No slip file uploaded"));
         }
 
-        // ✅ ดึงข้อมูลออเดอร์
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
         MyShop myShop = order.getMyShop();
 
-        // ✅ ตรวจสอบว่าเป็นเจ้าของออเดอร์หรือไม่
         if (!order.getUser().getUserName().equals(userName)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "You are not authorized to upload slip for this order"));
@@ -170,39 +166,23 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
         }
 
-        // ✅ ตรวจสอบค่าที่ได้รับจาก SlipOK API
         Map<String, Object> data = (Map<String, Object>) slipData.get("data");
-        if (data == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Slip data is missing"));
-        }
-
         Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
-        if (receiver == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Receiver information is missing in slip data"));
+
+        // ✅ ดึงชื่อผู้รับจากสลิป
+        String recipientName = receiver.get("displayName") != null
+                ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
+                : null;
+
+        String shopTitle = myShop.getTitle().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
+
+        if (recipientName == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
         }
 
-        String recipientName = receiver.get("displayName") != null ? receiver.get("displayName").toString().trim() : null;
-        Map<String, Object> proxy = (Map<String, Object>) receiver.get("proxy");
-        String recipientPromptPayId = proxy != null && proxy.get("value") != null ? proxy.get("value").toString() : null;
-
-        // ✅ เช็คค่าที่ได้มา
-        if (recipientName == null || recipientPromptPayId == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Recipient details are incomplete in slip data"));
-        }
-
-        // ✅ ถ้า MyShop ยังไม่มี PromptPayId ให้บันทึกอัตโนมัติ
-        if (myShop.getPromptPayId() == null || myShop.getPromptPayId().isEmpty()) {
-            myShop.setPromptPayId(recipientPromptPayId);
-            myshopRepository.save(myShop);
-        }
-
-        // ✅ ตรวจสอบชื่อและ PromptPayId
-        if (!recipientName.equalsIgnoreCase(myShop.getTitle())) {
+        // ✅ ตรวจสอบชื่อให้ตรง
+        if (!recipientName.equalsIgnoreCase(shopTitle)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
-        }
-
-        if (!recipientPromptPayId.equals(myShop.getPromptPayId())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "PromptPay ID does not match"));
         }
 
         // ✅ อัปโหลดสลิปไป Cloudinary

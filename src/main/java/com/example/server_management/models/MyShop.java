@@ -23,8 +23,6 @@ public class MyShop {
     private String detail;
     @Column(name = "qr_code_url")
     private String qrCodeUrl;
-    @Column(name = "promptpay_id")
-    private String promptPayId;
 
     @OneToOne
     @JoinColumn(name = "user_id")
@@ -63,14 +61,13 @@ public class MyShop {
     public void setUser(User user) {
         this.user = user;
     }
-    public String getQrCodeUrl() { return qrCodeUrl; }
-    public void setQrCodeUrl(String qrCodeUrl) { this.qrCodeUrl = qrCodeUrl; }
-    public String getPromptPayId() {
-        return promptPayId;
+
+    public String getQrCodeUrl() {
+        return qrCodeUrl;
     }
 
-    public void setPromptPayId(String promptPayId) {
-        this.promptPayId = promptPayId;
+    public void setQrCodeUrl(String qrCodeUrl) {
+        this.qrCodeUrl = qrCodeUrl;
     }
 }
 

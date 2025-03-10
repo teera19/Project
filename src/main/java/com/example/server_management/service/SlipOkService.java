@@ -2,7 +2,6 @@ package com.example.server_management.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -13,12 +12,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 @Service
-public class EasySlipService {
+public class SlipOkService {
 
-    @Value("${easyslip.api.url}")
+    @Value("${slipok.api.url}")
     private String apiUrl;
 
-    @Value("${easyslip.api.key}")
+    @Value("${slipok.api.key}")
     private String apiKey;
 
     public Map<String, Object> validateSlip(MultipartFile slip) {
@@ -41,14 +40,14 @@ public class EasySlipService {
             });
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
             RestTemplate restTemplate = new RestTemplate();
-            ResponseEntity<Map> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class);
 
+            ResponseEntity<Map> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class);
             return response.getBody();
+
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return Map.of("error", "Slip validation failed");
         }
     }
 }

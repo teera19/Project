@@ -5,13 +5,15 @@ import com.example.server_management.models.Order;
 import com.example.server_management.repository.OrderRepository;
 import com.example.server_management.service.CartService;
 import com.example.server_management.service.CloudinaryService;
-import com.example.server_management.service.EasySlipService;
+import com.example.server_management.service.SlipOkService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.example.server_management.models.MyShop;
+
 
 import java.util.List;
 import java.util.Map;
@@ -27,7 +29,7 @@ public class CartCon {
     @Autowired
     private CloudinaryService cloudinaryService;
     @Autowired
-    EasySlipService easySlipService;
+    SlipOkService slipOkService;
 
     @PostMapping("/addtocart/{product_id}")
 
@@ -137,17 +139,19 @@ public class CartCon {
                     .body(Map.of("message", "User not logged in"));
         }
 
+        // ✅ ค้นหา Order และข้อมูลร้านค้า
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        MyShop myShop = order.getMyShop();
 
         if (!order.getUser().getUserName().equals(userName)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "You are not authorized to upload slip for this order"));
         }
 
-        // ✅ ตรวจสอบสลิปกับ EasySlip API ก่อน
-        Map<String, Object> slipData = easySlipService.validateSlip(slip);
-        if (slipData == null || !Boolean.TRUE.equals(slipData.get("is_valid"))) {
+        // ✅ ตรวจสอบ Slip กับ SlipOk API
+        Map<String, Object> slipData = slipOkService.validateSlip(slip);
+        if (slipData == null || slipData.containsKey("error")) {
             return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
         }
 
@@ -159,16 +163,15 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Slip amount does not match the order amount"));
         }
 
-        if (!recipientName.equalsIgnoreCase("ชื่อบัญชีที่ถูกต้อง")) {
+        if (!recipientName.equalsIgnoreCase(myShop.getTitle())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
 
-        // ✅ ถ้าผ่านแล้วค่อยอัปโหลดไป Cloudinary
+        // ✅ อัปโหลด Slip ไปยัง Cloudinary
         String slipUrl = cloudinaryService.uploadImage(slip);
         order.setSlipUrl(slipUrl);
         orderRepository.save(order);
 
         return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
     }
-
 }

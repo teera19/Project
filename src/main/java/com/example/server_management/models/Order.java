@@ -8,6 +8,7 @@ import java.util.List;
 @Entity
 @Table(name = "orders")
 public class Order {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int orderId;
@@ -15,6 +16,10 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "myshop_id", nullable = false)
+    private MyShop myShop;
 
     @Column(nullable = false)
     private double totalPrice;
@@ -28,25 +33,11 @@ public class Order {
     @Column
     private String slipUrl;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private List<OrderItem> orderItems;
-
-    public Order() {}
-
-    public Order(User user, double totalPrice, Timestamp orderDate) {
-        this.user = user;
-        this.totalPrice = totalPrice;
-        this.orderDate = orderDate;
-    }
-
     // Getter & Setter
     public int getOrderId() { return orderId; }
     public User getUser() { return user; }
+    public MyShop getMyShop() { return myShop; }
     public double getTotalPrice() { return totalPrice; }
-    public Timestamp getOrderDate() { return orderDate; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
     public String getSlipUrl() { return slipUrl; }
     public void setSlipUrl(String slipUrl) { this.slipUrl = slipUrl; }
-    public List<OrderItem> getOrderItems() { return orderItems; }
 }

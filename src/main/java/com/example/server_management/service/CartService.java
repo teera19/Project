@@ -1,16 +1,13 @@
 package com.example.server_management.service;
 
-import com.example.server_management.models.Cart;
-import com.example.server_management.models.CartItem;
-import com.example.server_management.models.Product;
-import com.example.server_management.models.User;
-import com.example.server_management.repository.CartItemRepository;
-import com.example.server_management.repository.CartRepository;
-import com.example.server_management.repository.ProductRepository;
-import com.example.server_management.repository.UserRepository;
+import com.example.server_management.models.*;
+import com.example.server_management.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +25,10 @@ public class CartService {
     private UserRepository userRepository;
     @Autowired
     private CartItemRepository cartItemRepository;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private OrderItemRepository orderItemRepository;
 
     public Cart getCartByUser(String userName) {
         User user = userRepository.findByUserName(userName);
@@ -106,6 +107,39 @@ public class CartService {
     public int getCartItemCount(String userName) {
         Cart cart = getCartByUser(userName);
         return cart.getItems().stream().mapToInt(CartItem::getQuantity).sum();
+    }
+    @Transactional
+    public Order checkout(String userName) {
+        User user = userRepository.findByUserName(userName);
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        // ✅ ดึงสินค้าทั้งหมดจากตะกร้าของผู้ใช้ (แก้ไขปัญหา Optional)
+        List<CartItem> cartItems = cartItemRepository.findByCartUser(user);
+
+        if (cartItems.isEmpty()) {
+            throw new IllegalArgumentException("Cart is empty");
+        }
+
+        // ✅ คำนวณราคาทั้งหมด
+        double totalPrice = cartItems.stream()
+                .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
+                .sum();
+
+        // ✅ สร้างคำสั่งซื้อใหม่
+        Order order = new Order(user, totalPrice, new Timestamp(System.currentTimeMillis()));
+        order = orderRepository.save(order);
+
+        // ✅ ย้ายสินค้าจากตะกร้าไปยัง OrderItem
+        for (CartItem cartItem : cartItems) {
+            OrderItem orderItem = new OrderItem(order, cartItem.getProduct(), cartItem.getQuantity());
+            orderItemRepository.save(orderItem);
+        }
+
+        // ✅ ลบสินค้าทั้งหมดออกจากตะกร้า (แก้ไข Optional)
+        cartItemRepository.deleteAll(cartItems);
+        return order;
     }
 
 }

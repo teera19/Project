@@ -1,6 +1,7 @@
 package com.example.server_management.rest_controllers;
 
 import com.example.server_management.models.CartItem;
+import com.example.server_management.models.Order;
 import com.example.server_management.service.CartService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/")
@@ -76,6 +78,21 @@ public class CartCon {
 
         cartService.clearCart(userName);
         return new ResponseEntity<>("Cart cleared", HttpStatus.OK);
+    }
+    @PostMapping("/checkout")
+    public ResponseEntity<?> checkout(HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not logged in"));
+        }
+
+        try {
+            Order order = cartService.checkout(userName);
+            return ResponseEntity.ok(Map.of("message", "Checkout successful", "orderId", order.getOrderId()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
 }

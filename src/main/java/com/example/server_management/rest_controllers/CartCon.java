@@ -132,7 +132,7 @@ public class CartCon {
                 "qrCodeUrl", order.getSlipUrl(),
                 "bankAccountNumber", myShop.getBankAccountNumber(),
                 "bankName", myShop.getBankName(),
-                "bankAccountName", myShop.getDisplayName()
+                "displayName", myShop.getDisplayName()
         ));
     }
 
@@ -176,19 +176,22 @@ public class CartCon {
         Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
 
         // ดึงชื่อผู้รับจากสลิป
+        // ดึงชื่อผู้รับจากสลิป
         String recipientName = receiver.get("displayName") != null
                 ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
                 : null;
 
+// เอาชื่อผู้รับในฐานข้อมูล
         String shopBankAccountName = myShop.getDisplayName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
 
         if (recipientName == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
         }
 
-        // ใช้แค่ 5-10 ตัวแรกในการเปรียบเทียบชื่อ
-        if (!recipientName.substring(0, Math.min(10, recipientName.length()))
-                .equalsIgnoreCase(shopBankAccountName.substring(0, Math.min(10, shopBankAccountName.length())))) {
+// เปรียบเทียบแค่ 5-10 ตัวแรก
+        int compareLength = Math.min(10, recipientName.length()); // กำหนดให้เปรียบเทียบ 5-10 ตัวแรก
+        if (!recipientName.substring(0, compareLength)
+                .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
 

@@ -145,14 +145,10 @@ public class CartCon {
                     .body(Map.of("message", "You are not authorized to upload slip for this order"));
         }
 
-        // ✅ อัปโหลดสลิปไปยัง Cloudinary
-        String slipUrl = cloudinaryService.uploadImage(slip);
-        order.setSlipUrl(slipUrl);
-
-        // ✅ ตรวจสอบสลิปกับ EasySlip API
+        // ✅ ตรวจสอบสลิปกับ EasySlip API ก่อน
         Map<String, Object> slipData = easySlipService.validateSlip(slip);
         if (slipData == null || !Boolean.TRUE.equals(slipData.get("is_valid"))) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed", "slipUrl", slipUrl));
+            return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
         }
 
         // ✅ ตรวจสอบยอดเงินและชื่อปลายทาง
@@ -167,8 +163,11 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
 
-        // ✅ บันทึกข้อมูลหากตรวจสอบผ่าน
+        // ✅ ถ้าผ่านการตรวจสอบแล้ว อัปโหลดไปยัง Cloudinary
+        String slipUrl = cloudinaryService.uploadImage(slip);
+        order.setSlipUrl(slipUrl);
         orderRepository.save(order);
+
         return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
     }
 

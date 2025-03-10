@@ -32,7 +32,8 @@ public class OrderController {
         }
 
         User user = userRepository.findByUserName(userName);
-        List<Order> orders = orderRepository.findByUser(user);
+        List<Order> orders = orderRepository.findByUserAndStatus(user, "PENDING"); // ✅ ดึงเฉพาะ Order ที่ยังไม่ยืนยัน
         return ResponseEntity.ok(orders);
     }
+
 }

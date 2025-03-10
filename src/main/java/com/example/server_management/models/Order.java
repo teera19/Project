@@ -22,6 +22,8 @@ public class Order {
     @Column(nullable = false)
     private Timestamp orderDate; // วันที่สั่งซื้อ
 
+    @Column(nullable = false)
+    private String status = "PENDING";
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItems;
 
@@ -40,5 +42,12 @@ public class Order {
     public double getTotalPrice() { return totalPrice; }
     public Timestamp getOrderDate() { return orderDate; }
     public List<OrderItem> getOrderItems() { return orderItems; }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }
 

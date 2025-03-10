@@ -176,35 +176,20 @@ public class CartCon {
         Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
 
         // ดึงชื่อผู้รับจากสลิป
-        // ดึงชื่อผู้รับจากสลิป
         String recipientName = receiver.get("displayName") != null
                 ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
                 : null;
 
-// เอาชื่อผู้รับในฐานข้อมูล
+        // เอาชื่อผู้รับในฐานข้อมูล
         String shopBankAccountName = myShop.getDisplayName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
 
         if (recipientName == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
         }
 
-// เปรียบเทียบแค่ 5-10 ตัวแรก
-        int compareLength = Math.min(10, recipientName.length()); // กำหนดให้เปรียบเทียบ 5-10 ตัวแรก
-        if (!recipientName.substring(0, compareLength)
-                .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
+        // เปรียบเทียบแค่ชื่อผู้รับในสลิปกับชื่อในฐานข้อมูล
+        if (!recipientName.equalsIgnoreCase(shopBankAccountName)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
-        }
-
-        // ดึงเลขบัญชีธนาคารจากสลิป
-        Map<String, Object> proxy = (Map<String, Object>) receiver.get("proxy");
-        String recipientBankAccount = (String) proxy.get("value");
-
-        if (recipientBankAccount == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Bank account number is missing in slip data"));
-        }
-
-        if (!recipientBankAccount.equals(myShop.getBankAccountNumber())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Bank account number does not match"));
         }
 
         // ✅ อัปโหลดสลิปไป Cloudinary
@@ -214,6 +199,5 @@ public class CartCon {
 
         return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
     }
-
 
 }

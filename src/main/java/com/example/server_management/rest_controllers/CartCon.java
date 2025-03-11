@@ -271,7 +271,7 @@ public class CartCon {
                     .body(Map.of("message", "User not found"));
         }
 
-        User user = userOptional.get(); // ดึงข้อมูลผู้ใช้
+        User user = userOptional.get(); // Get user information
         int userId = user.getUserId();
 
         try {
@@ -315,4 +315,5 @@ public class CartCon {
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
+
 }

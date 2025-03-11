@@ -200,6 +200,9 @@ public class CartCon {
                         .body(Map.of("message", "Shop information is missing"));
             }
 
+            // เพิ่ม log เพื่อดูข้อมูล MyShop
+            log.debug("MyShop info: Bank Account: {}, Bank Name: {}, Display Name: {}", myShop.getBankAccountNumber(), myShop.getBankName(), myShop.getDisplayName());
+
             return ResponseEntity.ok(Map.of(
                     "orderId", order.getOrderId(),
                     "amount", order.getAmount(),
@@ -214,6 +217,7 @@ public class CartCon {
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
+
 
 
 

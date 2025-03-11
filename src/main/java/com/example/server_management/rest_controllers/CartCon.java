@@ -183,19 +183,23 @@ public class CartCon {
         }
 
         try {
+            // ดึงข้อมูล Order ตาม orderId
             Order order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
+            // ตรวจสอบว่า order นี้เป็นของผู้ใช้ที่ล็อกอินอยู่หรือไม่
             if (!order.getUser().getUserName().equals(userName)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "You are not authorized to view this payment info"));
             }
 
-            log.debug("Order found: {}", order);  // เพิ่ม log เพื่อตรวจสอบการดึงข้อมูล Order
+            log.debug("Order found: {}", order);
 
-            MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
-            log.debug("MyShop found: {}", myShop);  // เพิ่ม log เพื่อตรวจสอบการดึงข้อมูล MyShop
+            // ดึงข้อมูลร้านค้า (MyShop)
+            MyShop myShop = order.getMyShop();
+            log.debug("MyShop found: {}", myShop);
 
+            // กรณีไม่มีร้านค้า (MyShop == null), แสดงข้อมูลแค่ยอดเงินและสลิป URL
             if (myShop == null) {
                 return ResponseEntity.ok(Map.of(
                         "orderId", order.getOrderId(),
@@ -204,6 +208,7 @@ public class CartCon {
                 ));
             }
 
+            // กรณีมีร้านค้า, แสดงข้อมูลธนาคารและข้อมูลอื่นๆ ของร้านค้า
             return ResponseEntity.ok(Map.of(
                     "orderId", order.getOrderId(),
                     "amount", order.getAmount(),
@@ -213,7 +218,7 @@ public class CartCon {
                     "displayName", myShop.getDisplayName()
             ));
         } catch (Exception e) {
-            log.error("Error occurred while fetching payment info", e);  // เพิ่ม log สำหรับ error
+            log.error("Error occurred while fetching payment info", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }

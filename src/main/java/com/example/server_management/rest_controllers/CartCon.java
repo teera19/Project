@@ -204,7 +204,7 @@ public class CartCon {
         log.info("Starting the upload process for orderId: " + orderId + " with user: " + userName);
 
         if (userName == null) {
-            log.warn("User not logged in, orderId: {}", orderId);
+            log.warn("User not logged in for orderId: {}", orderId);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
         }
@@ -214,20 +214,25 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "No slip file uploaded"));
         }
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> {
-                    log.error("Order not found for orderId: {}", orderId);
-                    return new IllegalArgumentException("Order not found");
-                });
-
-        if (!order.getUser().getUserName().equals(userName)) {
-            log.warn("User is not authorized to upload slip for orderId: {}", orderId);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "You are not authorized to upload slip for this order"));
-        }
-
         try {
+            // Attempt to load the order and check if it exists
+            log.info("Attempting to load order with ID: {}", orderId);
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> {
+                        log.error("Order not found with ID: {}", orderId);
+                        return new IllegalArgumentException("Order not found");
+                    });
+
+            log.info("Order found for orderId: {}", orderId);
+
+            if (!order.getUser().getUserName().equals(userName)) {
+                log.warn("User is not authorized to upload slip for orderId: {}", orderId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "You are not authorized to upload slip for this order"));
+            }
+
             // ตรวจสอบข้อมูลสลิป
+            log.info("Validating slip for orderId: {}", orderId);
             Map<String, Object> slipData = slipOkService.validateSlip(slip);
             if (slipData == null || slipData.containsKey("error")) {
                 log.error("Slip verification failed for orderId: {}", orderId);
@@ -246,10 +251,10 @@ public class CartCon {
 
         } catch (Exception e) {
             log.error("Error during the upload process for orderId: " + orderId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
-
     @GetMapping("/orders")
     public ResponseEntity<?> getOrdersByUser(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");

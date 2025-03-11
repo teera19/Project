@@ -175,24 +175,36 @@ public class CartCon {
                     .body(Map.of("message", "User not logged in"));
         }
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        try {
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-        if (!order.getUser().getUserName().equals(userName)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "You are not authorized to view this payment info"));
+            if (!order.getUser().getUserName().equals(userName)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "You are not authorized to view this payment info"));
+            }
+
+            MyShop myShop = order.getMyShop();
+            if (myShop == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("message", "Shop information is missing"));
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "orderId", order.getOrderId(),
+                    "amount", order.getAmount(),
+                    "qrCodeUrl", order.getSlipUrl(),
+                    "bankAccountNumber", myShop.getBankAccountNumber(),
+                    "bankName", myShop.getBankName(),
+                    "displayName", myShop.getDisplayName()
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
-
-        MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
-        return ResponseEntity.ok(Map.of(
-                "orderId", order.getOrderId(),
-                "amount", order.getAmount(),
-                "qrCodeUrl", order.getSlipUrl(),
-                "bankAccountNumber", myShop.getBankAccountNumber(),
-                "bankName", myShop.getBankName(),
-                "displayName", myShop.getDisplayName()
-        ));
     }
+
 
 
     @PostMapping("/checkout/upload-slip/{orderId}")

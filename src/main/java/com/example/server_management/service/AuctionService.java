@@ -4,6 +4,7 @@ import com.example.server_management.models.*;
 import com.example.server_management.repository.AuctionRepository;
 import com.example.server_management.repository.BidRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,8 @@ public class AuctionService {
 
     @Autowired
     private BidRepository bidRepository;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     public List<Auction> getAllAuctions() {
         return auctionRepository.findByOrderByAuctionIdDesc();
@@ -94,32 +98,48 @@ public class AuctionService {
 
 
     // ✅ ใช้ @Transactional เฉพาะใน updateAuctionStatus
-    @Scheduled(fixedRate = 60000) // ทุก 1 นาที
-    @Transactional
-    public void updateAuctionWinners() {
+    @Scheduled(fixedRate = 60000) // ทุกๆ 1 นาที
+    public void checkAndUpdateAuctionStatus() {
         List<Auction> ongoingAuctions = auctionRepository.findByStatus(AuctionStatus.ONGOING);
         ZonedDateTime nowUTC = ZonedDateTime.now(ZoneId.of("UTC"));
 
         for (Auction auction : ongoingAuctions) {
             ZonedDateTime auctionEndTimeUTC = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"));
 
-            if (nowUTC.isAfter(auctionEndTimeUTC)) { // ตรวจสอบเวลาหมดประมูล
-                if (auction.getStatus() != AuctionStatus.COMPLETED) { // ตรวจสอบว่าปิดการประมูลแล้วหรือยัง
+            // เช็คเวลาว่าหมดเวลาหรือยัง
+            if (nowUTC.isAfter(auctionEndTimeUTC)) {
+                if (auction.getStatus() != AuctionStatus.COMPLETED) {
+                    // ถ้าหมดเวลาแล้ว ให้ปิดประมูล
                     Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
                     if (highestBid != null) {
-                        auction.setWinner(highestBid.getUser()); // อัปเดตผู้ชนะ
-                        auction.setStatus(AuctionStatus.COMPLETED); // ปิดการประมูล
-                        auctionRepository.save(auction); // บันทึกการเปลี่ยนแปลง
-                        System.out.println("🏆 Auction " + auction.getAuctionId() + " ended. Winner: " + highestBid.getUser().getUserName() + " with bid: " + highestBid.getBidAmount());
+                        // ถ้ามีการบิด ให้ตั้งผู้ชนะ
+                        auction.setWinner(highestBid.getUser());
+                        auction.setStatus(AuctionStatus.COMPLETED);
+                        auctionRepository.save(auction);
+
+                        // แจ้งเตือนผู้ชนะ
+                        messagingTemplate.convertAndSendToUser(highestBid.getUser().getUserName(), "/queue/notifications",
+                                Map.of("message", "🎉 คุณเป็นผู้ชนะการประมูลสำหรับ " + auction.getProductName() +
+                                        " ด้วยราคา " + highestBid.getBidAmount()));
+
+                        // แจ้งเตือนเจ้าของสินค้า
+                        messagingTemplate.convertAndSendToUser(auction.getOwnerUserName(), "/queue/notifications",
+                                Map.of("message", "✅ การประมูล " + auction.getProductName() + " จบลงแล้ว. " +
+                                        "ผู้ชนะ: " + highestBid.getUser().getUserName() + " ด้วยราคา " + highestBid.getBidAmount()));
                     } else {
-                        auction.setStatus(AuctionStatus.COMPLETED); // ไม่มีการบิด ก็ปิดการประมูล
-                        auctionRepository.save(auction); // บันทึกการเปลี่ยนแปลง
-                        System.out.println("Auction " + auction.getAuctionId() + " ended with no bids.");
+                        // ถ้าไม่มีการบิด ปิดการประมูลและไม่มีผู้ชนะ
+                        auction.setStatus(AuctionStatus.COMPLETED);
+                        auctionRepository.save(auction);
+
+                        // แจ้งเตือนว่าประมูลจบโดยไม่มีผู้ชนะ
+                        messagingTemplate.convertAndSend("/topic/auction",
+                                Map.of("message", "📢 การประมูล " + auction.getProductName() + " จบลงแล้ว โดยไม่มีผู้ชนะ"));
                     }
                 }
             }
         }
     }
+
 }
 
 

@@ -172,35 +172,22 @@ public class AuctionController {
         bid.setBidTime(ZonedDateTime.now(ZoneId.of("UTC")).toLocalDateTime());
         bidRepository.save(bid);
 
-        // ตรวจสอบว่าราคาบิดที่สูงสุดตรงกับ MaxBidPrice หรือไม่
+        // ถ้าราคาบิดเท่ากับราคาสูงสุด (maxBidPrice) ให้ปิดการประมูลทันที
         if (bidAmount >= auction.getMaxBidPrice()) {
             // ปิดการประมูล
             auction.setStatus(AuctionStatus.COMPLETED);
+            auction.setWinner(user); // ผู้ที่บิดในราคาสูงสุดคือผู้ชนะ
             auctionRepository.save(auction);
 
             // แจ้งเตือนผู้ชนะ
             messagingTemplate.convertAndSendToUser(user.getUserName(), "/queue/notifications",
-                    Map.of("message", "🎉 คุณเป็นผู้ชนะการประมูลสำหรับ " + auction.getProductName()));
-        }
+                    Map.of("message", "🎉 คุณเป็นผู้ชนะการประมูลสำหรับ " + auction.getProductName() +
+                            " ด้วยราคา " + bidAmount));
 
-        // ตรวจสอบว่าเวลาปัจจุบันเกินเวลาประมูลหรือไม่
-        ZonedDateTime currentTime = ZonedDateTime.now(ZoneId.of("UTC"));
-        if (currentTime.isAfter(auction.getEndTime().atZone(ZoneId.of("UTC")))) {
-            // ถ้าเวลาหมด ปิดการประมูล
-            if (auction.getStatus() != AuctionStatus.COMPLETED) {
-                auction.setStatus(AuctionStatus.COMPLETED);
-                auctionRepository.save(auction);
-
-                // แจ้งเตือนทุกคน
-                messagingTemplate.convertAndSend("/topic/auction",
-                        Map.of("message", "📢 การประมูล " + auction.getProductName() + " จบลงแล้ว"));
-
-                // แจ้งเตือนผู้ชนะ
-                if (auction.getWinner() != null) {
-                    messagingTemplate.convertAndSendToUser(auction.getWinner().getUserName(), "/queue/notifications",
-                            Map.of("message", "🎉 คุณเป็นผู้ชนะการประมูลสำหรับ " + auction.getProductName()));
-                }
-            }
+            // แจ้งเตือนเจ้าของสินค้า
+            messagingTemplate.convertAndSendToUser(auction.getOwnerUserName(), "/queue/notifications",
+                    Map.of("message", "✅ การประมูล " + auction.getProductName() + " จบลงแล้ว. " +
+                            "ผู้ชนะ: " + user.getUserName() + " ด้วยราคา " + bidAmount));
         }
 
         // แจ้งเตือนทุกคนที่ติดตาม Auction นี้

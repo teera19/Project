@@ -162,8 +162,8 @@ public class CartCon {
 
             orderRepository.save(order);  // บันทึกคำสั่งซื้อใหม่ในฐานข้อมูล
 
-            // เคลียร์ตะกร้า
-            cartService.clearCart(userName);
+            // เคลียร์ตะกร้าหลังการเช็คเอาท์ (หากต้องการ)
+            // cartService.clearCart(userName); // สามารถเลือกไม่ลบตะกร้าหลังจากเช็คเอาท์
 
             return ResponseEntity.ok(Map.of("message", "Checkout successful", "orderId", order.getOrderId()));
         } catch (Exception e) {
@@ -171,6 +171,7 @@ public class CartCon {
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
+
 
 
     @GetMapping("/checkout/payment-info/{orderId}")

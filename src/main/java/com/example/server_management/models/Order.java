@@ -52,8 +52,6 @@ public class Order {
     // ✅ Getter & Setter
     public int getOrderId() { return orderId; }
 
-    public User getUser() { return user; }
-
     public double getAmount() {
         return amount;
     }
@@ -82,5 +80,12 @@ public class Order {
     public void addCartItem(CartItem cartItem) {
         cartItems.add(cartItem);
         cartItem.setOrder(this);
+    }
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

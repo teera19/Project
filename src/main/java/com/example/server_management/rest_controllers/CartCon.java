@@ -1,10 +1,7 @@
 package com.example.server_management.rest_controllers;
 
 import com.example.server_management.models.*;
-import com.example.server_management.repository.MyshopRepository;
-import com.example.server_management.repository.OrderRepository;
-import com.example.server_management.repository.ProductRepository;
-import com.example.server_management.repository.UserRepository;
+import com.example.server_management.repository.*;
 import com.example.server_management.service.CartService;
 import com.example.server_management.service.CloudinaryService;
 import com.example.server_management.service.SlipOkService;
@@ -38,6 +35,8 @@ public class CartCon {
     private UserRepository userRepository;
     @Autowired
     private ProductRepository productRepository;
+    @Autowired
+    private CartRepository cartRepository;
 
     @PostMapping("/addtocart/{product_id}")
     public ResponseEntity<?> addToCart(@PathVariable("product_id") int productId,
@@ -118,38 +117,44 @@ public class CartCon {
         }
 
         try {
-            Order order = cartService.checkout(userName);
+            // ค้นหาตะกร้าของผู้ใช้ (ไม่ใช้ Optional)
+            Cart cart = cartRepository.findByUser_UserName(userName);
+            if (cart == null) {
+                throw new IllegalArgumentException("Cart not found");
+            }
+
+            // สร้างคำสั่งซื้อใหม่
+            Order order = new Order();
+            order.setUser(cart.getUser()); // ตั้งค่า user ให้กับ Order
+            order.setAmount(calculateTotalAmount(cart)); // คำนวณยอดรวมจาก CartItem
+
+            // เพิ่ม CartItem จากตะกร้าไปยังคำสั่งซื้อ
+            for (CartItem cartItem : cart.getItems()) {
+                order.addCartItem(cartItem); // เพิ่มสินค้าในตะกร้าไปยังคำสั่งซื้อ
+            }
+
+            // บันทึกคำสั่งซื้อ
+            orderRepository.save(order);
+
+            // ลบสินค้าจากตะกร้า
+            cartService.clearCart(userName);
+
             return ResponseEntity.ok(Map.of("message", "Checkout successful", "orderId", order.getOrderId()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
 
-    @GetMapping("/checkout/payment-info/{orderId}")
-    public ResponseEntity<?> getPaymentInfo(@PathVariable int orderId, HttpSession session) {
-        String userName = (String) session.getAttribute("user_name");
-        if (userName == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User not logged in"));
+
+    private double calculateTotalAmount(Cart cart) {
+        double total = 0.0;
+        for (CartItem cartItem : cart.getItems()) {
+            total += cartItem.getProduct().getPrice() * cartItem.getQuantity(); // คำนวณยอดรวมจากราคาสินค้าและจำนวน
         }
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
-
-        if (!order.getUser().getUserName().equals(userName)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "You are not authorized to view this payment info"));
-        }
-
-        MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
-        return ResponseEntity.ok(Map.of(
-                "orderId", order.getOrderId(),
-                "amount", order.getAmount(),
-                "qrCodeUrl", order.getSlipUrl(),
-                "bankAccountNumber", myShop.getBankAccountNumber(),
-                "bankName", myShop.getBankName(),
-                "displayName", myShop.getDisplayName()
-        ));
+        return total;
     }
 
 

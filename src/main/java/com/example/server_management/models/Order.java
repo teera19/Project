@@ -34,7 +34,7 @@ public class Order {
     @Column
     private String slipUrl;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER) // เพิ่ม fetch = FetchType.EAGER
     private List<OrderItem> orderItems;
 
     // ✅ Constructor

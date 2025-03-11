@@ -1,27 +1,28 @@
 package com.example.server_management.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
 
 @Entity
 @Table(name = "order_items")
 public class OrderItem {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int orderItemId;
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
+    private Order order; // เชื่อมโยงกับ Order
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    private Product product; // เชื่อมโยงกับ Product
 
     @Column(nullable = false)
-    private int quantity;
+    private int quantity; // จำนวนสินค้าที่สั่ง
 
-    // ✅ Getter & Setter
+    // Getter & Setter
     public int getOrderItemId() { return orderItemId; }
 
     public Order getOrder() { return order; }

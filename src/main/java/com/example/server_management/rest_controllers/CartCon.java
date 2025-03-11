@@ -1,10 +1,9 @@
 package com.example.server_management.rest_controllers;
 
-import com.example.server_management.models.CartItem;
-import com.example.server_management.models.Order;
-import com.example.server_management.models.User;
+import com.example.server_management.models.*;
 import com.example.server_management.repository.MyshopRepository;
 import com.example.server_management.repository.OrderRepository;
+import com.example.server_management.repository.ProductRepository;
 import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.CartService;
 import com.example.server_management.service.CloudinaryService;
@@ -15,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.example.server_management.models.MyShop;
 
 
 import java.util.List;
@@ -38,12 +36,13 @@ public class CartCon {
     SlipOkService slipOkService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private ProductRepository productRepository;
 
     @PostMapping("/addtocart/{product_id}")
-
-    public ResponseEntity<String> addToCart(@PathVariable("product_id") int productId,
-                                            @RequestParam("quantity") int quantity,
-                                            HttpSession session) {
+    public ResponseEntity<?> addToCart(@PathVariable("product_id") int productId,
+                                       @RequestParam("quantity") int quantity,
+                                       HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return new ResponseEntity<>("User not logged in", HttpStatus.UNAUTHORIZED);
@@ -51,11 +50,20 @@ public class CartCon {
 
         try {
             cartService.addToCart(userName, productId, quantity);
-            return new ResponseEntity<>("Product added to cart successfully", HttpStatus.OK);
+
+            // ดึงข้อมูลสินค้าเพื่อส่งกลับ
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Product added to cart successfully",
+                    "product", product // ส่งข้อมูลสินค้า
+            ));
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
     }
+
 
     @GetMapping("/view")
     public ResponseEntity<List<CartItem>> viewCart(HttpSession session) {

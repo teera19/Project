@@ -39,47 +39,34 @@ public class CartService {
         });
     }
 
-    public Cart addToCart(String userName, int productId, int quantity) {
-        // ค้นหาผู้ใช้ปัจจุบัน
-        User currentUser = userRepository.findByUserName(userName);
+    public void addToCart(String userName, int productId, int quantity) {
+        // ค้นหาผู้ใช้จากชื่อผู้ใช้
+        User user = userRepository.findUserByUserName(userName)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (currentUser == null) {
-            throw new IllegalArgumentException("User not found");
+        // ค้นหาตะกร้าของผู้ใช้
+        Cart cart = cartRepository.findByUser_UserName(userName);
+        if (cart == null) {
+            cart = new Cart();
+            cart.setUser(user);
         }
 
         // ค้นหาสินค้า
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
-        // ตรวจสอบว่าสินค้าไม่ได้มาจากร้านค้าของผู้ใช้เอง
-        if (product.getShop().getUser().getUserName().equals(userName)) {
-            throw new IllegalArgumentException("Cannot add your own shop's product to the cart");
-        }
+        // สร้าง CartItem ใหม่
+        CartItem cartItem = new CartItem();
+        cartItem.setProduct(product);
+        cartItem.setQuantity(quantity);
+        cartItem.setCart(cart);
 
-        // ค้นหารถเข็นของผู้ใช้
-        Cart cart = getCartByUser(userName);
+        // เพิ่ม CartItem ไปที่ตะกร้า
+        cart.getItems().add(cartItem);
 
-        // ค้นหารายการสินค้าในรถเข็น
-        Optional<CartItem> existingItem = cart.getItems().stream()
-                .filter(item -> item.getProduct().equals(product))
-                .findFirst();
-
-        if (existingItem.isPresent()) {
-            // เพิ่มจำนวนสินค้าถ้ามีอยู่แล้วในรถเข็น
-            CartItem item = existingItem.get();
-            item.setQuantity(item.getQuantity() + quantity);
-        } else {
-            // เพิ่มสินค้าใหม่ในรถเข็น
-            CartItem newItem = new CartItem();
-            newItem.setCart(cart);
-            newItem.setProduct(product);
-            newItem.setQuantity(quantity);
-            cart.getItems().add(newItem);
-        }
-
-        return cartRepository.save(cart);
+        // บันทึก Cart และ CartItem
+        cartRepository.save(cart);
     }
-
 
     public List<CartItem> viewCart(String userName) {
         User user = userRepository.findByUserName(userName);

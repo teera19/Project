@@ -195,17 +195,16 @@ public class CartCon {
         }
         // ดึง amount จาก JSON ที่ได้รับมา
             // ดึง amount จาก JSON ที่ได้รับมา
-            System.out.println("Slip Data: " + slipData); // ดีบักดูข้อมูล slipData
-            Object amountObj = slipData.get("amount");
-            if (amountObj == null || !(amountObj instanceof Number)) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Amount is missing or invalid in slip data"));
-            }
-            double amountFromSlip = ((Number) amountObj).doubleValue();
-
-
-// เปรียบเทียบกับจำนวนเงินที่บันทึกในฐานข้อมูล
-            if (amountFromSlip != order.getAmount()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Amount does not match"));
+            Map<String, Object> dataFromSlip = (Map<String, Object>) slipData.get("data");  // เปลี่ยนชื่อเป็น dataFromSlip
+            if (dataFromSlip != null) {
+                Object amountObj = dataFromSlip.get("amount");  // ใช้ dataFromSlip แทน data
+                if (amountObj == null || !(amountObj instanceof Number)) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Amount is missing or invalid in slip data"));
+                }
+                double amountFromSlip = ((Number) amountObj).doubleValue();
+                if (amountFromSlip != order.getAmount()) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Amount does not match"));
+                }
             }
 
 

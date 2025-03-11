@@ -116,6 +116,13 @@ public class CartCon {
                         .body(Map.of("message", "User not found"));
             }
 
+            // ตรวจสอบว่า User มี MyShop หรือไม่
+            MyShop myShop = user.getMyShop();
+            if (myShop == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "User does not have a MyShop"));
+            }
+
             // คำนวณ totalAmount จาก Cart
             List<CartItem> cartItems = cartService.getCartItemsForUser(userName);
             double totalAmount = 0.0;
@@ -124,12 +131,12 @@ public class CartCon {
             }
 
             // สร้าง Order
-            Order order = new Order(user, user.getMyShop(), totalAmount, new Timestamp(System.currentTimeMillis()));
+            Order order = new Order(user, myShop, totalAmount, new Timestamp(System.currentTimeMillis()));
             order.setStatus("PENDING");
 
             // ตรวจสอบว่า orderItems ถูกเริ่มต้นหรือไม่ ถ้ายังให้เริ่มต้นใหม่
             if (order.getOrderItems() == null) {
-                order.setOrderItems(new ArrayList<>()); // เริ่มต้น orderItems
+                order.setOrderItems(new ArrayList<>());
             }
 
             // สร้าง OrderItem จาก cart_item

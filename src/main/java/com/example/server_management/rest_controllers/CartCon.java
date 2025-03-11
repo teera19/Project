@@ -193,10 +193,13 @@ public class CartCon {
                 .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
-        double amountFromSlip = (double) data.get("amount"); // ดึงจำนวนเงินจากสลิป
+        // ดึง amount จาก JSON ที่ได้รับมา
+        double amountFromSlip = (double) slipData.get("amount");
+        // เปรียบเทียบกับจำนวนเงินที่บันทึกในฐานข้อมูล
         if (amountFromSlip != order.getAmount()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Amount does not match"));
         }
+
         // ✅ อัปโหลดสลิปไป Cloudinary
         String slipUrl = cloudinaryService.uploadImage(slip);
         order.setSlipUrl(slipUrl);

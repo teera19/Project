@@ -174,6 +174,7 @@ public class CartCon {
         // ดึงข้อมูลจากสลิป
         Map<String, Object> data = (Map<String, Object>) slipData.get("data");
         Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
+        Map<String, Object> amount = (Map<String, Object>) data.get("amount");
 
         // ดึงชื่อผู้รับจากสลิป
         String recipientName = receiver.get("displayName") != null

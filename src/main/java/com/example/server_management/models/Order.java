@@ -19,7 +19,7 @@ public class Order {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "myshop_id", nullable = false)
+    @JoinColumn(name = "myshop_id", nullable = false) // ✅ เพิ่มความสัมพันธ์กับ MyShop
     private MyShop myShop;
 
     @Column(nullable = false)
@@ -34,10 +34,12 @@ public class Order {
     @Column
     private String slipUrl;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL) // เพิ่ม fetch = FetchType.EAGER
     private List<OrderItem> orderItems;
 
-    // Constructor
+    // ✅ Constructor
+    public Order() {}
+
     public Order(User user, MyShop myShop, double amount, Timestamp orderDate) {
         this.user = user;
         this.myShop = myShop;
@@ -45,18 +47,10 @@ public class Order {
         this.orderDate = orderDate;
     }
 
-    // Getters and Setters
-    public int getOrderId() {
-        return orderId;
-    }
+    // ✅ Getter & Setter
+    public int getOrderId() { return orderId; }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
+    public User getUser() { return user; }
 
     public double getAmount() {
         return amount;
@@ -66,43 +60,21 @@ public class Order {
         this.amount = amount;
     }
 
-    public Timestamp getOrderDate() {
-        return orderDate;
-    }
+    public Timestamp getOrderDate() { return orderDate; }
 
-    public void setOrderDate(Timestamp orderDate) {
-        this.orderDate = orderDate;
-    }
+    public String getStatus() { return status; }
 
-    public String getStatus() {
-        return status;
-    }
+    public void setStatus(String status) { this.status = status; }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public String getSlipUrl() { return slipUrl; }
 
-    public String getSlipUrl() {
-        return slipUrl;
-    }
+    public void setSlipUrl(String slipUrl) { this.slipUrl = slipUrl; }
 
-    public void setSlipUrl(String slipUrl) {
-        this.slipUrl = slipUrl;
-    }
+    public MyShop getMyShop() { return myShop; }
 
-    public MyShop getMyShop() {
-        return myShop;
-    }
+    public void setMyShop(MyShop myShop) { this.myShop = myShop; }
 
-    public void setMyShop(MyShop myShop) {
-        this.myShop = myShop;
-    }
+    public List<OrderItem> getOrderItems() { return orderItems; }
 
-    public List<OrderItem> getOrderItems() {
-        return orderItems;
-    }
-
-    public void setOrderItems(List<OrderItem> orderItems) {
-        this.orderItems = orderItems;
-    }
+    public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }
 }

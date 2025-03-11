@@ -50,11 +50,24 @@ public class AuctionController {
     @GetMapping
     public ResponseEntity<List<AuctionResponse>> getAllAuctions() {
         List<Auction> auctions = auctionService.getAllAuctions();
+
+        // แปลงการประมูลทุกรายการและอัปเดตสถานะ
         List<AuctionResponse> responses = auctions.stream()
-                .map(auction -> new AuctionResponse(auction, bidRepository)) // ✅ ส่ง bidRepository ไปด้วย
+                .map(auction -> {
+                    // ถ้าสถานะเป็น COMPLETED เปลี่ยนเป็น ENDED
+                    String status = auction.getStatus() == AuctionStatus.COMPLETED ? "Ended" : auction.getStatus().name();
+
+                    // สร้าง AuctionResponse และอัปเดตสถานะ
+                    AuctionResponse auctionResponse = new AuctionResponse(auction, bidRepository);
+                    auctionResponse.setStatus(status); // อัปเดตสถานะ
+
+                    return auctionResponse;
+                })
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(responses);
     }
+
 
 
     @GetMapping("/{auctionId}")

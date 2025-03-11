@@ -195,7 +195,7 @@ public class CartCon {
 
             log.debug("Order found: {}", order);
 
-            // ดึงข้อมูลร้านค้า (MyShop)
+            // ดึงข้อมูลร้านค้า (MyShop) จาก myshop_id ที่อยู่ในคำสั่งซื้อ
             MyShop myShop = order.getMyShop();
             log.debug("MyShop found: {}", myShop);
 
@@ -213,9 +213,9 @@ public class CartCon {
                     "orderId", order.getOrderId(),
                     "amount", order.getAmount(),
                     "qrCodeUrl", order.getSlipUrl(),
-                    "bankAccountNumber", myShop.getBankAccountNumber(),
-                    "bankName", myShop.getBankName(),
-                    "displayName", myShop.getDisplayName()
+                    "bankAccountNumber", myShop.getBankAccountNumber() != null ? myShop.getBankAccountNumber() : "N/A",
+                    "bankName", myShop.getBankName() != null ? myShop.getBankName() : "N/A",
+                    "displayName", myShop.getDisplayName() != null ? myShop.getDisplayName() : "N/A"
             ));
         } catch (Exception e) {
             log.error("Error occurred while fetching payment info", e);

@@ -128,7 +128,7 @@ public class CartCon {
         MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
         return ResponseEntity.ok(Map.of(
                 "orderId", order.getOrderId(),
-                "totalPrice", order.getTotalPrice(),
+                "amount", order.getAmount(),
                 "qrCodeUrl", order.getSlipUrl(),
                 "bankAccountNumber", myShop.getBankAccountNumber(),
                 "bankName", myShop.getBankName(),
@@ -193,7 +193,10 @@ public class CartCon {
                 .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
-
+        double amountFromSlip = (double) data.get("amount"); // ดึงจำนวนเงินจากสลิป
+        if (amountFromSlip != order.getAmount()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Amount does not match"));
+        }
         // ✅ อัปโหลดสลิปไป Cloudinary
         String slipUrl = cloudinaryService.uploadImage(slip);
         order.setSlipUrl(slipUrl);

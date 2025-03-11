@@ -23,7 +23,7 @@ public class Order {
     private MyShop myShop;
 
     @Column(nullable = false)
-    private double totalPrice;
+    private double amount;
 
     @Column(nullable = false)
     private Timestamp orderDate;
@@ -43,7 +43,7 @@ public class Order {
     public Order(User user, MyShop myShop, double totalPrice, Timestamp orderDate) {
         this.user = user;
         this.myShop = myShop;
-        this.totalPrice = totalPrice;
+        this.amount = amount;
         this.orderDate = orderDate;
     }
 
@@ -52,7 +52,13 @@ public class Order {
 
     public User getUser() { return user; }
 
-    public double getTotalPrice() { return totalPrice; }
+    public double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(double amount) {
+        this.amount = amount;
+    }
 
     public Timestamp getOrderDate() { return orderDate; }
 

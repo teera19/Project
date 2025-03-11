@@ -182,38 +182,35 @@ public class CartCon {
                     .body(Map.of("message", "User not logged in"));
         }
 
-        try {
-            Order order = orderRepository.findById(orderId)
-                    .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-            // เช็คว่าเป็นผู้ใช้ที่ทำการสั่งซื้อจริงหรือไม่
-            if (!order.getUser().getUserName().equals(userName)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "You are not authorized to view this payment info"));
-            }
+        if (!order.getUser().getUserName().equals(userName)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not authorized to view this payment info"));
+        }
 
-            // ดึงข้อมูล MyShop จากคำสั่งซื้อ
-            MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop ที่เกี่ยวข้องกับคำสั่งซื้อ
-            if (myShop == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("message", "Shop information is missing"));
-            }
+        MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
 
-            // ส่งข้อมูลการชำระเงิน
+        // หากไม่มีร้านค้า (myShop == null), ให้ข้ามการแสดงข้อมูลร้านค้า
+        if (myShop == null) {
             return ResponseEntity.ok(Map.of(
                     "orderId", order.getOrderId(),
                     "amount", order.getAmount(),
-                    "qrCodeUrl", order.getSlipUrl(),
-                    "bankAccountNumber", myShop.getBankAccountNumber(),
-                    "bankName", myShop.getBankName(),
-                    "displayName", myShop.getDisplayName()
+                    "qrCodeUrl", order.getSlipUrl()
             ));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
+
+        return ResponseEntity.ok(Map.of(
+                "orderId", order.getOrderId(),
+                "amount", order.getAmount(),
+                "qrCodeUrl", order.getSlipUrl(),
+                "bankAccountNumber", myShop.getBankAccountNumber(),
+                "bankName", myShop.getBankName(),
+                "displayName", myShop.getDisplayName()
+        ));
     }
+
 
 
 

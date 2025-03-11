@@ -38,6 +38,8 @@ public class Order {
     @CollectionTable(name = "order_products", joinColumns = @JoinColumn(name = "order_id"))
     @Column(name = "product_id")
     private List<Integer> productIds = new ArrayList<>();
+    @Transient
+    private List<Product> products;
 
     // Default constructor
     public Order() {
@@ -59,6 +61,13 @@ public class Order {
 
     public void setProductIds(List<Integer> productIds) {
         this.productIds = productIds;
+    }
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public void setProducts(List<Product> products) {
+        this.products = products;
     }
 
     public int getOrderId() {

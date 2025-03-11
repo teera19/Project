@@ -259,61 +259,33 @@ public class CartCon {
     public ResponseEntity<?> getOrdersByUser(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
-            log.warn("User not logged in");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
         }
 
         Optional<User> userOptional = userRepository.findUserByUserName(userName);
         if (!userOptional.isPresent()) {
-            log.error("User not found with username: {}", userName);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "User not found"));
         }
 
-        User user = userOptional.get(); // Get user information
+        User user = userOptional.get(); // ดึงข้อมูลผู้ใช้
         int userId = user.getUserId();
 
-        try {
-            List<Order> orders = orderRepository.findByUserIdAndStatus(userId, "PAID");
-            log.info("Fetched orders for user: {} with status PAID", userName);
+        List<Order> orders = orderRepository.findByUserIdAndStatus(userId, "PAID");
 
-            if (orders.isEmpty()) {
-                log.warn("No paid orders found for user: {}", userName);
-                return ResponseEntity.status(HttpStatus.NO_CONTENT)
-                        .body(Map.of("message", "No paid orders found for user."));
-            }
-
-            List<Map<String, Object>> orderDetails = new ArrayList<>();
-            for (Order order : orders) {
-                Map<String, Object> orderInfo = Map.of(
-                        "orderId", order.getOrderId(),
-                        "amount", order.getAmount(),
-                        "slipUrl", order.getSlipUrl(),
-                        "status", order.getStatus(),
-                        "productIds", order.getProductIds()
-                );
-
-                List<Product> products = new ArrayList<>();
-                for (Integer productId : order.getProductIds()) {
-                    Optional<Product> productOptional = productRepository.findById(productId);
-                    if (productOptional.isPresent()) {
-                        products.add(productOptional.get());
-                    } else {
-                        log.warn("Product with ID {} not found for orderId {}", productId, order.getOrderId());
-                    }
-                }
-
-                orderInfo.put("products", products);
-                orderDetails.add(orderInfo);
-            }
-
-            return ResponseEntity.ok(orderDetails);
-        } catch (Exception e) {
-            log.error("Error occurred while fetching orders for user: {}", userName, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
+        if (orders.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                    .body(Map.of("message", "No paid orders found for user."));
         }
+
+        // สำหรับแต่ละ Order, ดึงข้อมูลสินค้าจาก productIds
+        for (Order order : orders) {
+            List<Product> products = productRepository.findAllById(order.getProductIds());
+            order.setProducts(products); // สมมติว่าเพิ่ม method setProducts ใน Order
+        }
+
+        return ResponseEntity.ok(orders);  // ส่งผลลัพธ์คำสั่งซื้อพร้อมสินค้าที่เกี่ยวข้อง
     }
 
 }

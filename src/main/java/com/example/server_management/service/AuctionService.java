@@ -94,7 +94,7 @@ public class AuctionService {
 
 
     // ✅ ใช้ @Transactional เฉพาะใน updateAuctionStatus
-    @Scheduled(fixedRate = 60000) // 60 วินาที
+    @Scheduled(fixedRate = 60000) // ทุก 1 นาที
     @Transactional
     public void updateAuctionWinners() {
         List<Auction> ongoingAuctions = auctionRepository.findByStatus(AuctionStatus.ONGOING);
@@ -103,22 +103,24 @@ public class AuctionService {
         for (Auction auction : ongoingAuctions) {
             ZonedDateTime auctionEndTimeUTC = ZonedDateTime.of(auction.getEndTime(), ZoneId.of("UTC"));
 
-            if (nowUTC.isAfter(auctionEndTimeUTC)) { // ✅ ถ้าหมดเวลา
-                if (auction.getStatus() != AuctionStatus.COMPLETED) { // ✅ ป้องกันเซ็ตซ้ำ
+            if (nowUTC.isAfter(auctionEndTimeUTC)) { // ตรวจสอบเวลาหมดประมูล
+                if (auction.getStatus() != AuctionStatus.COMPLETED) { // ตรวจสอบว่าปิดการประมูลแล้วหรือยัง
                     Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
                     if (highestBid != null) {
-                        auction.setWinner(highestBid.getUser()); // ✅ กำหนดผู้ชนะ
-                        auctionRepository.save(auction);
+                        auction.setWinner(highestBid.getUser()); // อัปเดตผู้ชนะ
+                        auction.setStatus(AuctionStatus.COMPLETED); // ปิดการประมูล
+                        auctionRepository.save(auction); // บันทึกการเปลี่ยนแปลง
                         System.out.println("🏆 Auction " + auction.getAuctionId() + " ended. Winner: " + highestBid.getUser().getUserName() + " with bid: " + highestBid.getBidAmount());
+                    } else {
+                        auction.setStatus(AuctionStatus.COMPLETED); // ไม่มีการบิด ก็ปิดการประมูล
+                        auctionRepository.save(auction); // บันทึกการเปลี่ยนแปลง
+                        System.out.println("Auction " + auction.getAuctionId() + " ended with no bids.");
                     }
-                    auction.setStatus(AuctionStatus.COMPLETED); // ✅ เซ็ตให้ประมูลจบ
-                    auctionRepository.save(auction);
                 }
             }
         }
     }
 }
-
 
 
 

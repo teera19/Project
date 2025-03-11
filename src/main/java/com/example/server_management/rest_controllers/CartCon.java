@@ -51,6 +51,10 @@ public class CartCon {
             return new ResponseEntity<>("User not logged in", HttpStatus.UNAUTHORIZED);
         }
 
+        if (quantity <= 0) { // ตรวจสอบว่า quantity มากกว่าศูนย์
+            return new ResponseEntity<>("Quantity must be greater than zero", HttpStatus.BAD_REQUEST);
+        }
+
         try {
             // ดึงข้อมูลสินค้าเพื่อเพิ่มลงในตะกร้า
             Product product = productRepository.findById(productId)
@@ -74,6 +78,7 @@ public class CartCon {
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
 
 

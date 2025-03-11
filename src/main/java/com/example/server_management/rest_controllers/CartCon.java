@@ -199,30 +199,23 @@ public class CartCon {
             MyShop myShop = order.getMyShop();
             log.debug("MyShop found: {}", myShop);
 
-            // กรณีไม่มีร้านค้า (MyShop == null), แสดงข้อมูลแค่ยอดเงินและสลิป URL
-            if (myShop == null) {
-                return ResponseEntity.ok(Map.of(
-                        "orderId", order.getOrderId(),
-                        "amount", order.getAmount(),
-                        "qrCodeUrl", order.getSlipUrl()
-                ));
-            }
-
-            // กรณีมีร้านค้า, แสดงข้อมูลธนาคารและข้อมูลอื่นๆ ของร้านค้า
+            // ดึงข้อมูลธนาคารของร้านค้าและแสดงข้อมูลออกมา
             return ResponseEntity.ok(Map.of(
                     "orderId", order.getOrderId(),
                     "amount", order.getAmount(),
                     "qrCodeUrl", order.getSlipUrl(),
-                    "bankAccountNumber", myShop.getBankAccountNumber() != null ? myShop.getBankAccountNumber() : "N/A",
-                    "bankName", myShop.getBankName() != null ? myShop.getBankName() : "N/A",
-                    "displayName", myShop.getDisplayName() != null ? myShop.getDisplayName() : "N/A"
+                    "bankAccountNumber", myShop != null ? myShop.getBankAccountNumber() : "N/A",  // หากไม่มีร้านค้า ก็จะเป็น N/A
+                    "bankName", myShop != null ? myShop.getBankName() : "N/A",  // หากไม่มีร้านค้า ก็จะเป็น N/A
+                    "displayName", myShop != null ? myShop.getDisplayName() : "N/A" // หากไม่มีร้านค้า ก็จะเป็น N/A
             ));
+
         } catch (Exception e) {
             log.error("Error occurred while fetching payment info", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
+
 
 
 

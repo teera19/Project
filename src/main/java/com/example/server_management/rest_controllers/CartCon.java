@@ -2,6 +2,7 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.models.CartItem;
 import com.example.server_management.models.Order;
+import com.example.server_management.models.User;
 import com.example.server_management.repository.MyshopRepository;
 import com.example.server_management.repository.OrderRepository;
 import com.example.server_management.repository.UserRepository;
@@ -19,6 +20,7 @@ import com.example.server_management.models.MyShop;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/")
@@ -225,16 +227,24 @@ public class CartCon {
 
     @GetMapping("/orders")
     public ResponseEntity<?> getOrdersByUser(HttpSession session) {
-        // ดึง userId จาก session
+        // ดึง userName จาก session
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
         }
 
-        // ดึง userId จากฐานข้อมูลตาม userName
-        int userId = userRepository.findByUserName(userName).getUserId();  // สมมติว่า userRepository ค้นหาผู้ใช้จาก userName
+        // ดึงข้อมูล User จากฐานข้อมูลตาม userName
+        Optional<User> userOptional = userRepository.findUserByUserName(userName);
+        if (!userOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
 
+        User user = userOptional.get(); // ถ้าพบผู้ใช้จะดึงข้อมูลได้
+        int userId = user.getUserId();
+
+        // ค้นหาคำสั่งซื้อที่มีสถานะเป็น PAID
         List<Order> orders = orderRepository.findByUserIdAndStatus(userId, "PAID");
 
         if (orders.isEmpty()) {

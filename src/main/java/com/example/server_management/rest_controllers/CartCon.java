@@ -302,8 +302,7 @@ public class CartCon {
                     if (product != null) {
                         Map<String, Object> productInfo = new HashMap<>();
                         productInfo.put("productId", product.getProductId());
-                        productInfo.put("productName", product.getName());
-                        productInfo.put("quantity", order.getProductQuantity(product.getProductId()));
+                        productInfo.put("productName", product.getName());;
                         productInfo.put("price", product.getPrice());
                         products.add(productInfo);
                     }

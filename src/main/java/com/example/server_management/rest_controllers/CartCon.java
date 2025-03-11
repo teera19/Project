@@ -213,13 +213,16 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "No slip file uploaded"));
         }
 
-        // หา Order โดยใช้ orderId
+        // ตรวจสอบว่า orderId มีข้อมูลในฐานข้อมูล
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Order not found for orderId: " + orderId));
 
         MyShop myShop = order.getMyShop();
+        if (myShop == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Shop not found for orderId: " + orderId));
+        }
 
-        // ตรวจสอบว่า User ที่อัปโหลดสลิปตรงกับ User ของ Order หรือไม่
+        // ตรวจสอบว่า User ตรงกันหรือไม่
         if (!order.getUser().getUserName().equals(userName)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "You are not authorized to upload slip for this order"));
@@ -227,25 +230,21 @@ public class CartCon {
 
         // เรียก API เพื่อตรวจสอบสลิป
         try {
-            // เรียก API เพื่อตรวจสอบสลิป
-            log.info("Starting slip verification for orderId: {}", orderId);  // เพิ่มการบันทึกเพื่อดูว่าโค้ดทำงานถึงจุดนี้หรือไม่
+            log.info("Starting slip verification for orderId: {}", orderId);
             Map<String, Object> slipData = slipOkService.validateSlip(slip);
 
             if (slipData == null || slipData.containsKey("error")) {
-                log.error("Slip verification failed for orderId: {}. Response: {}", orderId, slipData);  // บันทึกข้อผิดพลาด
+                log.error("Slip verification failed for orderId: {}. Response: {}", orderId, slipData);
                 return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
             }
 
-            // ดึงข้อมูลจากสลิป
             Map<String, Object> data = (Map<String, Object>) slipData.get("data");
             Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
 
-            // ดึงชื่อผู้รับจากสลิป
             String recipientName = receiver.get("displayName") != null
                     ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
                     : null;
 
-            // เอาชื่อผู้รับในฐานข้อมูล
             String shopBankAccountName = myShop.getDisplayName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
 
             if (recipientName == null) {
@@ -253,15 +252,13 @@ public class CartCon {
                 return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
             }
 
-            // เปรียบเทียบแค่ 5-10 ตัวแรกของชื่อ
-            int compareLength = Math.min(10, recipientName.length()); // กำหนดให้เปรียบเทียบ 5-10 ตัวแรก
+            int compareLength = Math.min(10, recipientName.length());
             if (!recipientName.substring(0, compareLength)
                     .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
                 log.error("Recipient name mismatch for orderId: {}. Expected: {}, Got: {}", orderId, shopBankAccountName, recipientName);
                 return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
             }
 
-            // ดึง amount จาก JSON ที่ได้รับมา
             Map<String, Object> dataFromSlip = (Map<String, Object>) slipData.get("data");
             if (dataFromSlip != null) {
                 Object amountObj = dataFromSlip.get("amount");
@@ -276,22 +273,22 @@ public class CartCon {
                 }
             }
 
-            // ✅ อัปโหลดสลิปไป Cloudinary
-            log.info("Uploading slip for orderId: {}", orderId);  // เพิ่มการบันทึกว่าเริ่มทำการอัปโหลด
+            log.info("Uploading slip for orderId: {}", orderId);
             String slipUrl = cloudinaryService.uploadImage(slip);
             order.setSlipUrl(slipUrl);
             order.setStatus("PAID");
             orderRepository.save(order);
 
-            log.info("Slip uploaded and verified successfully for orderId: {}", orderId);  // เพิ่มการบันทึกเมื่อสำเร็จ
+            log.info("Slip uploaded and verified successfully for orderId: {}", orderId);
             return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
 
         } catch (Exception e) {
-            log.error("Error during slip upload process for orderId: {}", orderId, e);  // เพิ่มการบันทึกข้อผิดพลาดในกรณีเกิด Exception
+            log.error("Error during slip upload process for orderId: {}", orderId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
+
 
     @GetMapping("/orders")
     public ResponseEntity<?> getOrdersByUser(HttpSession session) {

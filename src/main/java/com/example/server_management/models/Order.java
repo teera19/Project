@@ -40,7 +40,7 @@ public class Order {
     // ✅ Constructor
     public Order() {}
 
-    public Order(User user, MyShop myShop, double totalPrice, Timestamp orderDate) {
+    public Order(User user, MyShop myShop, double amount, Timestamp orderDate) {
         this.user = user;
         this.myShop = myShop;
         this.amount = amount;

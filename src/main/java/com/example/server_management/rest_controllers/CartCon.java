@@ -211,6 +211,7 @@ public class CartCon {
             // ✅ อัปโหลดสลิปไป Cloudinary
         String slipUrl = cloudinaryService.uploadImage(slip);
         order.setSlipUrl(slipUrl);
+        order.setStatus("PAID");
         orderRepository.save(order);
 
         return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));

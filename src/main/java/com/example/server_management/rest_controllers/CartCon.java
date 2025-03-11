@@ -276,11 +276,10 @@ public class CartCon {
 
             return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
         } catch (Exception e) {
-            log.error("Error during process: ", e);  // เพิ่มบันทึกข้อผิดพลาด
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
+
     @GetMapping("/orders")
     public ResponseEntity<?> getOrdersByUser(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");

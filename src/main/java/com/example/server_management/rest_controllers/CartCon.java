@@ -14,8 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 import java.sql.Timestamp;
@@ -69,10 +67,7 @@ public class CartCon {
             // จับข้อผิดพลาดอื่นๆ
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
-    private static final Logger log = LoggerFactory.getLogger(CartCon.class);
-
 
 
     @GetMapping("/view")
@@ -216,62 +211,22 @@ public class CartCon {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-        MyShop myShop = order.getMyShop();
-
         if (!order.getUser().getUserName().equals(userName)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "You are not authorized to upload slip for this order"));
         }
 
-        // เรียก API เพื่อตรวจสอบสลิป
         try {
-            // เรียก API เพื่อตรวจสอบสลิป
+            // ตรวจสอบข้อมูลสลิป
             Map<String, Object> slipData = slipOkService.validateSlip(slip);
             if (slipData == null || slipData.containsKey("error")) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
             }
 
-            // ดึงข้อมูลจากสลิป
-            Map<String, Object> data = (Map<String, Object>) slipData.get("data");
-            Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
-
-            // ดึงชื่อผู้รับจากสลิป
-            String recipientName = receiver.get("displayName") != null
-                    ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
-                    : null;
-
-            // เอาชื่อผู้รับในฐานข้อมูล
-            String shopBankAccountName = myShop.getDisplayName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
-
-            if (recipientName == null) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
-            }
-
-            // เปรียบเทียบแค่ 5-10 ตัวแรกของชื่อ
-            int compareLength = Math.min(10, recipientName.length()); // กำหนดให้เปรียบเทียบ 5-10 ตัวแรก
-            if (!recipientName.substring(0, compareLength)
-                    .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
-            }
-            // ดึง amount จาก JSON ที่ได้รับมา
-            // ดึง amount จาก JSON ที่ได้รับมา
-            Map<String, Object> dataFromSlip = (Map<String, Object>) slipData.get("data");  // เปลี่ยนชื่อเป็น dataFromSlip
-            if (dataFromSlip != null) {
-                Object amountObj = dataFromSlip.get("amount");  // ใช้ dataFromSlip แทน data
-                if (amountObj == null || !(amountObj instanceof Number)) {
-                    return ResponseEntity.badRequest().body(Map.of("message", "Amount is missing or invalid in slip data"));
-                }
-                double amountFromSlip = ((Number) amountObj).doubleValue();
-                if (amountFromSlip != order.getAmount()) {
-                    return ResponseEntity.badRequest().body(Map.of("message", "Amount does not match"));
-                }
-            }
-
-
-            // ✅ อัปโหลดสลิปไป Cloudinary
+            // อัปโหลดสลิปไปที่ Cloudinary
             String slipUrl = cloudinaryService.uploadImage(slip);
             order.setSlipUrl(slipUrl);
-            order.setStatus("PAID");
+            order.setStatus("PAID");  // เปลี่ยนสถานะคำสั่งซื้อเป็น PAID
             orderRepository.save(order);
 
             return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));

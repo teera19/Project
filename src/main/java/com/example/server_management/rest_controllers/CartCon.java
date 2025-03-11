@@ -194,13 +194,22 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
         }
         // ดึง amount จาก JSON ที่ได้รับมา
-        double amountFromSlip = (double) slipData.get("amount");
-        // เปรียบเทียบกับจำนวนเงินที่บันทึกในฐานข้อมูล
-        if (amountFromSlip != order.getAmount()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Amount does not match"));
-        }
+            // ดึง amount จาก JSON ที่ได้รับมา
+            Object amountObj = slipData.get("amount");
 
-        // ✅ อัปโหลดสลิปไป Cloudinary
+            if (amountObj == null || !(amountObj instanceof Number)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Amount is missing or invalid in slip data"));
+            }
+
+            double amountFromSlip = ((Number) amountObj).doubleValue();
+
+// เปรียบเทียบกับจำนวนเงินที่บันทึกในฐานข้อมูล
+            if (amountFromSlip != order.getAmount()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Amount does not match"));
+            }
+
+
+            // ✅ อัปโหลดสลิปไป Cloudinary
         String slipUrl = cloudinaryService.uploadImage(slip);
         order.setSlipUrl(slipUrl);
         orderRepository.save(order);

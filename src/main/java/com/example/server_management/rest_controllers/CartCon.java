@@ -1,6 +1,8 @@
 package com.example.server_management.rest_controllers;
 
-import com.example.server_management.models.*;
+import com.example.server_management.models.CartItem;
+import com.example.server_management.models.Order;
+import com.example.server_management.models.User;
 import com.example.server_management.repository.MyshopRepository;
 import com.example.server_management.repository.OrderRepository;
 import com.example.server_management.repository.UserRepository;
@@ -13,10 +15,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.example.server_management.models.MyShop;
 
 
-import java.sql.Timestamp;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/")
@@ -103,52 +107,12 @@ public class CartCon {
         }
 
         try {
-            // ดึงข้อมูล User
-            User user = userRepository.findByUserName(userName);
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "User not found"));
-            }
-
-            // คำนวณ totalAmount จาก Cart
-            List<CartItem> cartItems = cartService.getCartItemsForUser(userName);
-            double totalAmount = 0.0;
-            for (CartItem cartItem : cartItems) {
-                totalAmount += cartItem.getProduct().getPrice() * cartItem.getQuantity();
-            }
-
-            // สร้าง Order
-            MyShop myShop = user.getMyShop();
-            Order order = new Order(user, myShop, totalAmount, new Timestamp(System.currentTimeMillis()));
-            order.setStatus("PENDING");
-
-            // บันทึก Order
-            orderRepository.save(order);
-
-            // สร้าง list ของข้อมูลสินค้า
-            List<Map<String, Object>> orderItemsData = new ArrayList<>();
-            for (CartItem cartItem : cartItems) {
-                Map<String, Object> orderItemData = new HashMap<>();
-                Product product = cartItem.getProduct();
-
-                orderItemData.put("productId", product.getProductId());
-                orderItemData.put("productName", product.getName());
-                orderItemData.put("price", product.getPrice());
-                orderItemData.put("quantity", cartItem.getQuantity());
-                orderItemsData.add(orderItemData);  // เพิ่มข้อมูลสินค้าใน orderItemsData
-            }
-
-            // ส่งข้อมูลการเช็คเอาต์พร้อมกับข้อมูลสินค้าที่เป็นผลลัพธ์
-            return ResponseEntity.ok(Map.of(
-                    "message", "Checkout successful",
-                    "orderId", order.getOrderId(),
-                    "orderItems", orderItemsData // ส่งข้อมูลสินค้า
-            ));
-        } catch (Exception e) {
+            Order order = cartService.checkout(userName);
+            return ResponseEntity.ok(Map.of("message", "Checkout successful", "orderId", order.getOrderId()));
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
-
 
     @GetMapping("/checkout/payment-info/{orderId}")
     public ResponseEntity<?> getPaymentInfo(@PathVariable int orderId, HttpSession session) {

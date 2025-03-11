@@ -19,7 +19,7 @@ public class Order {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "myshop_id", nullable = false) // ✅ เพิ่มความสัมพันธ์กับ MyShop
+    @JoinColumn(name = "myshop_id", nullable = false)
     private MyShop myShop;
 
     @Column(nullable = false)
@@ -34,22 +34,35 @@ public class Order {
     @Column
     private String slipUrl;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL) // เพิ่ม fetch = FetchType.EAGER
-    private List<OrderItem> orderItems;
+    @ElementCollection
+    @CollectionTable(name = "order_products", joinColumns = @JoinColumn(name = "order_id"))
+    @Column(name = "product_id")
+    private List<Integer> productIds = new ArrayList<>();  // เก็บ product_id จากตะกร้า
 
-
-    // ✅ Constructor
-    public Order() {}
-
-    public Order(User user, MyShop myShop, double amount, Timestamp orderDate) {
+    // Constructor ที่รับพารามิเตอร์
+    public Order(User user, MyShop shop, double totalPrice, Timestamp timestamp) {
         this.user = user;
-        this.myShop = myShop;
-        this.amount = amount;
-        this.orderDate = orderDate;
+        this.myShop = shop;
+        this.amount = totalPrice;
+        this.orderDate = timestamp;
     }
 
-    // ✅ Getter & Setter
-    public int getOrderId() { return orderId; }
+    // Getter และ Setter สำหรับ orderItems และอื่นๆ
+    public List<Integer> getProductIds() {
+        return productIds;
+    }
+
+    public void setProductIds(List<Integer> productIds) {
+        this.productIds = productIds;
+    }
+
+    public int getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(int orderId) {
+        this.orderId = orderId;
+    }
 
     public double getAmount() {
         return amount;
@@ -59,23 +72,30 @@ public class Order {
         this.amount = amount;
     }
 
-    public Timestamp getOrderDate() { return orderDate; }
+    public Timestamp getOrderDate() {
+        return orderDate;
+    }
 
-    public String getStatus() { return status; }
+    public void setOrderDate(Timestamp orderDate) {
+        this.orderDate = orderDate;
+    }
 
-    public void setStatus(String status) { this.status = status; }
+    public String getStatus() {
+        return status;
+    }
 
-    public String getSlipUrl() { return slipUrl; }
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
-    public void setSlipUrl(String slipUrl) { this.slipUrl = slipUrl; }
+    public String getSlipUrl() {
+        return slipUrl;
+    }
 
-    public MyShop getMyShop() { return myShop; }
+    public void setSlipUrl(String slipUrl) {
+        this.slipUrl = slipUrl;
+    }
 
-    public void setMyShop(MyShop myShop) { this.myShop = myShop; }
-
-    public List<OrderItem> getOrderItems() { return orderItems; }
-
-    public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }
     public User getUser() {
         return user;
     }
@@ -83,4 +103,13 @@ public class Order {
     public void setUser(User user) {
         this.user = user;
     }
+
+    public MyShop getMyShop() {
+        return myShop;
+    }
+
+    public void setMyShop(MyShop myShop) {
+        this.myShop = myShop;
+    }
 }
+

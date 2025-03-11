@@ -27,8 +27,6 @@ public class CartService {
     private CartItemRepository cartItemRepository;
     @Autowired
     private OrderRepository orderRepository;
-    @Autowired
-    private OrderItemRepository orderItemRepository;
 
     public Cart getCartByUser(String userName) {
         User user = userRepository.findByUserName(userName);
@@ -108,29 +106,19 @@ public class CartService {
                 .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
                 .sum();
 
-        // ✅ ดึง QR Code จากร้านค้า
+        // ดึง QR Code จากร้านค้า
         MyShop shop = cartItems.get(0).getProduct().getShop();
         if (shop == null) {
             throw new IllegalArgumentException("Shop not found");
         }
 
-        // ✅ สร้าง Order พร้อมกับ MyShop
+        // สร้าง Order พร้อมกับ MyShop
         Order order = new Order(user, shop, totalPrice, new Timestamp(System.currentTimeMillis()));
 
-        // ✅ บันทึก QR Code ลงใน slipUrl
+        // บันทึก QR Code ลงใน slipUrl
         order.setSlipUrl(shop.getQrCodeUrl());
 
         return orderRepository.save(order);
-    }
-    public List<CartItem> getCartItemsForUser(String userName) {
-        // สมมติว่าเราค้นหากระเป๋าสินค้าจากฐานข้อมูลโดยการเชื่อมโยงกับผู้ใช้
-        User user = userRepository.findByUserName(userName);
-        if (user == null) {
-            throw new IllegalArgumentException("User not found");
-        }
-
-        // ค้นหาข้อมูล CartItem โดยใช้ userId
-        return cartItemRepository.findByCart_User_UserId(user.getUserId());
     }
 
 }

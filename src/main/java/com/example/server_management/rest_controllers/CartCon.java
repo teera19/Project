@@ -60,7 +60,10 @@ public class CartCon {
                     "product", product // ส่งข้อมูลสินค้า
             ));
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(Map.of("message", e.getMessage()), HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // จับข้อผิดพลาดอื่นๆ
+            return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

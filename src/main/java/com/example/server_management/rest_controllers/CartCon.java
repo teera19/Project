@@ -1,9 +1,10 @@
 package com.example.server_management.rest_controllers;
 
-import com.example.server_management.models.*;
+import com.example.server_management.models.CartItem;
+import com.example.server_management.models.Order;
+import com.example.server_management.models.User;
 import com.example.server_management.repository.MyshopRepository;
 import com.example.server_management.repository.OrderRepository;
-import com.example.server_management.repository.ProductRepository;
 import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.CartService;
 import com.example.server_management.service.CloudinaryService;
@@ -14,10 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.example.server_management.models.MyShop;
 
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,8 +38,6 @@ public class CartCon {
     SlipOkService slipOkService;
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private ProductRepository productRepository;
 
     @PostMapping("/addtocart/{product_id}")
 
@@ -109,48 +107,9 @@ public class CartCon {
         }
 
         try {
-            // ดึงข้อมูล User
-            User user = userRepository.findByUserName(userName);
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "User not found"));
-            }
-
-            // ตรวจสอบว่า User มี MyShop หรือไม่
-            MyShop myShop = user.getMyShop();
-            if (myShop == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("message", "User does not have a MyShop"));
-            }
-
-            // คำนวณ totalAmount จาก Cart
-            List<CartItem> cartItems = cartService.getCartItemsForUser(userName);
-            double totalAmount = 0.0;
-            for (CartItem cartItem : cartItems) {
-                totalAmount += cartItem.getProduct().getPrice() * cartItem.getQuantity();
-            }
-
-            // สร้าง Order
-            Order order = new Order(user, myShop, totalAmount, new Timestamp(System.currentTimeMillis()));
-            order.setStatus("PENDING");
-
-            // ตรวจสอบว่า orderItems ถูกเริ่มต้นหรือไม่ ถ้ายังให้เริ่มต้นใหม่
-            if (order.getOrderItems() == null) {
-                order.setOrderItems(new ArrayList<>());
-            }
-
-            // สร้าง OrderItem จาก cart_item
-            for (CartItem cartItem : cartItems) {
-                Product product = productRepository.findById(cartItem.getProduct().getProductId()).orElseThrow();
-                OrderItem orderItem = new OrderItem(order, product, cartItem.getQuantity());
-                order.getOrderItems().add(orderItem); // เพิ่ม OrderItem ลงใน Order
-            }
-
-            // บันทึก Order และ OrderItems
-            orderRepository.save(order);
-
+            Order order = cartService.checkout(userName);
             return ResponseEntity.ok(Map.of("message", "Checkout successful", "orderId", order.getOrderId()));
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
@@ -217,29 +176,29 @@ public class CartCon {
                 return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
             }
 
-        // ดึงข้อมูลจากสลิป
-        Map<String, Object> data = (Map<String, Object>) slipData.get("data");
-        Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
+            // ดึงข้อมูลจากสลิป
+            Map<String, Object> data = (Map<String, Object>) slipData.get("data");
+            Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
 
-        // ดึงชื่อผู้รับจากสลิป
-        String recipientName = receiver.get("displayName") != null
-                ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
-                : null;
+            // ดึงชื่อผู้รับจากสลิป
+            String recipientName = receiver.get("displayName") != null
+                    ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
+                    : null;
 
-        // เอาชื่อผู้รับในฐานข้อมูล
-        String shopBankAccountName = myShop.getDisplayName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
+            // เอาชื่อผู้รับในฐานข้อมูล
+            String shopBankAccountName = myShop.getDisplayName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
 
-        if (recipientName == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
-        }
+            if (recipientName == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
+            }
 
-        // เปรียบเทียบแค่ 5-10 ตัวแรกของชื่อ
-        int compareLength = Math.min(10, recipientName.length()); // กำหนดให้เปรียบเทียบ 5-10 ตัวแรก
-        if (!recipientName.substring(0, compareLength)
-                .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
-        }
-        // ดึง amount จาก JSON ที่ได้รับมา
+            // เปรียบเทียบแค่ 5-10 ตัวแรกของชื่อ
+            int compareLength = Math.min(10, recipientName.length()); // กำหนดให้เปรียบเทียบ 5-10 ตัวแรก
+            if (!recipientName.substring(0, compareLength)
+                    .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
+            }
+            // ดึง amount จาก JSON ที่ได้รับมา
             // ดึง amount จาก JSON ที่ได้รับมา
             Map<String, Object> dataFromSlip = (Map<String, Object>) slipData.get("data");  // เปลี่ยนชื่อเป็น dataFromSlip
             if (dataFromSlip != null) {
@@ -255,12 +214,12 @@ public class CartCon {
 
 
             // ✅ อัปโหลดสลิปไป Cloudinary
-        String slipUrl = cloudinaryService.uploadImage(slip);
-        order.setSlipUrl(slipUrl);
-        order.setStatus("PAID");
-        orderRepository.save(order);
+            String slipUrl = cloudinaryService.uploadImage(slip);
+            order.setSlipUrl(slipUrl);
+            order.setStatus("PAID");
+            orderRepository.save(order);
 
-        return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
+            return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }

@@ -34,8 +34,8 @@ public class Order {
     @Column
     private String slipUrl;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private List<OrderItem> orderItems = new ArrayList<>();
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL) // เพิ่ม fetch = FetchType.EAGER
+    private List<OrderItem> orderItems;
 
     // ✅ Constructor
     public Order() {}
@@ -45,7 +45,6 @@ public class Order {
         this.myShop = myShop;
         this.amount = amount;
         this.orderDate = orderDate;
-        this.orderItems = new ArrayList<>(); // กำหนดค่าเริ่มต้นเป็น empty list
     }
 
     // ✅ Getter & Setter

@@ -4,6 +4,7 @@ import com.example.server_management.models.CartItem;
 import com.example.server_management.models.Order;
 import com.example.server_management.repository.MyshopRepository;
 import com.example.server_management.repository.OrderRepository;
+import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.CartService;
 import com.example.server_management.service.CloudinaryService;
 import com.example.server_management.service.SlipOkService;
@@ -33,6 +34,8 @@ public class CartCon {
     private CloudinaryService cloudinaryService;
     @Autowired
     SlipOkService slipOkService;
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping("/addtocart/{product_id}")
 
@@ -220,5 +223,26 @@ public class CartCon {
         }
     }
 
+    @GetMapping("/orders")
+    public ResponseEntity<?> getOrdersByUser(HttpSession session) {
+        // ดึง userId จาก session
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not logged in"));
+        }
+
+        // ดึง userId จากฐานข้อมูลตาม userName
+        int userId = userRepository.findByUserName(userName).getUserId();  // สมมติว่า userRepository ค้นหาผู้ใช้จาก userName
+
+        List<Order> orders = orderRepository.findByUserIdAndStatus(userId, "PAID");
+
+        if (orders.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                    .body(Map.of("message", "No paid orders found for user."));
+        }
+
+        return ResponseEntity.ok(orders);
+    }
 
 }

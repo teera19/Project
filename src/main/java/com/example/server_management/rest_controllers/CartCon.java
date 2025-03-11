@@ -271,6 +271,7 @@ public class CartCon {
             // ✅ อัปโหลดสลิปไป Cloudinary
             String slipUrl = cloudinaryService.uploadImage(slip);
             order.setSlipUrl(slipUrl);
+            order.setStatus("PAID");
             orderRepository.save(order);
 
             return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
@@ -278,7 +279,6 @@ public class CartCon {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
-
 
     @GetMapping("/orders")
     public ResponseEntity<?> getOrdersByUser(HttpSession session) {

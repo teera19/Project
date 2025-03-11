@@ -186,21 +186,20 @@ public class CartCon {
             Order order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-            // ตรวจสอบว่า user ที่เข้าถึงตรงกับ user ที่เป็นเจ้าของคำสั่งซื้อหรือไม่
+            // เช็คว่าเป็นผู้ใช้ที่ทำการสั่งซื้อจริงหรือไม่
             if (!order.getUser().getUserName().equals(userName)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "You are not authorized to view this payment info"));
             }
 
-            // ดึงข้อมูล MyShop
-            MyShop myShop = order.getMyShop();
-
+            // ดึงข้อมูล MyShop จากคำสั่งซื้อ
+            MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop ที่เกี่ยวข้องกับคำสั่งซื้อ
             if (myShop == null) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(Map.of("message", "Shop information is missing"));
             }
 
-            // ส่งข้อมูลกลับ
+            // ส่งข้อมูลการชำระเงิน
             return ResponseEntity.ok(Map.of(
                     "orderId", order.getOrderId(),
                     "amount", order.getAmount(),
@@ -211,12 +210,11 @@ public class CartCon {
             ));
 
         } catch (Exception e) {
-            // เพิ่ม log เพื่อช่วยในการแก้ไขปัญหา
-            log.error("Error while fetching payment info: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
+
 
 
 

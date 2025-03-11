@@ -22,13 +22,18 @@ public class CartItem {
 
     @Column(name = "quantity")
     private int quantity;
-
     @ManyToOne
-    @JoinColumn(name = "order_id", nullable = false)  // การเชื่อมโยงกับ Order
+    @JoinColumn(name = "order_id")
     private Order order;
+
     // ✅ Getter / Setter
-    public int getCartItemId() { return cartItemId; }
-    public void setCartItemId(int cartItemId) { this.cartItemId = cartItemId; }
+    public int getCartItemId() {
+        return cartItemId;
+    }
+
+    public void setCartItemId(int cartItemId) {
+        this.cartItemId = cartItemId;
+    }
 
     public Cart getCart() { return cart; }
     public void setCart(Cart cart) { this.cart = cart; }
@@ -38,12 +43,11 @@ public class CartItem {
 
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
-
     public Order getOrder() {
         return order;
     }
 
     public void setOrder(Order order) {
-        this.order = order;
+        this.order = order; // เพิ่มการตั้งค่า Order
     }
 }

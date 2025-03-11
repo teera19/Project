@@ -192,7 +192,6 @@ public class CartCon {
 
         MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
 
-        // หากไม่มีร้านค้า (myShop == null), ให้ข้ามการแสดงข้อมูลร้านค้า
         if (myShop == null) {
             return ResponseEntity.ok(Map.of(
                     "orderId", order.getOrderId(),

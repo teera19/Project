@@ -193,7 +193,8 @@ public class CartCon {
                     "bankAccountNumber", shop.getBankAccountNumber(),
                     "displayName", shop.getDisplayName(),
                     "bankName", shop.getBankName(),
-                    "qrCodeUrl", shop.getQrCodeUrl()
+                    "qrCodeUrl", shop.getQrCodeUrl(),
+                    "amount",order.getAmount()
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

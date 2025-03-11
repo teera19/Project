@@ -227,8 +227,6 @@ public class CartCon {
     public ResponseEntity<?> getOrdersByUser(HttpSession session) {
         // ดึง userId จาก session
         String userName = (String) session.getAttribute("user_name");
-        session.setAttribute("user_name", userName);
-
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));

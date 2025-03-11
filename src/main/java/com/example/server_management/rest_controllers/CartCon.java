@@ -175,52 +175,34 @@ public class CartCon {
 
 
     @GetMapping("/checkout/payment-info/{orderId}")
-    public ResponseEntity<?> getPaymentInfo(@PathVariable int orderId, HttpSession session) {
-        String userName = (String) session.getAttribute("user_name");
-        if (userName == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User not logged in"));
-        }
-
+    public ResponseEntity<?> getPaymentInfo(@PathVariable("orderId") int orderId) {
         try {
-            // ดึงข้อมูล Order ตาม orderId
+            // ดึงข้อมูลคำสั่งซื้อจาก orderId
             Order order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-            // ตรวจสอบว่า order นี้เป็นของผู้ใช้ที่ล็อกอินอยู่หรือไม่
-            if (!order.getUser().getUserName().equals(userName)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "You are not authorized to view this payment info"));
+            // ดึงข้อมูล MyShop ที่เกี่ยวข้องกับคำสั่งซื้อ
+            MyShop shop = order.getMyShop();
+            if (shop == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Shop not found"));
             }
 
-            log.debug("Order found: {}", order);
-
-            // ดึงข้อมูลร้านค้า (MyShop) จาก myshop_id ที่อยู่ในคำสั่งซื้อ
-            MyShop myShop = order.getMyShop();
-            log.debug("MyShop found: {}", myShop);
-
-            // ดึงข้อมูลธนาคารของร้านค้าและแสดงข้อมูลออกมา
+            // ส่งคืนข้อมูลธนาคารของร้านค้า
             return ResponseEntity.ok(Map.of(
-                    "orderId", order.getOrderId(),
-                    "amount", order.getAmount(),
-                    "qrCodeUrl", order.getSlipUrl(),
-                    "bankAccountNumber", myShop != null ? myShop.getBankAccountNumber() : "N/A",  // หากไม่มีร้านค้า ก็จะเป็น N/A
-                    "bankName", myShop != null ? myShop.getBankName() : "N/A",  // หากไม่มีร้านค้า ก็จะเป็น N/A
-                    "displayName", myShop != null ? myShop.getDisplayName() : "N/A" // หากไม่มีร้านค้า ก็จะเป็น N/A
+                    "bankAccountNumber", shop.getBankAccountNumber(),
+                    "displayName", shop.getDisplayName(),
+                    "bankName", shop.getBankName(),
+                    "qrCodeUrl", shop.getQrCodeUrl()
             ));
-
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            log.error("Error occurred while fetching payment info", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
-
-
-
-
-
-
 
     @PostMapping("/checkout/upload-slip/{orderId}")
     public ResponseEntity<?> uploadSlip(@PathVariable int orderId,

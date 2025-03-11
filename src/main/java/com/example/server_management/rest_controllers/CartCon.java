@@ -182,32 +182,41 @@ public class CartCon {
                     .body(Map.of("message", "User not logged in"));
         }
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        try {
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-        if (!order.getUser().getUserName().equals(userName)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "You are not authorized to view this payment info"));
-        }
+            if (!order.getUser().getUserName().equals(userName)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "You are not authorized to view this payment info"));
+            }
 
-        MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
+            log.debug("Order found: {}", order);  // เพิ่ม log เพื่อตรวจสอบการดึงข้อมูล Order
 
-        if (myShop == null) {
+            MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
+            log.debug("MyShop found: {}", myShop);  // เพิ่ม log เพื่อตรวจสอบการดึงข้อมูล MyShop
+
+            if (myShop == null) {
+                return ResponseEntity.ok(Map.of(
+                        "orderId", order.getOrderId(),
+                        "amount", order.getAmount(),
+                        "qrCodeUrl", order.getSlipUrl()
+                ));
+            }
+
             return ResponseEntity.ok(Map.of(
                     "orderId", order.getOrderId(),
                     "amount", order.getAmount(),
-                    "qrCodeUrl", order.getSlipUrl()
+                    "qrCodeUrl", order.getSlipUrl(),
+                    "bankAccountNumber", myShop.getBankAccountNumber(),
+                    "bankName", myShop.getBankName(),
+                    "displayName", myShop.getDisplayName()
             ));
+        } catch (Exception e) {
+            log.error("Error occurred while fetching payment info", e);  // เพิ่ม log สำหรับ error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
-
-        return ResponseEntity.ok(Map.of(
-                "orderId", order.getOrderId(),
-                "amount", order.getAmount(),
-                "qrCodeUrl", order.getSlipUrl(),
-                "bankAccountNumber", myShop.getBankAccountNumber(),
-                "bankName", myShop.getBankName(),
-                "displayName", myShop.getDisplayName()
-        ));
     }
 
 

@@ -37,7 +37,7 @@ public class CartService {
         });
     }
 
-    public void addToCart(String userName, int productId, int quantity) {
+    public void addToCart(String userName, int productId, int quantity, int myShopId) {
         // ค้นหาผู้ใช้จากชื่อผู้ใช้
         User user = userRepository.findUserByUserName(userName)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -52,6 +52,11 @@ public class CartService {
         // ค้นหาสินค้า
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+
+        // ตรวจสอบว่า myShopId ตรงกับเจ้าของสินค้าหรือไม่
+        if (product.getShop().getMyShopId() != myShopId) {
+            throw new IllegalArgumentException("The product does not belong to the given shop.");
+        }
 
         // สร้าง CartItem ใหม่
         CartItem cartItem = new CartItem();

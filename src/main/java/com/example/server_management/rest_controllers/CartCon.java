@@ -54,11 +54,16 @@ public class CartCon {
         }
 
         try {
-            cartService.addToCart(userName, productId, quantity);
-
-            // ดึงข้อมูลสินค้าเพื่อส่งกลับ
+            // ดึงข้อมูลสินค้าเพื่อเพิ่มลงในตะกร้า
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+
+            // ดึง myshop_id จากสินค้า
+            MyShop myShop = product.getShop(); // รับข้อมูลร้านค้าจากสินค้า
+            int myShopId = myShop.getMyShopId(); // ดึง myshop_id
+
+            // ทำการเพิ่มสินค้าไปยังตะกร้า
+            cartService.addToCart(userName, productId, quantity, myShopId);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Product added to cart successfully",
@@ -71,6 +76,7 @@ public class CartCon {
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
 
     @GetMapping("/view")

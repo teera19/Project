@@ -123,7 +123,13 @@ public class CartService {
         // บันทึก QR Code ลงใน slipUrl
         order.setSlipUrl(shop.getQrCodeUrl());
 
-        return orderRepository.save(order);
+        // บันทึกคำสั่งซื้อ
+        Order savedOrder = orderRepository.save(order);
+
+        // ไม่ลบตะกร้าโดยอัตโนมัติหลังเช็คเอาท์
+        // คุณสามารถเคลียร์ตะกร้าภายหลังการยืนยันคำสั่งซื้อ หรือเมื่อมีการดำเนินการอื่นๆ ตามที่ต้องการ
+
+        return savedOrder;
     }
 
 }

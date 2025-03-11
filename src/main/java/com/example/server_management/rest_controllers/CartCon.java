@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -126,11 +127,16 @@ public class CartCon {
             Order order = new Order(user, user.getMyShop(), totalAmount, new Timestamp(System.currentTimeMillis()));
             order.setStatus("PENDING");
 
+            // ตรวจสอบว่า orderItems ถูกเริ่มต้นหรือไม่ ถ้ายังให้เริ่มต้นใหม่
+            if (order.getOrderItems() == null) {
+                order.setOrderItems(new ArrayList<>()); // เริ่มต้น orderItems
+            }
+
             // สร้าง OrderItem จาก cart_item
             for (CartItem cartItem : cartItems) {
                 Product product = productRepository.findById(cartItem.getProduct().getProductId()).orElseThrow();
                 OrderItem orderItem = new OrderItem(order, product, cartItem.getQuantity());
-                order.getOrderItems().add(orderItem); // เพิ่ม OrderItem ไปยัง Order
+                order.getOrderItems().add(orderItem); // เพิ่ม OrderItem ลงใน Order
             }
 
             // บันทึก Order และ OrderItems
@@ -141,6 +147,7 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
     @GetMapping("/checkout/payment-info/{orderId}")
     public ResponseEntity<?> getPaymentInfo(@PathVariable int orderId, HttpSession session) {
         String userName = (String) session.getAttribute("user_name");

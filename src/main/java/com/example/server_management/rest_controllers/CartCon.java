@@ -174,7 +174,6 @@ public class CartCon {
         // ดึงข้อมูลจากสลิป
         Map<String, Object> data = (Map<String, Object>) slipData.get("data");
         Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
-        Map<String, Object> amount = (Map<String, Object>) data.get("amount");
 
         // ดึงชื่อผู้รับจากสลิป
         String recipientName = receiver.get("displayName") != null
@@ -196,13 +195,13 @@ public class CartCon {
         }
         // ดึง amount จาก JSON ที่ได้รับมา
             // ดึง amount จาก JSON ที่ได้รับมา
+            System.out.println("Slip Data: " + slipData); // ดีบักดูข้อมูล slipData
             Object amountObj = slipData.get("amount");
-
             if (amountObj == null || !(amountObj instanceof Number)) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Amount is missing or invalid in slip data"));
             }
-
             double amountFromSlip = ((Number) amountObj).doubleValue();
+
 
 // เปรียบเทียบกับจำนวนเงินที่บันทึกในฐานข้อมูล
             if (amountFromSlip != order.getAmount()) {

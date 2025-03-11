@@ -37,9 +37,14 @@ public class Order {
     @ElementCollection
     @CollectionTable(name = "order_products", joinColumns = @JoinColumn(name = "order_id"))
     @Column(name = "product_id")
-    private List<Integer> productIds = new ArrayList<>();  // เก็บ product_id จากตะกร้า
+    private List<Integer> productIds = new ArrayList<>();
 
-    // Constructor ที่รับพารามิเตอร์
+    // Default constructor
+    public Order() {
+        // No-argument constructor required by Hibernate
+    }
+
+    // Constructor that accepts parameters
     public Order(User user, MyShop shop, double totalPrice, Timestamp timestamp) {
         this.user = user;
         this.myShop = shop;
@@ -47,7 +52,7 @@ public class Order {
         this.orderDate = timestamp;
     }
 
-    // Getter และ Setter สำหรับ orderItems และอื่นๆ
+    // Getters and Setters
     public List<Integer> getProductIds() {
         return productIds;
     }
@@ -112,3 +117,4 @@ public class Order {
         this.myShop = myShop;
     }
 }
+

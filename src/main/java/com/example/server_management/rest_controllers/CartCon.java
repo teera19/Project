@@ -179,6 +179,9 @@ public class CartCon {
             Order order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
+            // เพิ่ม log เพื่อตรวจสอบการเปรียบเทียบ user
+            log.debug("Checking user: {} with order user: {}", userName, order.getUser().getUserName());
+
             if (!order.getUser().getUserName().equals(userName)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "You are not authorized to view this payment info"));
@@ -204,6 +207,7 @@ public class CartCon {
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
+
 
 
 

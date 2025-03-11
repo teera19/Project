@@ -182,40 +182,23 @@ public class CartCon {
                     .body(Map.of("message", "User not logged in"));
         }
 
-        try {
-            Order order = orderRepository.findById(orderId)
-                    .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-            // เพิ่ม log เพื่อตรวจสอบการเปรียบเทียบ user
-            log.debug("Checking user: {} with order user: {}", userName, order.getUser().getUserName());
-
-            if (!order.getUser().getUserName().equals(userName)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "You are not authorized to view this payment info"));
-            }
-
-            MyShop myShop = order.getMyShop();
-            if (myShop == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("message", "Shop information is missing"));
-            }
-
-            // เพิ่ม log เพื่อดูข้อมูล MyShop
-            log.debug("MyShop info: Bank Account: {}, Bank Name: {}, Display Name: {}", myShop.getBankAccountNumber(), myShop.getBankName(), myShop.getDisplayName());
-
-            return ResponseEntity.ok(Map.of(
-                    "orderId", order.getOrderId(),
-                    "amount", order.getAmount(),
-                    "qrCodeUrl", order.getSlipUrl(),
-                    "bankAccountNumber", myShop.getBankAccountNumber(),
-                    "bankName", myShop.getBankName(),
-                    "displayName", myShop.getDisplayName()
-            ));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
+        if (!order.getUser().getUserName().equals(userName)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not authorized to view this payment info"));
         }
+
+        MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
+        return ResponseEntity.ok(Map.of(
+                "orderId", order.getOrderId(),
+                "amount", order.getAmount(),
+                "qrCodeUrl", order.getSlipUrl(),
+                "bankAccountNumber", myShop.getBankAccountNumber(),
+                "bankName", myShop.getBankName(),
+                "displayName", myShop.getDisplayName()
+        ));
     }
 
 

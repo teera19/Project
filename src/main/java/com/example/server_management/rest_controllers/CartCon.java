@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import java.sql.Timestamp;
@@ -67,7 +69,10 @@ public class CartCon {
             // จับข้อผิดพลาดอื่นๆ
             return new ResponseEntity<>(Map.of("message", "Internal Server Error", "error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
     }
+    private static final Logger log = LoggerFactory.getLogger(CartCon.class);
+
 
 
     @GetMapping("/view")
@@ -271,11 +276,10 @@ public class CartCon {
 
             return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
         } catch (Exception e) {
-            e.printStackTrace();  // หรือใช้ logger เช่น log.error("Error: ", e);
+            log.error("Error during process: ", e);  // เพิ่มบันทึกข้อผิดพลาด
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
-
     }
     @GetMapping("/orders")
     public ResponseEntity<?> getOrdersByUser(HttpSession session) {

@@ -97,10 +97,14 @@ public class AuctionResponse {
             this.status = "Active";
             this.minutesRemaining = ChronoUnit.MINUTES.between(now, endZoned);
         } else {
-            this.status = "Ended";
+            this.status = "Ended";  // แสดงสถานะเป็น Ended เมื่อการประมูลจบ
             this.minutesRemaining = 0;
         }
     }
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
 
     // ✅ เพิ่ม Getter
     public double getStartingPrice() { return startingPrice; }

@@ -63,8 +63,17 @@ public class AuctionController {
         if (auction == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return ResponseEntity.ok(new AuctionResponse(auction, bidRepository)); // ✅ ใช้ bidRepository
+
+        // ถ้าสถานะเป็น COMPLETED เปลี่ยนเป็น ENDED
+        String status = auction.getStatus() == AuctionStatus.COMPLETED ? "Ended" : auction.getStatus().name();
+
+        // ส่ง response กลับไปให้ Postman หรือ UI โดยการอัปเดตสถานะ
+        AuctionResponse auctionResponse = new AuctionResponse(auction, bidRepository);
+        auctionResponse.setStatus(status); // อัปเดตสถานะที่ส่งกลับ
+
+        return ResponseEntity.ok(auctionResponse); // ส่ง response กลับไป
     }
+
 
 
     @PostMapping("/add-auction")

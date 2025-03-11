@@ -279,7 +279,30 @@ public class CartCon {
                     .body(Map.of("message", "No paid orders found for user."));
         }
 
-        return ResponseEntity.ok(orders);
+        // ดึงข้อมูลสินค้าและเพิ่มเข้าไปในแต่ละคำสั่งซื้อ
+        List<Map<String, Object>> orderDetails = new ArrayList<>();
+        for (Order order : orders) {
+            Map<String, Object> orderInfo = Map.of(
+                    "orderId", order.getOrderId(),
+                    "amount", order.getAmount(),
+                    "slipUrl", order.getSlipUrl(),
+                    "status", order.getStatus(),
+                    "productIds", order.getProductIds()
+            );
+
+            // ดึงข้อมูลสินค้า
+            List<Product> products = new ArrayList<>();
+            for (Integer productId : order.getProductIds()) {
+                Optional<Product> productOptional = productRepository.findById(productId);
+                productOptional.ifPresent(products::add);
+            }
+
+            orderInfo.put("products", products);  // เพิ่มข้อมูลสินค้าลงในคำตอบ
+
+            orderDetails.add(orderInfo);
+        }
+
+        return ResponseEntity.ok(orderDetails);
     }
 
 }

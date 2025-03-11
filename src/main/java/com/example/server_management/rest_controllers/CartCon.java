@@ -164,12 +164,12 @@ public class CartCon {
         }
 
         // เรียก API เพื่อตรวจสอบสลิป
-        Map<String, Object> slipData = slipOkService.validateSlip(slip);
-        System.out.println("Slip Data Response: " + slipData);
-
-        if (slipData == null || slipData.containsKey("error")) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
-        }
+        try {
+            // เรียก API เพื่อตรวจสอบสลิป
+            Map<String, Object> slipData = slipOkService.validateSlip(slip);
+            if (slipData == null || slipData.containsKey("error")) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
+            }
 
         // ดึงข้อมูลจากสลิป
         Map<String, Object> data = (Map<String, Object>) slipData.get("data");
@@ -206,6 +206,10 @@ public class CartCon {
         orderRepository.save(order);
 
         return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
+        }
     }
+
 
 }

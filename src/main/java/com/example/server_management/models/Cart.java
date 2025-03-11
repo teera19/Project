@@ -25,6 +25,9 @@ public class Cart {
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference // ฝั่งเจ้าของความสัมพันธ์ (Cart → CartItem)
     private List<CartItem> items = new ArrayList<>();
+    @ManyToOne
+    @JoinColumn(name = "myshop_id", nullable = false)
+    private MyShop myShop;
 
     // Getter และ Setter
     public int getId() {
@@ -49,5 +52,8 @@ public class Cart {
 
     public void setItems(List<CartItem> items) {
         this.items = items;
+    }
+    public MyShop getMyShop() {
+        return myShop;
     }
 }

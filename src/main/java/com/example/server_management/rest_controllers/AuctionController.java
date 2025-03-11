@@ -9,6 +9,7 @@ import com.example.server_management.repository.BidRepository;
 import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.AuctionService;
 import com.example.server_management.service.CloudinaryService;
+import com.example.server_management.service.SlipOkService;
 import jakarta.persistence.Tuple;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,8 @@ public class AuctionController {
     private AuctionRepository auctionRepository;
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+    @Autowired
+    private SlipOkService slipOkService;
 
     @GetMapping
     public ResponseEntity<List<AuctionResponse>> getAllAuctions() {
@@ -155,17 +158,16 @@ public class AuctionController {
                     .body(Map.of("message", "Auction not found with ID: " + auctionId));
         }
 
-        // ✅ ค้นหาผู้ที่บิดสูงสุดก่อนหน้านี้
+        // ตรวจสอบว่าราคาบิดต้องมากกว่าราคาสูงสุดก่อนหน้า
         Bid highestBidObj = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
         double highestBid = highestBidObj != null ? highestBidObj.getBidAmount() : auction.getStartingPrice();
         String previousBidder = highestBidObj != null ? highestBidObj.getUser().getUserName() : null;
 
-        // ✅ ตรวจสอบว่าราคาบิดต้องมากกว่าราคาสูงสุดก่อนหน้า
         if (bidAmount <= highestBid) {
             return ResponseEntity.badRequest().body(Map.of("message", "Bid amount must be higher than the current highest bid: " + highestBid));
         }
 
-        // ✅ บันทึก Bid ใหม่
+        // บันทึก Bid ใหม่
         Bid bid = new Bid();
         bid.setAuction(auction);
         bid.setUser(user);
@@ -173,11 +175,22 @@ public class AuctionController {
         bid.setBidTime(ZonedDateTime.now(ZoneId.of("UTC")).toLocalDateTime());
         bidRepository.save(bid);
 
-        // ✅ แจ้งเตือนทุกคนที่ติดตาม Auction นี้
+        // ตรวจสอบว่าราคาบิดที่สูงสุดตรงกับ MaxBidPrice หรือไม่
+        if (bidAmount >= auction.getMaxBidPrice()) {
+            // ปิดการประมูล
+            auction.setStatus(AuctionStatus.COMPLETED);
+            auctionRepository.save(auction);
+
+            // แจ้งเตือนผู้ชนะ
+            messagingTemplate.convertAndSendToUser(user.getUserName(), "/queue/notifications",
+                    Map.of("message", "🎉 คุณเป็นผู้ชนะการประมูลสำหรับ " + auction.getProductName()));
+        }
+
+        // แจ้งเตือนทุกคนที่ติดตาม Auction นี้
         messagingTemplate.convertAndSend("/topic/auction",
                 Map.of("message", "📢 มีคนบิดใหม่ในประมูล " + auction.getProductName() + " ด้วยราคา " + bidAmount));
 
-        // ✅ แจ้งเตือนผู้ที่ถูกแซง (เฉพาะเมื่อ previousBidder != userName)
+        // แจ้งเตือนผู้ที่ถูกแซง (เฉพาะเมื่อ previousBidder != userName)
         if (previousBidder != null && !previousBidder.equals(userName)) {
             messagingTemplate.convertAndSendToUser(previousBidder, "/queue/notifications",
                     Map.of("message", "⚠️ คุณถูกบิดแซงในประมูล " + auction.getProductName() + " ด้วยราคา " + bidAmount));
@@ -407,5 +420,130 @@ public class AuctionController {
         return ResponseEntity.ok(Map.of("message", "Auction ended. Winner: " + winner.getUserName()));
     }
 
+    @GetMapping("/auction/{auctionId}/payment-info")
+    public ResponseEntity<?> getPaymentInfo(@PathVariable int auctionId, HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not logged in"));
+        }
+
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
+
+        // ตรวจสอบว่า user คือผู้ชนะการประมูลหรือไม่
+        if (auction.getWinner() == null || !auction.getWinner().getUserName().equals(userName)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not the winner of this auction"));
+        }
+
+        // ดึงข้อมูลผู้ขาย (เจ้าของประมูล)
+        MyShop myShop = auction.getMyShop();
+        if (myShop == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Seller has not created a shop yet. Please contact seller to create a shop first."));
+        }
+
+        // ดึงราคาที่ชนะการประมูล (highestBid)
+        Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
+        double winningBidAmount = (highestBid != null) ? highestBid.getBidAmount() : auction.getStartingPrice();
+
+        // ส่งข้อมูลการชำระเงิน เช่น จำนวนเงินที่ต้องชำระ, ข้อมูลธนาคารผู้ขาย
+        return ResponseEntity.ok(Map.of(
+                "auctionId", auction.getAuctionId(),
+                "amount", winningBidAmount,  // จำนวนเงินที่ผู้ชนะต้องชำระ
+                "qrCodeUrl", auction.getImageUrl(),  // QR code ของการประมูล
+                "bankAccountNumber", myShop.getBankAccountNumber(),  // เลขบัญชีธนาคารของผู้ขาย
+                "bankName", myShop.getBankName(),  // ชื่อธนาคาร
+                "displayName", myShop.getDisplayName()  // ชื่อบัญชีธนาคาร
+        ));
+    }
+    @PostMapping("/{auctionId}/upload-slip")
+    public ResponseEntity<?> uploadSlip(@PathVariable int auctionId,
+                                        @RequestParam("slip") MultipartFile slip,
+                                        HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not logged in"));
+        }
+
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new IllegalArgumentException("Auction not found"));
+
+        // ตรวจสอบว่า user คือผู้ชนะการประมูลหรือไม่
+        if (auction.getWinner() == null || !auction.getWinner().getUserName().equals(userName)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not the winner of this auction"));
+        }
+
+        // ตรวจสอบว่าสลิปไม่เป็นค่าว่าง
+        if (slip == null || slip.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "No slip file uploaded"));
+        }
+
+        try {
+            // ใช้บริการ SlipOkService เพื่อตรวจสอบสลิป
+            Map<String, Object> slipData = slipOkService.validateSlip(slip);
+            if (slipData == null || slipData.containsKey("error")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Slip verification failed"));
+            }
+
+            // ดึงข้อมูลจากสลิปที่ได้รับ
+            Map<String, Object> data = (Map<String, Object>) slipData.get("data");
+            Map<String, Object> receiver = (Map<String, Object>) data.get("receiver");
+
+            // ตรวจสอบชื่อผู้รับจากสลิป
+            String recipientName = receiver.get("displayName") != null
+                    ? receiver.get("displayName").toString().trim().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim()
+                    : null;
+
+            String shopBankAccountName = auction.getMyShop().getDisplayName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
+
+            if (recipientName == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
+            }
+
+            // เปรียบเทียบชื่อผู้รับในสลิปกับชื่อในข้อมูล
+            int compareLength = Math.min(10, recipientName.length());
+            if (!recipientName.substring(0, compareLength)
+                    .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
+            }
+
+            // ตรวจสอบจำนวนเงินในสลิป
+            Object amountObj = data.get("amount");
+            if (amountObj == null || !(amountObj instanceof Number)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Amount is missing or invalid in slip data"));
+            }
+
+            double amountFromSlip = ((Number) amountObj).doubleValue();
+
+            // ดึงราคาที่ชนะการประมูลจาก BidRepository แทน
+            Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
+            double winningBidAmount = (highestBid != null) ? highestBid.getBidAmount() : auction.getStartingPrice();
+
+            if (amountFromSlip != winningBidAmount) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Amount does not match the auction bid amount"));
+            }
+
+            // อัปโหลดสลิปไปยัง Cloudinary
+            String slipUrl = cloudinaryService.uploadImage(slip);
+            auction.setSlipUrl(slipUrl);
+
+            // อัปเดตสถานะการประมูล
+            auction.setStatus(AuctionStatus.COMPLETED);
+            auctionRepository.save(auction);
+
+            return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
+        }
+    }
 
 }

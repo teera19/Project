@@ -29,6 +29,11 @@ public class Auction {
     private List<Bid> bids;
     @Column(nullable = true) //  เก็บ URL ของรูปใน Database
     private String imageUrl;
+    @ManyToOne
+    @JoinColumn(name = "myshop_id", nullable = false) // สร้างความสัมพันธ์กับ MyShop
+    private MyShop myShop;
+    @Column(nullable = true)
+    private String slipUrl;
 
 
 
@@ -140,6 +145,21 @@ public class Auction {
 
     public void setWinner(User winner) {
         this.winner = winner;
+    }
+    public MyShop getMyShop() {
+        return myShop;
+    }
+
+    public void setMyShop(MyShop myShop) {
+        this.myShop = myShop;
+    }
+    public String getSlipUrl() {
+        return slipUrl;
+    }
+
+    // Setter สำหรับ slipUrl
+    public void setSlipUrl(String slipUrl) {
+        this.slipUrl = slipUrl;
     }
 
 }

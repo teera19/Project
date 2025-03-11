@@ -1,8 +1,6 @@
 package com.example.server_management.rest_controllers;
 
-import com.example.server_management.models.CartItem;
-import com.example.server_management.models.Order;
-import com.example.server_management.models.User;
+import com.example.server_management.models.*;
 import com.example.server_management.repository.MyshopRepository;
 import com.example.server_management.repository.OrderRepository;
 import com.example.server_management.repository.UserRepository;
@@ -15,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.example.server_management.models.MyShop;
 
 
 import java.util.List;
@@ -131,15 +128,21 @@ public class CartCon {
         }
 
         MyShop myShop = order.getMyShop(); // ดึงข้อมูล MyShop เพื่อดึงข้อมูลธนาคาร
+        // ดึงข้อมูล orderItems (สินค้าที่ซื้อ)
+        List<OrderItem> orderItems = order.getOrderItems();
+
+        // แสดงผลข้อมูลทั้งหมดรวมถึงสินค้าในคำสั่งซื้อ
         return ResponseEntity.ok(Map.of(
                 "orderId", order.getOrderId(),
                 "amount", order.getAmount(),
                 "qrCodeUrl", order.getSlipUrl(),
                 "bankAccountNumber", myShop.getBankAccountNumber(),
                 "bankName", myShop.getBankName(),
-                "displayName", myShop.getDisplayName()
+                "displayName", myShop.getDisplayName(),
+                "orderItems", orderItems // ส่งคืนข้อมูลสินค้าในคำสั่งซื้อ
         ));
     }
+
 
 
     @PostMapping("/checkout/upload-slip/{orderId}")

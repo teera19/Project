@@ -319,5 +319,63 @@ public class CartCon {
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
+    @PostMapping("/buy/{productId}")
+    public ResponseEntity<?> buyProduct(@PathVariable("productId") int productId,
+                                        @RequestParam("quantity") int quantity,
+                                        HttpSession session) {
+        String userName = (String) session.getAttribute("user_name");
+        if (userName == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not logged in"));
+        }
+
+        if (quantity <= 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Quantity must be greater than zero"));
+        }
+
+        try {
+            // ดึงข้อมูลสินค้า
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+
+            // ดึงข้อมูลร้านค้าที่เกี่ยวข้อง
+            MyShop shop = product.getShop();
+            if (shop == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Shop not found"));
+            }
+
+            // คำนวณยอดรวม
+            double totalAmount = product.getPrice() * quantity;
+
+            // สร้างคำสั่งซื้อ
+            Order order = new Order(
+                    userRepository.findUserByUserName(userName).get(),
+                    shop,
+                    totalAmount,
+                    new Timestamp(System.currentTimeMillis())
+            );
+
+            // เก็บ productId และ quantity ลงในคำสั่งซื้อ
+            List<Integer> productIds = new ArrayList<>();
+            productIds.add(productId);
+            order.setProductIds(productIds);
+            // สามารถเก็บข้อมูลจำนวนสินค้าลงในคำสั่งซื้อได้ เช่น:
+            // order.setQuantity(quantity);
+
+            orderRepository.save(order);  // บันทึกคำสั่งซื้อใหม่ในฐานข้อมูล
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Order created successfully",
+                    "orderId", order.getOrderId()
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
+        }
+    }
+
 
 }

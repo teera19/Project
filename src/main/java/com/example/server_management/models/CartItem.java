@@ -22,9 +22,7 @@ public class CartItem {
 
     @Column(name = "quantity")
     private int quantity;
-    @ManyToOne
-    @JoinColumn(name = "order_id")
-    private Order order;
+
 
     // ✅ Getter / Setter
     public int getCartItemId() {
@@ -43,11 +41,5 @@ public class CartItem {
 
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
-    public Order getOrder() {
-        return order;
-    }
 
-    public void setOrder(Order order) {
-        this.order = order; // เพิ่มการตั้งค่า Order
-    }
 }

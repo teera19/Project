@@ -36,8 +36,7 @@ public class Order {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL) // เพิ่ม fetch = FetchType.EAGER
     private List<OrderItem> orderItems;
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CartItem> cartItems = new ArrayList<>();
+
 
     // ✅ Constructor
     public Order() {}
@@ -77,10 +76,6 @@ public class Order {
     public List<OrderItem> getOrderItems() { return orderItems; }
 
     public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }
-    public void addCartItem(CartItem cartItem) {
-        cartItems.add(cartItem);
-        cartItem.setOrder(this);
-    }
     public User getUser() {
         return user;
     }

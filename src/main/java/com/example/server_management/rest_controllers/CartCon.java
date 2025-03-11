@@ -17,10 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -266,36 +264,55 @@ public class CartCon {
         }
     }
     @GetMapping("/orders")
-    public ResponseEntity<?> getOrdersByUser(HttpSession session) {
+    public ResponseEntity<?> getPaidOrders(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
         }
 
-        Optional<User> userOptional = userRepository.findUserByUserName(userName);
-        if (!userOptional.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "User not found"));
+        try {
+            // ดึงรายการคำสั่งซื้อที่มีสถานะเป็น PAID สำหรับผู้ใช้
+            List<Order> paidOrders = orderRepository.findByUser_UserNameAndStatus(userName, "PAID");
+
+            if (paidOrders.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                        .body(Map.of("message", "No paid orders found"));
+            }
+
+            // สร้างรายการเพื่อเก็บข้อมูลคำสั่งซื้อพร้อมรายละเอียดสินค้า
+            List<Map<String, Object>> orderDetails = new ArrayList<>();
+            for (Order order : paidOrders) {
+                Map<String, Object> orderInfo = new HashMap<>();
+                orderInfo.put("orderId", order.getOrderId());
+                orderInfo.put("totalAmount", order.getAmount());
+                orderInfo.put("orderDate", order.getOrderDate());
+                orderInfo.put("status", order.getStatus());
+                orderInfo.put("slipUrl", order.getSlipUrl());
+
+                // ดึงรายละเอียดสินค้า
+                List<Map<String, Object>> products = new ArrayList<>();
+                for (Integer productId : order.getProductIds()) {
+                    Product product = productRepository.findById(productId).orElse(null);
+                    if (product != null) {
+                        Map<String, Object> productInfo = new HashMap<>();
+                        productInfo.put("productId", product.getProductId());
+                        productInfo.put("productName", product.getName());
+                        productInfo.put("quantity", order.getProductQuantity(product.getProductId()));
+                        productInfo.put("price", product.getPrice());
+                        products.add(productInfo);
+                    }
+                }
+                orderInfo.put("products", products);
+
+                orderDetails.add(orderInfo);
+            }
+
+            return ResponseEntity.ok(orderDetails);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
-
-        User user = userOptional.get(); // ดึงข้อมูลผู้ใช้
-        int userId = user.getUserId();
-
-        List<Order> orders = orderRepository.findByUserIdAndStatus(userId, "PAID");
-
-        if (orders.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT)
-                    .body(Map.of("message", "No paid orders found for user."));
-        }
-
-        // สำหรับแต่ละ Order, ดึงข้อมูลสินค้าจาก productIds
-        for (Order order : orders) {
-            List<Product> products = productRepository.findAllById(order.getProductIds());
-            order.setProducts(products); // สมมติว่าเพิ่ม method setProducts ใน Order
-        }
-
-        return ResponseEntity.ok(orders);  // ส่งผลลัพธ์คำสั่งซื้อพร้อมสินค้าที่เกี่ยวข้อง
     }
 
 }

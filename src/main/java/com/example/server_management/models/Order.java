@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "orders")
@@ -40,6 +41,11 @@ public class Order {
     private List<Integer> productIds = new ArrayList<>();
     @Transient
     private List<Product> products;
+    @ElementCollection
+    @CollectionTable(name = "order_product_quantities", joinColumns = @JoinColumn(name = "order_id"))
+    @MapKeyColumn(name = "product_id")  // กำหนดว่า productId จะเป็นคีย์ในตารางนี้
+    @Column(name = "quantity")
+    private Map<Integer, Integer> productQuantities;
 
     // Default constructor
     public Order() {
@@ -52,6 +58,16 @@ public class Order {
         this.myShop = shop;
         this.amount = totalPrice;
         this.orderDate = timestamp;
+    }
+    public Map<Integer, Integer> getProductQuantities() {
+        return productQuantities;
+    }
+
+    public void setProductQuantities(Map<Integer, Integer> productQuantities) {
+        this.productQuantities = productQuantities;
+    }
+    public int getProductQuantity(int productId) {
+        return productQuantities.getOrDefault(productId, 0); // คืนค่าจำนวนสินค้าหรือ 0 ถ้าไม่พบ
     }
 
     // Getters and Setters

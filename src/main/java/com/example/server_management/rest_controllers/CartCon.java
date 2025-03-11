@@ -304,6 +304,7 @@ public class CartCon {
                         productInfo.put("productId", product.getProductId());
                         productInfo.put("productName", product.getName());;
                         productInfo.put("price", product.getPrice());
+                        productInfo.put("imageUrl", product.getImageUrl());
                         products.add(productInfo);
                     }
                 }

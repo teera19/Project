@@ -213,11 +213,13 @@ public class CartCon {
             return ResponseEntity.badRequest().body(Map.of("message", "No slip file uploaded"));
         }
 
+        // หา Order โดยใช้ orderId
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
         MyShop myShop = order.getMyShop();
 
+        // ตรวจสอบว่า User ที่อัปโหลดสลิปตรงกับ User ของ Order หรือไม่
         if (!order.getUser().getUserName().equals(userName)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "You are not authorized to upload slip for this order"));
@@ -226,8 +228,11 @@ public class CartCon {
         // เรียก API เพื่อตรวจสอบสลิป
         try {
             // เรียก API เพื่อตรวจสอบสลิป
+            log.info("Starting slip verification for orderId: {}", orderId);  // เพิ่มการบันทึกเพื่อดูว่าโค้ดทำงานถึงจุดนี้หรือไม่
             Map<String, Object> slipData = slipOkService.validateSlip(slip);
+
             if (slipData == null || slipData.containsKey("error")) {
+                log.error("Slip verification failed for orderId: {}. Response: {}", orderId, slipData);  // บันทึกข้อผิดพลาด
                 return ResponseEntity.badRequest().body(Map.of("message", "Slip verification failed"));
             }
 
@@ -244,6 +249,7 @@ public class CartCon {
             String shopBankAccountName = myShop.getDisplayName().replace("นาย", "").replace("นาง", "").replace("นางสาว", "").trim();
 
             if (recipientName == null) {
+                log.error("Recipient name is missing in slip data for orderId: {}", orderId);
                 return ResponseEntity.badRequest().body(Map.of("message", "Recipient name is missing in slip data"));
             }
 
@@ -251,32 +257,39 @@ public class CartCon {
             int compareLength = Math.min(10, recipientName.length()); // กำหนดให้เปรียบเทียบ 5-10 ตัวแรก
             if (!recipientName.substring(0, compareLength)
                     .equalsIgnoreCase(shopBankAccountName.substring(0, compareLength))) {
+                log.error("Recipient name mismatch for orderId: {}. Expected: {}, Got: {}", orderId, shopBankAccountName, recipientName);
                 return ResponseEntity.badRequest().body(Map.of("message", "Recipient name does not match"));
             }
+
             // ดึง amount จาก JSON ที่ได้รับมา
-            // ดึง amount จาก JSON ที่ได้รับมา
-            Map<String, Object> dataFromSlip = (Map<String, Object>) slipData.get("data");  // เปลี่ยนชื่อเป็น dataFromSlip
+            Map<String, Object> dataFromSlip = (Map<String, Object>) slipData.get("data");
             if (dataFromSlip != null) {
-                Object amountObj = dataFromSlip.get("amount");  // ใช้ dataFromSlip แทน data
+                Object amountObj = dataFromSlip.get("amount");
                 if (amountObj == null || !(amountObj instanceof Number)) {
+                    log.error("Amount missing or invalid in slip data for orderId: {}", orderId);
                     return ResponseEntity.badRequest().body(Map.of("message", "Amount is missing or invalid in slip data"));
                 }
                 double amountFromSlip = ((Number) amountObj).doubleValue();
                 if (amountFromSlip != order.getAmount()) {
+                    log.error("Amount mismatch for orderId: {}. Expected: {}, Got: {}", orderId, order.getAmount(), amountFromSlip);
                     return ResponseEntity.badRequest().body(Map.of("message", "Amount does not match"));
                 }
             }
 
-
             // ✅ อัปโหลดสลิปไป Cloudinary
+            log.info("Uploading slip for orderId: {}", orderId);  // เพิ่มการบันทึกว่าเริ่มทำการอัปโหลด
             String slipUrl = cloudinaryService.uploadImage(slip);
             order.setSlipUrl(slipUrl);
             order.setStatus("PAID");
             orderRepository.save(order);
 
+            log.info("Slip uploaded and verified successfully for orderId: {}", orderId);  // เพิ่มการบันทึกเมื่อสำเร็จ
             return ResponseEntity.ok(Map.of("message", "Slip uploaded and verified successfully", "slipUrl", slipUrl));
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
+            log.error("Error during slip upload process for orderId: {}", orderId, e);  // เพิ่มการบันทึกข้อผิดพลาดในกรณีเกิด Exception
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
 

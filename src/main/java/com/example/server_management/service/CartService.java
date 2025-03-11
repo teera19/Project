@@ -31,12 +31,10 @@ public class CartService {
     private OrderItemRepository orderItemRepository;
 
     public Cart getCartByUser(String userName) {
-        User user = userRepository.findByUserName(userName);
-        return cartRepository.findByUser(user).orElseGet(() -> {
-            Cart newCart = new Cart();
-            newCart.setUser(user);
-            return cartRepository.save(newCart);
-        });
+        User user = userRepository.findUserByUserName(userName)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return cartRepository.findByUser(user)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
     }
 
     public void addToCart(String userName, int productId, int quantity) {
@@ -132,5 +130,6 @@ public class CartService {
         // ค้นหาข้อมูล CartItem โดยใช้ userId
         return cartItemRepository.findByCart_User_UserId(user.getUserId());
     }
+
 
 }

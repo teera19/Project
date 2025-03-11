@@ -23,6 +23,9 @@ public class CartItem {
     @Column(name = "quantity")
     private int quantity;
 
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)  // การเชื่อมโยงกับ Order
+    private Order order;
     // ✅ Getter / Setter
     public int getCartItemId() { return cartItemId; }
     public void setCartItemId(int cartItemId) { this.cartItemId = cartItemId; }
@@ -35,4 +38,12 @@ public class CartItem {
 
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
+
+    public Order getOrder() {
+        return order;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
+    }
 }

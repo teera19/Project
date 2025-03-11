@@ -1,10 +1,9 @@
 package com.example.server_management.rest_controllers;
 
-import com.example.server_management.models.CartItem;
-import com.example.server_management.models.Order;
-import com.example.server_management.models.User;
+import com.example.server_management.models.*;
 import com.example.server_management.repository.MyshopRepository;
 import com.example.server_management.repository.OrderRepository;
+import com.example.server_management.repository.ProductRepository;
 import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.CartService;
 import com.example.server_management.service.CloudinaryService;
@@ -15,9 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.example.server_management.models.MyShop;
 
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +37,8 @@ public class CartCon {
     SlipOkService slipOkService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private ProductRepository productRepository;
 
     @PostMapping("/addtocart/{product_id}")
 
@@ -107,13 +108,39 @@ public class CartCon {
         }
 
         try {
-            Order order = cartService.checkout(userName);
+            // ดึงข้อมูล User
+            User user = userRepository.findByUserName(userName);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found"));
+            }
+
+            // คำนวณ totalAmount จาก Cart
+            List<CartItem> cartItems = cartService.getCartItemsForUser(userName);
+            double totalAmount = 0.0;
+            for (CartItem cartItem : cartItems) {
+                totalAmount += cartItem.getProduct().getPrice() * cartItem.getQuantity();
+            }
+
+            // สร้าง Order
+            Order order = new Order(user, user.getMyShop(), totalAmount, new Timestamp(System.currentTimeMillis()));
+            order.setStatus("PENDING");
+
+            // สร้าง OrderItem จาก cart_item
+            for (CartItem cartItem : cartItems) {
+                Product product = productRepository.findById(cartItem.getProduct().getProductId()).orElseThrow();
+                OrderItem orderItem = new OrderItem(order, product, cartItem.getQuantity());
+                order.getOrderItems().add(orderItem); // เพิ่ม OrderItem ไปยัง Order
+            }
+
+            // บันทึก Order และ OrderItems
+            orderRepository.save(order);
+
             return ResponseEntity.ok(Map.of("message", "Checkout successful", "orderId", order.getOrderId()));
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
-
     @GetMapping("/checkout/payment-info/{orderId}")
     public ResponseEntity<?> getPaymentInfo(@PathVariable int orderId, HttpSession session) {
         String userName = (String) session.getAttribute("user_name");

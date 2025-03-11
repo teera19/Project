@@ -55,4 +55,8 @@ public class CartItem {
     public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
+    public int getProductId() {
+        return product != null ? product.getProductId() : 0;  // คืนค่า productId ของ Product
+    }
+
 }

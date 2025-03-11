@@ -10,6 +10,7 @@ import java.util.List;
 @Repository
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     List<CartItem> findByCartUser(User user);
+    List<CartItem> findByCart_User_UserId(int userId);
 }
 
 

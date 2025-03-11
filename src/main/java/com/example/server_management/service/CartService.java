@@ -135,4 +135,15 @@ public class CartService {
 
         return orderRepository.save(order);
     }
+    public List<CartItem> getCartItemsForUser(String userName) {
+        // สมมติว่าเราค้นหากระเป๋าสินค้าจากฐานข้อมูลโดยการเชื่อมโยงกับผู้ใช้
+        User user = userRepository.findByUserName(userName);
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        // ค้นหาข้อมูล CartItem โดยใช้ userId
+        return cartItemRepository.findByCart_User_UserId(user.getUserId());
+    }
+
 }

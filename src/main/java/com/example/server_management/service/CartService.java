@@ -100,36 +100,60 @@ public class CartService {
 
 
     @Transactional
-    public Order checkout(String userName) {
+    public Order checkout(String userName, Integer productId, Integer quantity) {
+        // หาผู้ใช้จาก userName
         User user = userRepository.findByUserName(userName);
         if (user == null) throw new IllegalArgumentException("User not found");
 
-        List<CartItem> cartItems = cartItemRepository.findByCartUser(user);
-        if (cartItems.isEmpty()) throw new IllegalArgumentException("Cart is empty");
+        // กรณีถ้ามีสินค้าในตะกร้า
+        if (productId == null || quantity == null) {
+            List<CartItem> cartItems = cartItemRepository.findByCartUser(user);
+            if (cartItems.isEmpty()) throw new IllegalArgumentException("Cart is empty");
 
-        double totalPrice = cartItems.stream()
-                .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
-                .sum();
+            double totalPrice = cartItems.stream()
+                    .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
+                    .sum();
 
-        // ดึง QR Code จากร้านค้า
-        MyShop shop = cartItems.get(0).getProduct().getShop();
-        if (shop == null) {
-            throw new IllegalArgumentException("Shop not found");
+            // ดึงข้อมูลร้านค้าที่เกี่ยวข้อง
+            MyShop shop = cartItems.get(0).getProduct().getShop();
+            if (shop == null) {
+                throw new IllegalArgumentException("Shop not found");
+            }
+
+            // สร้างคำสั่งซื้อจากสินค้าทั้งหมดในตะกร้า
+            Order order = new Order(user, shop, totalPrice, new Timestamp(System.currentTimeMillis()));
+
+            // บันทึก QR Code ลงใน slipUrl
+            order.setSlipUrl(shop.getQrCodeUrl());
+
+            // บันทึกคำสั่งซื้อ
+            Order savedOrder = orderRepository.save(order);
+
+            return savedOrder;
+
+        } else {
+            // กรณีซื้อสินค้าทันทีจาก productId และ quantity
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+
+            // ดึงข้อมูลร้านค้าที่เกี่ยวข้องกับสินค้า
+            MyShop shop = product.getShop();
+            if (shop == null) {
+                throw new IllegalArgumentException("Shop not found");
+            }
+
+            // คำนวณราคาสินค้า
+            double totalAmount = product.getPrice() * quantity;
+
+            // สร้างคำสั่งซื้อจากการซื้อสินค้าทันที
+            Order order = new Order(user, shop, totalAmount, new Timestamp(System.currentTimeMillis()));
+            order.setProductIds(Collections.singletonList(productId));  // ตั้งค่ารายการสินค้าในคำสั่งซื้อ
+
+            // บันทึกคำสั่งซื้อ
+            Order savedOrder = orderRepository.save(order);
+
+            return savedOrder;
         }
-
-        // สร้าง Order พร้อมกับ MyShop
-        Order order = new Order(user, shop, totalPrice, new Timestamp(System.currentTimeMillis()));
-
-        // บันทึก QR Code ลงใน slipUrl
-        order.setSlipUrl(shop.getQrCodeUrl());
-
-        // บันทึกคำสั่งซื้อ
-        Order savedOrder = orderRepository.save(order);
-
-        // ไม่ลบตะกร้าโดยอัตโนมัติหลังเช็คเอาท์
-        // คุณสามารถเคลียร์ตะกร้าภายหลังการยืนยันคำสั่งซื้อ หรือเมื่อมีการดำเนินการอื่นๆ ตามที่ต้องการ
-
-        return savedOrder;
     }
 
 }

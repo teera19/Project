@@ -6,6 +6,7 @@ import com.example.server_management.repository.OrderRepository;
 import com.example.server_management.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,8 @@ public class OrderController {
     @GetMapping("/history")
     public ResponseEntity<?> getOrderHistory(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
@@ -36,6 +39,8 @@ public class OrderController {
     @PatchMapping("/confirm-received/{orderId}")
     public ResponseEntity<?> confirmOrderReceived(HttpSession session, @PathVariable int orderId) {
         String userName = (String) session.getAttribute("user_name");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));

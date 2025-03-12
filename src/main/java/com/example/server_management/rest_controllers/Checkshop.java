@@ -4,6 +4,7 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,8 @@ public class Checkshop {
     public ResponseEntity<?> checkShop(HttpSession session) {
         // ดึง user_name จาก HttpSession
         String userName = (String) session.getAttribute("user_name");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
 
         // เช็คว่า session มี user_name หรือไม่
         if (userName == null) {

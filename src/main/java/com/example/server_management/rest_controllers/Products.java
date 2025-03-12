@@ -6,6 +6,7 @@ import com.example.server_management.models.ProductResponse;
 import com.example.server_management.repository.CategoryRepository;
 import com.example.server_management.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +30,8 @@ public class Products {
     @GetMapping("/by-category/{categoryName}")
     public ResponseEntity<?> getProductsByCategory(@PathVariable String categoryName) {
         Category category = categoryRepository.findByName(categoryName);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (category == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Category not found: " + categoryName));

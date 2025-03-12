@@ -5,6 +5,7 @@ import com.example.server_management.models.User;
 import com.example.server_management.repository.UserRepository;
 import com.example.server_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +28,8 @@ public class MyProfile {
     public ResponseEntity<?> getUserProfile(HttpSession session) {
         // ดึงข้อมูลจาก session เพื่อหาผู้ใช้ที่ล็อกอิน
         String userName = (String) session.getAttribute("user_name");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
 
         if (userName != null) {
             // ค้นหาผู้ใช้ในฐานข้อมูล

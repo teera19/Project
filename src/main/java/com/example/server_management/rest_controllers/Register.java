@@ -3,6 +3,7 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.models.User;
 import com.example.server_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +25,10 @@ public class Register {
             @RequestParam String address,
             @RequestParam String tel) {
 
+
         System.out.println("Received Register Request: " + userName);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
 
         if (userName.isEmpty() || name.isEmpty() || lastName.isEmpty() || email.isEmpty() ||
                 password.isEmpty() || address.isEmpty() || tel.isEmpty()) {

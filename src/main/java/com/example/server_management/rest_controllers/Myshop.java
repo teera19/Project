@@ -2,6 +2,7 @@ package com.example.server_management.rest_controllers;
 
 import com.example.server_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,8 @@ public class Myshop {
                                              @RequestParam("bank_account_number") String bankAccountNumber,
                                              @RequestParam("displayName") String displayName,
                                              @RequestParam("bank_name") String bankName) { // เพิ่มฟิลด์ชื่อธนาคาร
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
 
         if (userName.isEmpty() || title.isEmpty() || detail.isEmpty() || qrCodeImage.isEmpty()) {
             return new ResponseEntity<>("Please complete all fields and upload QR Code", HttpStatus.BAD_REQUEST);

@@ -5,6 +5,7 @@ import com.example.server_management.models.User;
 import com.example.server_management.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,8 @@ public class Editprofile {
     public ResponseEntity<?> editProfile(@ModelAttribute EditProfile editProfile, HttpSession session) {
         // ตรวจสอบว่า user ล็อกอินอยู่หรือไม่
         String userName = (String) session.getAttribute("user_name");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return new ResponseEntity<>("User is not logged in.", HttpStatus.UNAUTHORIZED);
         }

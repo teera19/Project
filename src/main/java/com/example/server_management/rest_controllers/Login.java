@@ -4,6 +4,7 @@ import com.example.server_management.models.User;
 import com.example.server_management.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,8 @@ public class Login {
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody User loginUser, HttpSession session) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
         try {
             User existingUser = userRepository.findByUserName(loginUser.getUserName());
 

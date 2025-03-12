@@ -105,7 +105,7 @@ public class CartService {
         if (user == null) throw new IllegalArgumentException("User not found");
 
         List<CartItem> cartItems = cartItemRepository.findByCartUser(user);
-//        if (cartItems.isEmpty()) throw new IllegalArgumentException("Cart is empty");
+        if (cartItems.isEmpty()) throw new IllegalArgumentException("Cart is empty");
 
         double totalPrice = cartItems.stream()
                 .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())

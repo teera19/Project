@@ -125,8 +125,10 @@ public class CartCon {
         return new ResponseEntity<>("Cart cleared", HttpStatus.OK);
     }
 
-    @PostMapping(value = "/checkout",produces = "application/json;charset=UTF-8")
-    public ResponseEntity<?> checkout(HttpSession session) {
+    @PostMapping(value = "/checkout", produces = "application/json;charset=UTF-8")
+    public ResponseEntity<?> checkout(HttpSession session,
+                                      @RequestParam(value = "productId", required = false) Integer productId,
+                                      @RequestParam(value = "quantity", required = false) Integer quantity) {
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -134,49 +136,77 @@ public class CartCon {
         }
 
         try {
-            // ดึงข้อมูลตะกร้าสินค้า
-            List<CartItem> cartItems = cartService.viewCart(userName);
-//            if (cartItems.isEmpty()) {
-//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//                        .body(Map.of("message", "Your cart is empty"));
-//            }
-
-            // คำนวณยอดรวมและสร้างคำสั่งซื้อใหม่
             double totalAmount = 0;
             List<Integer> productIds = new ArrayList<>();
-            for (CartItem cartItem : cartItems) {
-                totalAmount += cartItem.getProduct().getPrice() * cartItem.getQuantity();
-                productIds.add(cartItem.getProduct().getProductId());  // เก็บ productId จาก CartItem
+
+            // หากมีการระบุ productId และ quantity (ซื้อสินค้าเดี่ยว)
+            if (productId != null && quantity != null) {
+                Product product = productRepository.findById(productId)
+                        .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+                MyShop shop = product.getShop();
+                if (shop == null) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(Map.of("message", "Shop not found"));
+                }
+
+                totalAmount += product.getPrice() * quantity;
+                productIds.add(productId); // เก็บ productId
+
+                // สร้างคำสั่งซื้อจากสินค้าเดี่ยว
+                Order order = new Order(
+                        userRepository.findUserByUserName(userName).get(),
+                        shop,
+                        totalAmount,
+                        new Timestamp(System.currentTimeMillis())
+                );
+                order.setProductIds(productIds);  // เก็บรายการสินค้าลงในคำสั่งซื้อ
+                orderRepository.save(order);  // บันทึกคำสั่งซื้อ
+
+                return ResponseEntity.ok(Map.of(
+                        "message", "Order created successfully",
+                        "orderId", order.getOrderId()
+                ));
             }
 
-            // ดึงข้อมูล MyShop
+            // หากไม่มีการระบุ productId (ซื้อจากตะกร้า)
+            List<CartItem> cartItems = cartService.viewCart(userName);
+            if (cartItems.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Your cart is empty"));
+            }
+
+            // คำนวณยอดรวมจากตะกร้า
+            for (CartItem cartItem : cartItems) {
+                totalAmount += cartItem.getProduct().getPrice() * cartItem.getQuantity();
+                productIds.add(cartItem.getProduct().getProductId());
+            }
+
             MyShop shop = cartItems.get(0).getProduct().getShop();
             if (shop == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("message", "Shop not found"));
             }
 
-            // สร้างคำสั่งซื้อใหม่
+            // สร้างคำสั่งซื้อจากตะกร้า
             Order order = new Order(
                     userRepository.findUserByUserName(userName).get(),
                     shop,
                     totalAmount,
                     new Timestamp(System.currentTimeMillis())
             );
-            order.setProductIds(productIds);  // ตั้งค่ารายการสินค้าในคำสั่งซื้อ
+            order.setProductIds(productIds);  // เก็บรายการสินค้าจากตะกร้า
+            orderRepository.save(order);  // บันทึกคำสั่งซื้อ
 
-            orderRepository.save(order);  // บันทึกคำสั่งซื้อใหม่ในฐานข้อมูล
+            return ResponseEntity.ok(Map.of(
+                    "message", "Checkout successful",
+                    "orderId", order.getOrderId()
+            ));
 
-            // เคลียร์ตะกร้าหลังการเช็คเอาท์ (หากต้องการ)
-            // cartService.clearCart(userName); // สามารถเลือกไม่ลบตะกร้าหลังจากเช็คเอาท์
-
-            return ResponseEntity.ok(Map.of("message", "Checkout successful", "orderId", order.getOrderId()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
-
 
 
     @GetMapping(value = "/checkout/payment-info/{orderId}",produces = "application/json;charset=UTF-8")

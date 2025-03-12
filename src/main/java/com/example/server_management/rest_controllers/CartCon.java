@@ -114,38 +114,16 @@ public class CartCon {
         return new ResponseEntity<>("Product removed from cart", HttpStatus.OK);
     }
 
-    @DeleteMapping(value = "/clear", produces = "application/json;charset=UTF-8")
-    public ResponseEntity<String> clearCart(HttpSession session, @RequestBody Map<String, List<Integer>> requestBody) {
+    @DeleteMapping(value = "/clear",produces = "application/json;charset=UTF-8")
+    public ResponseEntity<String> clearCart(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return new ResponseEntity<>("User not logged in", HttpStatus.UNAUTHORIZED);
         }
 
-        try {
-            // รับ selectedProductIds จาก requestBody
-            List<Integer> selectedProductIds = requestBody.get("selectedProductIds");
-
-            if (selectedProductIds == null || selectedProductIds.isEmpty()) {
-                return new ResponseEntity<>("No products selected for removal", HttpStatus.BAD_REQUEST);
-            }
-
-            // ดึงรายการสินค้าทั้งหมดในตะกร้าของผู้ใช้
-            List<CartItem> cartItems = cartService.viewCart(userName);
-
-            // ลบเฉพาะสินค้าที่ถูกเลือกเช็คเอาท์
-            for (CartItem cartItem : cartItems) {
-                if (selectedProductIds.contains(cartItem.getProduct().getProductId())) {
-                    // ลบสินค้าที่ถูกเลือก
-                    cartService.removeFromCart(userName, cartItem.getProduct().getProductId());
-                }
-            }
-
-            return new ResponseEntity<>("Cart cleared (selected items removed)", HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        cartService.clearCart(userName);
+        return new ResponseEntity<>("Cart cleared", HttpStatus.OK);
     }
-
 
     @PostMapping(value = "/checkout",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> checkout(HttpSession session) {

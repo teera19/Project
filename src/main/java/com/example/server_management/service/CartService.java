@@ -155,5 +155,26 @@ public class CartService {
             return savedOrder;
         }
     }
+    @Transactional
+    public Order checkoutFromProduct(String userName, Integer productId, Integer quantity) {
+        User user = userRepository.findByUserName(userName);
+        if (user == null) throw new IllegalArgumentException("User not found");
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+
+        MyShop shop = product.getShop();
+        if (shop == null) {
+            throw new IllegalArgumentException("Shop not found");
+        }
+
+        double totalAmount = product.getPrice() * quantity;
+
+        Order order = new Order(user, shop, totalAmount, new Timestamp(System.currentTimeMillis()));
+        order.setProductIds(Collections.singletonList(productId));  // เก็บรายการสินค้าจากการซื้อสินค้าเดี่ยว
+        orderRepository.save(order);
+
+        return order;
+    }
 
 }

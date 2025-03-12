@@ -22,7 +22,7 @@ public class Allproduct {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/all-product")
+    @GetMapping(value = "/all-product", produces = "application/json;charset=UTF-8")
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json; charset=UTF-8");

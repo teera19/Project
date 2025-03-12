@@ -2,6 +2,7 @@ package com.example.server_management.rest_controllers;
 import com.example.server_management.models.Category;
 import com.example.server_management.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +34,8 @@ public class CategoryController {
     public ResponseEntity<?> addCategory(@RequestBody CategoryDTO categoryDTO) {
         // ตรวจสอบว่าหมวดหมู่มีอยู่แล้วหรือไม่
         Optional<Category> existingCategory = Optional.ofNullable(categoryRepository.findByName(categoryDTO.getName()));
-
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (existingCategory.isPresent()) {
             return ResponseEntity.badRequest().body("Category already exists: " + categoryDTO.getName());
         }

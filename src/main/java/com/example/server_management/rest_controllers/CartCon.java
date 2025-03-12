@@ -115,13 +115,20 @@ public class CartCon {
     }
 
     @DeleteMapping(value = "/clear", produces = "application/json;charset=UTF-8")
-    public ResponseEntity<String> clearCart(HttpSession session, @RequestParam("selectedProductIds") List<Integer> selectedProductIds) {
+    public ResponseEntity<String> clearCart(HttpSession session, @RequestBody Map<String, List<Integer>> requestBody) {
         String userName = (String) session.getAttribute("user_name");
         if (userName == null) {
             return new ResponseEntity<>("User not logged in", HttpStatus.UNAUTHORIZED);
         }
 
         try {
+            // รับ selectedProductIds จาก requestBody
+            List<Integer> selectedProductIds = requestBody.get("selectedProductIds");
+
+            if (selectedProductIds == null || selectedProductIds.isEmpty()) {
+                return new ResponseEntity<>("No products selected for removal", HttpStatus.BAD_REQUEST);
+            }
+
             // ดึงรายการสินค้าทั้งหมดในตะกร้าของผู้ใช้
             List<CartItem> cartItems = cartService.viewCart(userName);
 

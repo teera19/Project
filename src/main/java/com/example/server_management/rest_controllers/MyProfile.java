@@ -24,12 +24,11 @@ public class MyProfile {
     @Autowired
     private UserRepository userRepository;
 
-    @GetMapping("/my-profile")
+    @GetMapping(value = "/my-profile",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getUserProfile(HttpSession session) {
         // ดึงข้อมูลจาก session เพื่อหาผู้ใช้ที่ล็อกอิน
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
+
 
         if (userName != null) {
             // ค้นหาผู้ใช้ในฐานข้อมูล

@@ -33,12 +33,10 @@ public class Editprofile {
     @Autowired
     private UserRepository userRepository;
 
-    @PostMapping(value = "/edit-profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/edit-profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE,produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> editProfile(@ModelAttribute EditProfile editProfile, HttpSession session) {
         // ตรวจสอบว่า user ล็อกอินอยู่หรือไม่
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return new ResponseEntity<>("User is not logged in.", HttpStatus.UNAUTHORIZED);
         }

@@ -15,18 +15,16 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/order")
+@RequestMapping(value = "/order",produces = "application/json;charset=UTF-8")
 public class OrderController {
     @Autowired
     private OrderRepository orderRepository;
     @Autowired
     private UserRepository userRepository;
 
-    @GetMapping("/history")
+    @GetMapping(value = "/history",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getOrderHistory(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
@@ -36,11 +34,9 @@ public class OrderController {
         List<Order> orders = orderRepository.findByUserAndStatus(user, "PENDING"); // ✅ ดึงเฉพาะ Order ที่ยังไม่ยืนยัน
         return ResponseEntity.ok(orders);
     }
-    @PatchMapping("/confirm-received/{orderId}")
+    @PatchMapping(value = "/confirm-received/{orderId}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> confirmOrderReceived(HttpSession session, @PathVariable int orderId) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));

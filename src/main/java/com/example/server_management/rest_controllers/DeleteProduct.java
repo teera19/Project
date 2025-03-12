@@ -19,12 +19,10 @@ public class DeleteProduct {
     @Autowired
     private UserService userService;
 
-    @DeleteMapping("/delete/{product_id}")
+    @DeleteMapping(value = "/delete/{product_id}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<String> deleteProduct(@PathVariable("product_id") int productId, HttpSession session) {
         // ดึง user_name จาก session
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
 
         if (userName == null) {
             return new ResponseEntity<>("User not logged in", HttpStatus.FORBIDDEN);

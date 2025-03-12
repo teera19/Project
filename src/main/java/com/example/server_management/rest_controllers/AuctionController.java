@@ -48,10 +48,8 @@ public class AuctionController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    @GetMapping
+    @GetMapping(value = "", produces = "application/json;charset=UTF-8")
     public ResponseEntity<List<AuctionResponse>> getAllAuctions() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         List<Auction> auctions = auctionService.getAllAuctions();
 
         // แปลงการประมูลทุกรายการและอัปเดตสถานะ
@@ -71,9 +69,7 @@ public class AuctionController {
         return ResponseEntity.ok(responses);
     }
 
-
-
-    @GetMapping("/{auctionId}")
+    @GetMapping(value ="/{auctionId}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<AuctionResponse> getAuctionById(@PathVariable int auctionId) {
         Auction auction = auctionService.getAuctionById(auctionId);
         HttpHeaders headers = new HttpHeaders();
@@ -94,7 +90,7 @@ public class AuctionController {
 
 
 
-    @PostMapping("/add-auction")
+    @PostMapping(value = "/add-auction",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> addAuction(
             @RequestParam("productName") String productName,
             @RequestParam("description") String description,
@@ -159,7 +155,7 @@ public class AuctionController {
 
 
 
-    @PostMapping("/{auctionId}/bids")
+    @PostMapping(value = "/{auctionId}/bids",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> addBid(@PathVariable int auctionId,
                                     @RequestBody Map<String, Object> bidRequest,
                                     HttpSession session) {
@@ -238,10 +234,8 @@ public class AuctionController {
     }
 
 
-    @GetMapping("/{auctionId}/bids")
+    @GetMapping(value = "/{auctionId}/bids",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getBidsForAuction(@PathVariable int auctionId) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         Auction auction = auctionService.getAuctionById(auctionId);
         if (auction == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -262,7 +256,7 @@ public class AuctionController {
     }
 
 
-    @GetMapping("/my-auction")
+    @GetMapping(value = "/my-auction",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getMyBidAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
         HttpHeaders headers = new HttpHeaders();
@@ -292,11 +286,9 @@ public class AuctionController {
 
         return ResponseEntity.ok(responses);
     }
-    @GetMapping("/my-auctions")
+    @GetMapping(value = "/my-auctions",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getMyAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
 
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -316,11 +308,10 @@ public class AuctionController {
 
         return ResponseEntity.ok(responses);
     }
-    @DeleteMapping("/my-auctions/{auctionId}")
+    @DeleteMapping(value = "/my-auctions/{auctionId}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> deleteMyAuction(@PathVariable int auctionId, HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
+
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Please log in to delete your auction."));
@@ -351,11 +342,10 @@ public class AuctionController {
         auctionRepository.delete(auction);
         return ResponseEntity.ok(Map.of("message", "Auction deleted successfully!"));
     }
-    @DeleteMapping("/my-auction/{auctionId}")
+    @DeleteMapping(value = "/my-auction/{auctionId}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> removeMyBid(@PathVariable int auctionId, HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
+
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Please log in to remove your bid."));
@@ -393,11 +383,9 @@ public class AuctionController {
         bidRepository.deleteAll(userBids);
         return ResponseEntity.ok(Map.of("message", "Your bid has been removed from the auction."));
     }
-    @GetMapping("/my-auctionwin")
+    @GetMapping(value = "/my-auctionwin",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getMyWonAuctions(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Please log in to view your won auctions."));
@@ -425,10 +413,8 @@ public class AuctionController {
 
         return ResponseEntity.ok(responses);
     }
-    @PostMapping("/{auctionId}/end")
+    @PostMapping(value = "/{auctionId}/end",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> endAuction(@PathVariable int auctionId) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         // ค้นหาการประมูลจาก ID
         Auction auction = auctionService.getAuctionById(auctionId);
         if (auction == null) {

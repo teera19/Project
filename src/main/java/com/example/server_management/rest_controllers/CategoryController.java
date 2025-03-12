@@ -30,7 +30,7 @@ public class CategoryController {
     }
 
     // ✅ API สำหรับเพิ่มหมวดหมู่ใหม่
-    @PostMapping("/add")
+    @PostMapping(value = "/add",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> addCategory(@RequestBody CategoryDTO categoryDTO) {
         // ตรวจสอบว่าหมวดหมู่มีอยู่แล้วหรือไม่
         Optional<Category> existingCategory = Optional.ofNullable(categoryRepository.findByName(categoryDTO.getName()));

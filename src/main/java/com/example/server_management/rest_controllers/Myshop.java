@@ -15,7 +15,7 @@ public class Myshop {
     @Autowired
     private UserService userService;
 
-    @PostMapping(value = "/create-shop", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/create-shop", consumes = "multipart/form-data",produces = "application/json;charset=UTF-8")
     public ResponseEntity<String> createShop(@RequestParam("user_name") String userName,
                                              @RequestParam("title") String title,
                                              @RequestParam("detail") String detail,
@@ -23,8 +23,6 @@ public class Myshop {
                                              @RequestParam("bank_account_number") String bankAccountNumber,
                                              @RequestParam("displayName") String displayName,
                                              @RequestParam("bank_name") String bankName) { // เพิ่มฟิลด์ชื่อธนาคาร
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
 
         if (userName.isEmpty() || title.isEmpty() || detail.isEmpty() || qrCodeImage.isEmpty()) {
             return new ResponseEntity<>("Please complete all fields and upload QR Code", HttpStatus.BAD_REQUEST);

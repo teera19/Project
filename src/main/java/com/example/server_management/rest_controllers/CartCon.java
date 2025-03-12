@@ -43,13 +43,12 @@ public class CartCon {
     @Autowired
     private ProductRepository productRepository;
 
-    @PostMapping("/addtocart/{product_id}")
+    @PostMapping(value = "/addtocart/{product_id}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> addToCart(@PathVariable("product_id") int productId,
                                        @RequestParam("quantity") int quantity,
                                        HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
+
         if (userName == null) {
             return new ResponseEntity<>("User not logged in", HttpStatus.UNAUTHORIZED);
         }
@@ -85,11 +84,9 @@ public class CartCon {
 
 
 
-    @GetMapping("/view")
+    @GetMapping(value = "/view",produces = "application/json;charset=UTF-8")
     public ResponseEntity<List<CartItem>> viewCart(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -106,11 +103,9 @@ public class CartCon {
     }
 
 
-    @DeleteMapping("/remove")
+    @DeleteMapping(value = "/remove",produces = "application/json;charset=UTF-8")
     public ResponseEntity<String> removeFromCart(@RequestParam("product_id") int productId, HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return new ResponseEntity<>("User not logged in", HttpStatus.UNAUTHORIZED);
         }
@@ -119,11 +114,9 @@ public class CartCon {
         return new ResponseEntity<>("Product removed from cart", HttpStatus.OK);
     }
 
-    @DeleteMapping("/clear")
+    @DeleteMapping(value = "/clear",produces = "application/json;charset=UTF-8")
     public ResponseEntity<String> clearCart(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return new ResponseEntity<>("User not logged in", HttpStatus.UNAUTHORIZED);
         }
@@ -132,11 +125,9 @@ public class CartCon {
         return new ResponseEntity<>("Cart cleared", HttpStatus.OK);
     }
 
-    @PostMapping("/checkout")
+    @PostMapping(value = "/checkout",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> checkout(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
@@ -188,10 +179,8 @@ public class CartCon {
 
 
 
-    @GetMapping("/checkout/payment-info/{orderId}")
+    @GetMapping(value = "/checkout/payment-info/{orderId}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getPaymentInfo(@PathVariable("orderId") int orderId) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         try {
             // ดึงข้อมูลคำสั่งซื้อจาก orderId
             Order order = orderRepository.findById(orderId)
@@ -221,14 +210,12 @@ public class CartCon {
         }
     }
 
-    @PostMapping("/checkout/upload-slip/{orderId}")
+    @PostMapping(value = "/checkout/upload-slip/{orderId}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> uploadSlip(@PathVariable int orderId,
                                         @RequestParam("slip") MultipartFile slip,
                                         HttpSession session) {
 
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         log.info("Starting the upload process for orderId: " + orderId + " with user: " + userName);
 
         if (userName == null) {
@@ -283,11 +270,9 @@ public class CartCon {
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
-    @GetMapping("/orders")
+    @GetMapping(value = "/orders",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getPaidOrders(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));
@@ -336,13 +321,12 @@ public class CartCon {
                     .body(Map.of("message", "Internal Server Error", "error", e.getMessage()));
         }
     }
-    @PostMapping("/buy/{productId}")
+    @PostMapping(value = "/buy/{productId}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> buyProduct(@PathVariable("productId") int productId,
                                         @RequestParam("quantity") int quantity,
                                         HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
+
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "User not logged in"));

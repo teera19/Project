@@ -18,10 +18,8 @@ public class Login {
     @Autowired
     private UserRepository userRepository;
 
-    @PostMapping("/login")
+    @PostMapping(value = "/login",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> loginUser(@RequestBody User loginUser, HttpSession session) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         try {
             User existingUser = userRepository.findByUserName(loginUser.getUserName());
 

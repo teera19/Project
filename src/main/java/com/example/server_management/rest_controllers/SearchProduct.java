@@ -21,10 +21,8 @@ public class SearchProduct {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/search-products")
+    @GetMapping(value = "/search-products",produces = "application/json;charset=UTF-8")
     public ResponseEntity<List<ProductResponse>> searchProducts(@RequestParam("query") String query) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         try {
             List<Product> products = userService.searchProductsByName(query);
             if (products.isEmpty()) {
@@ -42,7 +40,7 @@ public class SearchProduct {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    @GetMapping("/search-bycategory")
+    @GetMapping(value = "/search-bycategory",produces = "application/json;charset=UTF-8")
     public ResponseEntity<List<ProductResponse>> searchProductsByCategory(@RequestParam("category") String categoryName) {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json; charset=UTF-8");

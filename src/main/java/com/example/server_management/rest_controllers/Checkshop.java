@@ -20,12 +20,10 @@ public class Checkshop {
     @Autowired
     private UserService userService; // ใช้ UserService แทนการเรียก Repository โดยตรง
 
-    @GetMapping("/checkshop")
+    @GetMapping(value = "/checkshop",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> checkShop(HttpSession session) {
         // ดึง user_name จาก HttpSession
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
 
         // เช็คว่า session มี user_name หรือไม่
         if (userName == null) {

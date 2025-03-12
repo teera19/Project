@@ -40,13 +40,11 @@ public class Chat {
     private MessageRepository messageRepository;
 
 
-    @PostMapping("/start") //ปุ่มเริ่มแชทในราลเอียดสินค้า
+    @PostMapping(value = "/start",produces = "application/json;charset=UTF-8") //ปุ่มเริ่มแชทในราลเอียดสินค้า
     public ResponseEntity<Map<String, Object>> startChat(
             @SessionAttribute("user_name") String user1,
             @RequestBody ChatRequest chatRequest //  ใช้ @RequestBody เพื่อรับ JSON Body
     ) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         int productId = chatRequest.getProductId();
 
         // ค้นหาเจ้าของสินค้า (user2) จากฐานข้อมูล
@@ -66,14 +64,13 @@ public class Chat {
     }
 
 
-    @PostMapping("/{chatId}/send")
+    @PostMapping(value = "/{chatId}/send",produces = "application/json;charset=UTF-8")
     public ResponseEntity<Message> sendMessage(
             @SessionAttribute("user_name") String sender,
             @PathVariable int chatId,
             @RequestBody MessageRequest request) {
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
+
 
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
         if (!chatRoom.getUser1().equals(sender) && !chatRoom.getUser2().equals(sender)) {
@@ -117,10 +114,8 @@ public class Chat {
     }
 
     // ตัวอย่างการดึงประวัติแชท
-    @GetMapping("/{chatId}/history")
+    @GetMapping(value = "/{chatId}/history",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getChatHistory(@SessionAttribute("user_name") String currentUser, @PathVariable int chatId) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         ChatRoom chatRoom = chatService.getChatRoomById(chatId);
 
         if (!chatRoom.getUser1().equals(currentUser) && !chatRoom.getUser2().equals(currentUser)) {
@@ -139,10 +134,9 @@ public class Chat {
         return ResponseEntity.ok(messages);
     }
 
-    @GetMapping("/my-chats")
+    @GetMapping(value = "/my-chats",produces = "application/json;charset=UTF-8")
     public ResponseEntity<List<Map<String, Object>>> getMyChats(@SessionAttribute("user_name") String currentUser) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
+
         List<ChatRoom> chatRooms = chatService.getChatsByUser(currentUser);
 
         List<Map<String, Object>> response = chatRooms.stream().map(chatRoom -> {
@@ -167,18 +161,17 @@ public class Chat {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/active")
+    @PostMapping(value = "/active",produces = "application/json;charset=UTF-8")
     public ResponseEntity<Void> setActiveChat(@SessionAttribute("user_name") String username,
                                               @RequestBody Map<String, Integer> request) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
+
         int chatId = request.get("chatId");  // รับ chatId จาก request body
         chatStatusTracker.setActiveChat(username, chatId);  // บันทึกสถานะ active ของผู้ใช้
         return ResponseEntity.ok().build();  // ส่ง HTTP 200 OK
     }
 
     // สำหรับเคลียร์สถานะ inactive เมื่อผู้ใช้ออกจากห้องแชท
-    @PostMapping("/inactive")
+    @PostMapping(value = "/inactive",produces = "application/json;charset=UTF-8")
     public ResponseEntity<Void> clearActiveChat(@SessionAttribute("user_name") String username) {
         chatStatusTracker.clearActiveChat(username);  // เคลียร์สถานะ active ของผู้ใช้
         return ResponseEntity.ok().build();  // ส่ง HTTP 200 OK

@@ -20,7 +20,7 @@ public class Editproduct {
     @Autowired
     private UserService userService; // ✅ Inject UserService
 
-    @PostMapping("/edit-product/{product_id}")
+    @PostMapping(value = "/edit-product/{product_id}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> editProduct(
             @PathVariable("product_id") int productId,
             @RequestParam("name") String name,
@@ -34,8 +34,7 @@ public class Editproduct {
 
         // ✅ ตรวจสอบการล็อกอิน
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
+
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "User not logged in"));

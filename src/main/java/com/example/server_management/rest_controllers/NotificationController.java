@@ -21,7 +21,7 @@ public class NotificationController {
     @Autowired
     private ChatService chatService;
 
-    @GetMapping("/count")
+    @GetMapping(value = "/count",produces = "application/json;charset=UTF-8")
     public ResponseEntity<Map<String, Integer>> getNotificationCount(@SessionAttribute("user_name") String userName) {
         // ✅ ดึงจำนวนสินค้าในตะกร้า
         int cartCount = cartService.getCartItemCount(userName);

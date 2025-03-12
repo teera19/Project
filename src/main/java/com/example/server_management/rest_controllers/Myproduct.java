@@ -24,11 +24,9 @@ public class Myproduct {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/my-product")
+    @GetMapping(value = "/my-product",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getMyProducts(HttpSession session) {
         String userName = (String) session.getAttribute("user_name");
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
 
         if (userName == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)

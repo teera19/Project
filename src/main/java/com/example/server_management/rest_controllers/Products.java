@@ -27,11 +27,9 @@ public class Products {
     private CategoryRepository categoryRepository;
 
     // ✅ ดึงสินค้าตามหมวดหมู่
-    @GetMapping("/by-category/{categoryName}")
+    @GetMapping(value = "/by-category/{categoryName}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getProductsByCategory(@PathVariable String categoryName) {
         Category category = categoryRepository.findByName(categoryName);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         if (category == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Category not found: " + categoryName));
@@ -46,7 +44,7 @@ public class Products {
     }
 
     // ✅ ดึงสินค้าตาม ID
-    @GetMapping("/{productId}")
+    @GetMapping(value = "/{productId}",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> getProductById(@PathVariable int productId) {
         Optional<Product> productOpt = productRepository.findById(productId);
 

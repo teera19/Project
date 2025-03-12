@@ -23,7 +23,7 @@ public class Addproduct {
     @Autowired
     private UserService userService;
 
-    @PostMapping(value = "/add-product", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/add-product", consumes = "multipart/form-data",produces = "application/json;charset=UTF-8")
     public ResponseEntity<Object> addProduct(@RequestParam("shop_title") String shopTitle,
                                              @RequestParam("name") String name,
                                              @RequestParam("description") String description,
@@ -33,8 +33,6 @@ public class Addproduct {
                                              @RequestParam("defectDetails") String defectDetails,
                                              @RequestParam Map<String, String> details,
                                              HttpSession session) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
         try {
             // ✅ ตรวจสอบว่าผู้ใช้ล็อกอินหรือไม่
             String userName = (String) session.getAttribute("user_name");

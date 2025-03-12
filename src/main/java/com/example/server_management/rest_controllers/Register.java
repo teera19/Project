@@ -15,7 +15,7 @@ public class Register {
     @Autowired
     UserService userService;
 
-    @PostMapping("/register")
+    @PostMapping(value = "/register",produces = "application/json;charset=UTF-8")
     public ResponseEntity<?> register(
             @RequestParam String userName,
             @RequestParam String name,
@@ -27,8 +27,6 @@ public class Register {
 
 
         System.out.println("Received Register Request: " + userName);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json; charset=UTF-8");
 
         if (userName.isEmpty() || name.isEmpty() || lastName.isEmpty() || email.isEmpty() ||
                 password.isEmpty() || address.isEmpty() || tel.isEmpty()) {

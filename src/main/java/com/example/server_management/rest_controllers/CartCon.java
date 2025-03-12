@@ -136,10 +136,10 @@ public class CartCon {
         try {
             // ดึงข้อมูลตะกร้าสินค้า
             List<CartItem> cartItems = cartService.viewCart(userName);
-            if (cartItems.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("message", "Your cart is empty"));
-            }
+//            if (cartItems.isEmpty()) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                        .body(Map.of("message", "Your cart is empty"));
+//            }
 
             // คำนวณยอดรวมและสร้างคำสั่งซื้อใหม่
             double totalAmount = 0;
